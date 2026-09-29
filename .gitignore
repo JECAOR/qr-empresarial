@@ -1,0 +1,17 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno y credenciales
+.env
+.env.local
+
+# Resultados de pruebas y reportes
+playwright-report/
+test-results/
+coverage/
+
+# Archivos del sistema operativo y del editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
