@@ -1,0 +1,82 @@
+/* ============================================
+   PÁGINA 404
+   ============================================ */
+
+body.error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--slate-50);
+  padding: 24px;
+}
+
+.error-wrap {
+  max-width: 420px;
+  text-align: center;
+}
+
+.error-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--color-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.error-code {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.error-wrap h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--slate-950);
+  margin: 0 0 10px;
+  line-height: 1.3;
+}
+
+.error-wrap p {
+  font-size: 13px;
+  color: var(--slate-500);
+  line-height: 1.6;
+  margin: 0 0 26px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.error-links {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.error-links a {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.error-links span {
+  color: var(--slate-300);
+}
+
+@media (max-width: 480px) {
+  .error-actions {
+    flex-direction: column;
+  }
+}

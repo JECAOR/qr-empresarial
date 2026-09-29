@@ -1,0 +1,20 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo de Fonda La Cosecha">
+  <!-- Sol -->
+  <circle cx="24" cy="10" r="4" fill="currentColor" opacity="0.85"/>
+
+  <!-- Tallo central -->
+  <path d="M24 16 L24 40" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- Espigas de trigo (izquierda) -->
+  <path d="M24 20 C19 19, 15 21, 13 25" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M24 27 C19 26, 15 28, 13 32" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M24 34 C19 33, 15 35, 13 39" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+
+  <!-- Espigas de trigo (derecha) -->
+  <path d="M24 20 C29 19, 33 21, 35 25" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M24 27 C29 26, 33 28, 35 32" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M24 34 C29 33, 33 35, 35 39" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+
+  <!-- Base / plato -->
+  <path d="M10 41 C10 43.2, 16.3 45, 24 45 C31.7 45, 38 43.2, 38 41" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+</svg>

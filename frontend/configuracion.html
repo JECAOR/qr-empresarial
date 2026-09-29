@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuración · QR Empresarial</title>
+  <meta name="description" content="Ajustes de cuenta y del negocio en QR Empresarial." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/theme.css" />
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/contenido.css" />
+  <link rel="stylesheet" href="css/configuracion.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <nav id="sidebar" aria-label="Navegación principal"></nav>
+    <div class="app-main">
+      <header id="topbar"></header>
+
+      <main class="app-content">
+        <div class="settings-wrap">
+
+          <!-- Información del negocio -->
+          <form id="business-form" class="settings-card">
+            <h2>Información del negocio</h2>
+            <p class="settings-sub">Estos datos aparecen en tu perfil público</p>
+
+            <div class="settings-row">
+              <div class="form-field">
+                <label for="biz-name">Nombre del negocio</label>
+                <div class="form-input-wrap">
+                  <input type="text" id="biz-name">
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="biz-category">Categoría</label>
+                <div class="form-input-wrap">
+                  <input type="text" id="biz-category">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="biz-desc">Descripción</label>
+              <textarea id="biz-desc" class="settings-textarea"></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="biz-address">Dirección</label>
+              <div class="form-input-wrap">
+                <input type="text" id="biz-address">
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="form-field">
+                <label for="biz-phone">Teléfono / WhatsApp</label>
+                <div class="form-input-wrap">
+                  <input type="text" id="biz-phone">
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="biz-email">Correo de contacto</label>
+                <div class="form-input-wrap">
+                  <input type="email" id="biz-email">
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="form-field">
+                <label for="biz-instagram">Instagram</label>
+                <div class="form-input-wrap">
+                  <input type="text" id="biz-instagram" placeholder="@tunegocio">
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="biz-hours">Horario</label>
+                <div class="form-input-wrap">
+                  <input type="text" id="biz-hours" placeholder="Lun-Vie 9:00–18:00">
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-save-row">
+              <span id="business-saved-toast" class="settings-saved-toast"></span>
+              <button type="submit" class="btn-primary">Guardar cambios</button>
+            </div>
+          </form>
+
+          <!-- Apariencia -->
+          <div class="settings-card">
+            <h2>Apariencia</h2>
+            <p class="settings-sub">Elige el color de marca de tu panel y tu perfil público</p>
+            <div class="theme-option-row" id="theme-options"></div>
+          </div>
+
+          <!-- Notificaciones -->
+          <div class="settings-card">
+            <h2>Notificaciones</h2>
+            <p class="settings-sub">Elige qué avisos quieres recibir por correo</p>
+
+            <div class="settings-notif-row">
+              <div class="settings-notif-text">
+                <div class="title">Resumen semanal</div>
+                <div class="desc">Escaneos, visitantes y clics de los últimos 7 días</div>
+              </div>
+              <button class="item-toggle settings-notif-toggle on" data-notif-key="weekly" aria-label="Desactivar Resumen semanal" aria-pressed="true"><span class="knob"></span></button>
+            </div>
+            <div class="settings-notif-row">
+              <div class="settings-notif-text">
+                <div class="title">Nuevas reseñas</div>
+                <div class="desc">Cuando un cliente deja una calificación</div>
+              </div>
+              <button class="item-toggle settings-notif-toggle on" data-notif-key="reviews" aria-label="Desactivar Nuevas reseñas" aria-pressed="true"><span class="knob"></span></button>
+            </div>
+            <div class="settings-notif-row">
+              <div class="settings-notif-text">
+                <div class="title">Novedades de QR Empresarial</div>
+                <div class="desc">Nuevas funciones y consejos de uso</div>
+              </div>
+              <button class="item-toggle settings-notif-toggle" data-notif-key="updates" aria-label="Activar Novedades de QR Empresarial" aria-pressed="false"><span class="knob"></span></button>
+            </div>
+          </div>
+
+          <!-- Cambiar contraseña -->
+          <form id="password-form" class="settings-card">
+            <h2>Cuenta</h2>
+            <p class="settings-sub">Cambia tu contraseña de acceso</p>
+
+            <div class="form-field">
+              <label for="current-password">Contraseña actual</label>
+              <div class="form-input-wrap">
+                <input type="password" id="current-password" placeholder="••••••••••" required>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="new-password">Nueva contraseña</label>
+              <div class="form-input-wrap">
+                <input type="password" id="new-password" placeholder="••••••••••" required>
+              </div>
+              <div class="password-strength-track">
+                <div id="settings-strength-bar" class="password-strength-fill"></div>
+              </div>
+              <div class="password-strength-row">
+                <span id="settings-strength-label" class="password-strength-text"></span>
+                <span class="password-hint">Mín. 8 caracteres, mayúsculas, minúsculas y un número</span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="confirm-new-password">Confirmar nueva contraseña</label>
+              <div class="form-input-wrap">
+                <input type="password" id="confirm-new-password" placeholder="••••••••••" required>
+              </div>
+            </div>
+
+            <div class="settings-save-row">
+              <span id="password-saved-toast" class="settings-saved-toast"></span>
+              <button type="submit" class="btn-primary">Actualizar contraseña</button>
+            </div>
+          </form>
+
+          <!-- Zona de peligro -->
+          <div class="settings-card danger">
+            <h2 style="color:#d92525;">Zona de peligro</h2>
+            <p class="settings-sub">Esta acción no se puede deshacer</p>
+            <button id="open-delete-dialog" class="btn-danger-outline">Eliminar mi cuenta</button>
+          </div>
+
+        </div>
+      </main>
+
+      <nav id="mobile-nav" aria-label="Navegación móvil"></nav>
+    </div>
+  </div>
+
+  <!-- Confirmación de eliminar cuenta -->
+  <dialog id="delete-account-dialog">
+    <div class="dialog-inner">
+      <h3>¿Eliminar tu cuenta?</h3>
+      <p style="font-size:12px;color:var(--slate-500);line-height:1.6;margin:0 0 18px;">
+        Se eliminará tu perfil, tu código QR y todo el contenido asociado a Fonda La Cosecha. Esta acción no se puede deshacer.
+      </p>
+      <div class="dialog-actions">
+        <button type="button" id="cancel-delete" class="btn-secondary">Cancelar</button>
+        <button type="button" id="confirm-delete" class="btn-danger-outline" style="flex:1;">Sí, eliminar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="js/business-data.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    initLayout({ title: "Configuración", subtitle: "Ajustes de tu cuenta y negocio" });
+  </script>
+  <script src="js/configuracion.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

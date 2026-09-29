@@ -1,0 +1,41 @@
+/* ============================================
+   REFINAMIENTOS VISUALES COMPARTIDOS
+   Transiciones suaves y elevación sutil en tarjetas
+   ============================================ */
+
+.kpi-card,
+.chart-card,
+.qr-card,
+.qr-active-card,
+.qr-side-card,
+.qr-info-box,
+.item-card,
+.profile-card,
+.settings-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.kpi-card:hover,
+.chart-card:hover,
+.qr-card:hover,
+.qr-active-card:hover,
+.qr-side-card:hover {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+  transform: translateY(-2px);
+}
+
+.item-card:not(.is-inactive):hover {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.sidebar-item,
+.mobile-nav-item,
+.profile-link-btn,
+.qr-format-btn,
+.content-tab {
+  transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+}
+
+body {
+  line-height: 1.55;
+}

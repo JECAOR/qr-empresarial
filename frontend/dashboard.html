@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard · QR Empresarial</title>
+  <meta name="description" content="Panel de control de QR Empresarial: estadísticas de escaneos, visitantes y actividad de tu perfil." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/theme.css" />
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <nav id="sidebar" aria-label="Navegación principal"></nav>
+    <div class="app-main">
+      <header id="topbar"></header>
+
+      <main class="app-content">
+        <div class="dash-wrap">
+
+          <!-- Banner de bienvenida -->
+          <div class="dash-banner">
+            <div>
+              <div class="dash-banner-label">Bienvenido de vuelta</div>
+              <div class="dash-banner-title" id="dash-biz-name">Fonda La Cosecha</div>
+              <div class="dash-banner-sub">Tu perfil está activo · <strong>2,847 escaneos</strong> este mes</div>
+            </div>
+            <div class="dash-banner-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+            </div>
+          </div>
+
+          <!-- KPIs con sparklines reales -->
+          <div id="kpi-grid" class="kpi-grid"></div>
+
+          <!-- Gráfica principal + panel QR -->
+          <div class="dash-main-grid">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <div class="chart-card-title">Actividad semanal</div>
+                  <div class="chart-card-sub">Escaneos y clics · últimos 7 días</div>
+                </div>
+                <div class="chart-legend">
+                  <div class="chart-legend-item">
+                    <span class="chart-legend-dot" style="background:var(--color-primary)"></span>
+                    <span>Escaneos</span>
+                  </div>
+                  <div class="chart-legend-item">
+                    <span class="chart-legend-dot" style="background:#8B5CF6"></span>
+                    <span>Clics</span>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-canvas-wrap">
+                <canvas id="main-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="qr-active-card">
+              <div class="qr-active-header">
+                <span class="qr-active-title">QR Activo</span>
+                <span class="pill-online" style="font-size:9px;">● En línea</span>
+              </div>
+              <div class="qr-active-canvas-wrap">
+                <canvas id="qr-active-canvas"></canvas>
+              </div>
+              <div class="qr-active-url">
+                <span id="dash-qr-url">qr.fondalacosecha.co/menu</span>
+              </div>
+              <button id="qr-active-download" class="qr-active-btn filled">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Descargar
+              </button>
+              <button id="qr-active-share" class="qr-active-btn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                Compartir
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <nav id="mobile-nav" aria-label="Navegación móvil"></nav>
+    </div>
+  </div>
+
+  <script src="js/vendor/chart.umd.min.js"></script>
+  <script src="js/vendor/qrcode.min.js"></script>
+  <script src="js/business-data.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    initLayout({ title: "Dashboard", subtitle: `${getBusinessData().name} · Jun 2026` });
+  </script>
+  <script src="js/dashboard.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

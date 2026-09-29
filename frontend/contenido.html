@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contenido · QR Empresarial</title>
+  <meta name="description" content="Gestiona los enlaces y botones de tu perfil empresarial en QR Empresarial." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/theme.css" />
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/contenido.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <nav id="sidebar" aria-label="Navegación principal"></nav>
+    <div class="app-main">
+      <header id="topbar"></header>
+
+      <main class="app-content">
+        <div class="content-toolbar" id="content-tabs"></div>
+
+        <div id="item-list" class="item-list"></div>
+
+        <button id="item-add-btn-bottom" class="item-add-btn" style="margin-top:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar nuevo elemento
+        </button>
+      </main>
+
+      <nav id="mobile-nav" aria-label="Navegación móvil"></nav>
+    </div>
+  </div>
+
+  <!-- Modal nativo de HTML5 para agregar/editar un elemento -->
+  <dialog id="add-item-dialog">
+    <form id="add-item-form" class="dialog-inner" method="dialog">
+      <h3 id="dialog-title">Agregar elemento</h3>
+
+      <div class="form-field">
+        <label for="tipo">Tipo</label>
+        <select id="tipo" name="tipo">
+          <option value="enlace">Enlace</option>
+          <option value="botón">Botón</option>
+          <option value="texto">Texto</option>
+          <option value="contacto">Contacto</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="etiqueta">Etiqueta</label>
+        <div class="form-input-wrap">
+          <input type="text" id="etiqueta" name="etiqueta" placeholder="Ej. Ver catálogo" required>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="subtitulo">Subtítulo / enlace</label>
+        <div class="form-input-wrap">
+          <input type="text" id="subtitulo" name="subtitulo" placeholder="Ej. fondalacosecha.co/catalogo">
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button type="button" id="dialog-cancel" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/business-data.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    initLayout({
+      title: "Gestión de Contenido",
+      subtitle: "Personaliza los elementos de tu perfil empresarial",
+      actionHtml: `
+        <button id="btn-open-add" class="btn-add">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar
+        </button>`,
+    });
+  </script>
+  <script src="js/contenido.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

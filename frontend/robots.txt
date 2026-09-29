@@ -1,0 +1,20 @@
+# robots.txt — QR Empresarial
+# Permite indexar las páginas públicas (login, registro, perfil público, menú)
+# y bloquea las pantallas internas del panel, que son privadas por naturaleza
+# (requieren sesión iniciada y no aportan valor en resultados de búsqueda).
+
+User-agent: *
+Allow: /login.html
+Allow: /register.html
+Allow: /forgot-password.html
+Allow: /public.html
+Allow: /menu.html
+
+Disallow: /dashboard.html
+Disallow: /contenido.html
+Disallow: /qr.html
+Disallow: /configuracion.html
+Disallow: /404.html
+
+# Reemplaza este dominio por el real una vez el sitio esté desplegado.
+Sitemap: https://qr-empresarial.example.com/sitemap.xml

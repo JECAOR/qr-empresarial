@@ -1,0 +1,64 @@
+/* ============================================
+   TEMA — variables de color y tipografía
+   (equivalente al objeto THEMES del prototipo)
+   ============================================ */
+
+:root {
+  /* Tema por defecto: Índigo */
+  --color-primary: #4F46E5;
+  --color-primary-dark: #4338CA;
+  --color-primary-light: #EEF2FF;
+  --color-primary-mid: #A5B4FC;
+  --color-sidebar-bg: #0F172A;
+  --font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  /* Paleta neutra (slate) — fija, no cambia con el tema */
+  --slate-950: #0F172A;
+  --slate-900: #1E293B;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #556880;
+  --slate-400: #5C6980;
+  --slate-on-dark: #94A3B8;
+  --slate-300: #CBD5E1;
+  --slate-200: #E2E8F0;
+  --slate-100: #F1F5F9;
+  --slate-50: #F8FAFC;
+  --white: #FFFFFF;
+}
+
+/* Tema Esmeralda — se activa poniendo data-theme="teal" en <html> */
+html[data-theme="teal"] {
+  --color-primary: #0B7D73;
+  --color-primary-dark: #0F766E;
+  --color-primary-light: #F0FDFA;
+  --color-primary-mid: #5EEAD4;
+  --color-sidebar-bg: #0D2B27;
+  --font-family: "DM Sans", system-ui, sans-serif;
+}
+
+/* Tema Terracota — se activa poniendo data-theme="terracota" en <html> */
+html[data-theme="terracota"] {
+  --color-primary: #C2410C;
+  --color-primary-dark: #9A3412;
+  --color-primary-light: #FFF7ED;
+  --color-primary-mid: #FDBA74;
+  --color-sidebar-bg: #2B1608;
+  --font-family: "Poppins", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background: var(--white);
+  color: var(--slate-900);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}

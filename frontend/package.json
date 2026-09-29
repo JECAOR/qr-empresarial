@@ -1,0 +1,16 @@
+{
+  "name": "qr-empresarial",
+  "version": "1.0.0",
+  "description": "Panel de control para crear, personalizar y compartir el perfil empresarial de un negocio con un código QR dinámico.",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.56.0",
+    "http-server": "^14.1.1"
+  }
+}

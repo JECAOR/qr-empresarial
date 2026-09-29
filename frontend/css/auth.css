@@ -1,0 +1,559 @@
+/* ============================================
+   LAYOUT COMPARTIDO — Login y Registro
+   Panel izquierdo (marca) + panel derecho (formulario)
+   ============================================ */
+
+.auth-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ---------- Panel izquierdo (marca / branding) ---------- */
+.auth-brand {
+  width: 44%;
+  background: var(--color-sidebar-bg);
+  color: var(--white);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  padding: 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* patrón de puntos de fondo, igual al SVG del prototipo */
+.auth-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: radial-gradient(circle, white 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
+.auth-brand > * {
+  position: relative;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.auth-logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auth-logo-text {
+  color: var(--white);
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.auth-brand h2 {
+  color: var(--white);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.auth-brand p.auth-subtitle {
+  color: var(--slate-400);
+  font-size: 12px;
+  margin-top: 10px;
+  line-height: 1.65;
+}
+
+/* Lista de estadísticas / beneficios */
+.auth-stats,
+.auth-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-stat-row,
+.auth-benefit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auth-stat-value {
+  color: var(--white);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.auth-stat-label {
+  color: var(--slate-500);
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.auth-benefit-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auth-benefit-row span {
+  color: var(--slate-300);
+  font-size: 12px;
+}
+
+/* Tarjeta social-proof ("1,200+ empresas...") */
+.auth-social-proof {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-avatars {
+  display: flex;
+  margin-right: 4px;
+}
+
+.auth-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--color-sidebar-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 8px;
+  font-weight: 700;
+  margin-left: -8px;
+}
+
+.auth-avatar:first-child {
+  margin-left: 0;
+}
+
+.auth-social-proof span {
+  color: var(--slate-400);
+  font-size: 11px;
+}
+
+.auth-social-proof strong {
+  color: var(--white);
+  font-weight: 700;
+}
+
+/* Tarjeta de testimonio (Login) */
+.auth-testimonial {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.auth-testimonial p {
+  color: var(--slate-300);
+  font-size: 12px;
+  line-height: 1.65;
+  font-style: italic;
+  margin: 0;
+}
+
+.auth-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.auth-testimonial-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F59E0B, #EF4444);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.auth-testimonial-author .name {
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.auth-testimonial-author .role {
+  color: var(--slate-500);
+  font-size: 10px;
+}
+
+/* ---------- Panel derecho (formulario) ---------- */
+.auth-form-panel {
+  flex: 1;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+}
+
+.auth-form-wrap {
+  width: 100%;
+  max-width: 320px;
+}
+
+.auth-form-wrap h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--slate-950);
+  margin: 0;
+}
+
+.auth-form-wrap .auth-form-subtitle {
+  font-size: 13px;
+  color: var(--slate-500);
+  margin-top: 6px;
+  margin-bottom: 26px;
+}
+
+.toggle-password {
+  cursor: pointer;
+  color: var(--slate-400);
+  display: flex;
+  background: none;
+  border: none;
+  padding: 0;
+  align-items: center;
+}
+
+/* Fila con checkbox + enlace */
+.form-options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--slate-700);
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--slate-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+  background: var(--color-primary);
+}
+
+.checkbox-label input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Checkbox de términos (registro) */
+.terms-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--slate-600);
+  margin-bottom: 16px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+.terms-label input[type="checkbox"] {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1.5px solid var(--color-primary);
+  background: var(--color-primary-light);
+  flex-shrink: 0;
+  margin-top: 1px;
+  position: relative;
+  cursor: pointer;
+}
+
+.terms-label input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--color-primary);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.terms-label .link-primary {
+  display: inline;
+  font-size: 11px;
+}
+
+.terms-label.has-error input[type="checkbox"] {
+  border-color: #EF4444;
+}
+
+/* Divisor "o" */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.divider .line {
+  flex: 1;
+  height: 1px;
+  background: var(--slate-200);
+}
+
+.divider span {
+  font-size: 11px;
+  color: var(--slate-400);
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: 13px;
+  color: var(--slate-500);
+  margin: 0;
+}
+
+.forgot-sent-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #D1FAE5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+/* ---------- Registro multi-paso ---------- */
+.reg-nav-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.reg-nav-row .btn-primary {
+  flex: 1;
+}
+
+.reg-nav-row .btn-secondary {
+  flex: 0 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.plan-card {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.plan-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.plan-card label {
+  display: block;
+  border: 1.5px solid var(--slate-200);
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.plan-card input[type="radio"]:checked + label {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.plan-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.plan-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--slate-950);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-badge {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.plan-card input[type="radio"]:checked + label .plan-badge {
+  background: var(--white);
+}
+
+.plan-price {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--slate-950);
+}
+
+.plan-price span {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--slate-500);
+}
+
+.plan-desc {
+  font-size: 11px;
+  color: var(--slate-500);
+  margin-top: 4px;
+  display: block;
+}
+
+/* Indicador de pasos (Registro) */
+.steps-indicator {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.step-item:last-child {
+  flex: 0 0 auto;
+}
+
+.step-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--slate-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--slate-400);
+}
+
+.step-item.active .step-circle {
+  background: var(--color-primary);
+  color: var(--white);
+}
+
+.step-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--slate-400);
+}
+
+.step-item.active .step-label {
+  color: var(--color-primary);
+}
+
+.step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--slate-200);
+  margin-left: 6px;
+}
+
+/* ---------- Responsivo (reemplaza las versiones D/M del prototipo) ---------- */
+@media (max-width: 780px) {
+  .auth-layout {
+    flex-direction: column;
+  }
+
+  .auth-brand {
+    width: 100%;
+    padding: 32px 24px;
+    gap: 16px;
+  }
+
+  .auth-stats,
+  .auth-social-proof {
+    display: none; /* se ocultan en móvil, igual que simplifica el prototipo M */
+  }
+
+  .auth-form-panel {
+    padding: 32px 24px;
+  }
+}
