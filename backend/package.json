@@ -1,0 +1,37 @@
+{
+  "name": "qr-empresarial-backend",
+  "version": "1.0.0",
+  "description": "Backend de QR Empresarial: API REST para perfiles empresariales con codigo QR dinamico",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JECAOR/qr-empresarial.git"
+  },
+  "keywords": [
+    "qr",
+    "backend",
+    "node",
+    "express",
+    "mysql"
+  ],
+  "author": "Jean Carlos Orozco Hernandez",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JECAOR/qr-empresarial/issues"
+  },
+  "homepage": "https://github.com/JECAOR/qr-empresarial#readme",
+  "dependencies": {
+    "dotenv": "^18.0.6",
+    "express": "^5.2.1",
+    "mysql2": "^3.24.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
