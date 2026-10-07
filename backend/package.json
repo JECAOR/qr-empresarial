@@ -1,20 +1,25 @@
 {
-  "name": "qr-empresarial",
+  "name": "qr-empresarial-backend",
   "version": "1.0.0",
-  "description": "Aplicación web responsive que permite a pymes y emprendedores crear un **perfil empresarial digital** y compartirlo mediante un **código QR dinámico**. El QR apunta siempre a la misma URL, así que la información se puede actualizar sin volver a imprimir el código.",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "Backend de QR Empresarial: API REST para perfiles empresariales con codigo QR dinamico",
+  "main": "src/server.js",
   "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JECAOR/qr-empresarial.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "qr",
+    "backend",
+    "node",
+    "express",
+    "mysql"
+  ],
+  "author": "Jean Carlos Orozco Hernandez",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
