@@ -7,6 +7,9 @@
 
 const express = require('express');
 
+const usuarioRoutes = require('./modules/usuarios/usuario.routes');
+const errorHandler = require('./middlewares/error.middleware');
+
 const app = express();
 
 // Permite recibir informacion en formato JSON desde el frontend o Postman
@@ -20,6 +23,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Aqui se montaran las rutas de cada modulo (usuarios, auth, perfiles, ...)
+// Rutas de cada modulo
+app.use('/api/usuarios', usuarioRoutes);
+
+// Middleware global de errores: siempre despues de las rutas
+app.use(errorHandler);
 
 module.exports = app;
