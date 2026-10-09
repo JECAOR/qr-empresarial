@@ -5,6 +5,7 @@
 // ============================================
 
 const ROLES_VALIDOS = ['empresa', 'administrador'];
+const ESTADOS_VALIDOS = ['activo', 'restringido'];
 const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LONGITUD_MINIMA_CONTRASENA = 8;
 
@@ -60,6 +61,74 @@ function validarCrearUsuario(req, res, next) {
   next();
 }
 
+/**
+ * Comprueba que el identificador de la URL sea un entero positivo.
+ * Evita consultar la base de datos con valores sin sentido.
+ */
+function validarIdUsuario(req, res, next) {
+  const idUsuario = Number(req.params.idUsuario);
+
+  if (!Number.isInteger(idUsuario) || idUsuario <= 0) {
+    return res.status(400).json({
+      message: 'El identificador del usuario no es válido'
+    });
+  }
+
+  next();
+}
+
+/**
+ * Valida los datos de actualizacion. No incluye la contrasena:
+ * cambiarla es otra operacion, con su propia regla (RN-20).
+ */
+function validarActualizarUsuario(req, res, next) {
+  const { nombre, correo, rol } = req.body;
+
+  if (!nombre || !correo || !rol) {
+    return res.status(400).json({
+      message: 'Los campos nombre, correo y rol son obligatorios'
+    });
+  }
+
+  if (typeof nombre !== 'string' || nombre.trim().length < 2) {
+    return res.status(400).json({
+      message: 'El nombre debe tener al menos 2 caracteres'
+    });
+  }
+
+  if (!FORMATO_CORREO.test(correo)) {
+    return res.status(400).json({
+      message: 'El formato del correo no es válido'
+    });
+  }
+
+  if (!ROLES_VALIDOS.includes(rol)) {
+    return res.status(400).json({
+      message: 'El rol debe ser empresa o administrador'
+    });
+  }
+
+  next();
+}
+
+/**
+ * Valida el estado enviado en el PATCH: activo o restringido.
+ */
+function validarEstado(req, res, next) {
+  const { estado } = req.body;
+
+  if (!ESTADOS_VALIDOS.includes(estado)) {
+    return res.status(400).json({
+      message: 'El estado debe ser activo o restringido'
+    });
+  }
+
+  next();
+}
+
 module.exports = {
-  validarCrearUsuario
+  validarCrearUsuario,
+  validarIdUsuario,
+  validarActualizarUsuario,
+  validarEstado
 };

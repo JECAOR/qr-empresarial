@@ -49,6 +49,92 @@ async function crearUsuario(datosUsuario) {
   return { idUsuario, nombre, correo, rol };
 }
 
+/**
+ * Devuelve todos los usuarios activos.
+ * @returns {Promise<object[]>}
+ */
+async function listarUsuarios() {
+  return usuarioRepository.listar();
+}
+
+/**
+ * Consulta un usuario por su identificador.
+ * @param {number|string} idUsuario
+ * @returns {Promise<object>}
+ * @throws {Error} 404 si el usuario no existe.
+ */
+async function obtenerUsuarioPorId(idUsuario) {
+  const usuario = await usuarioRepository.buscarPorId(idUsuario);
+
+  if (!usuario) {
+    const error = new Error('Usuario no encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  return usuario;
+}
+
+/**
+ * Actualiza los datos del usuario. No modifica la contrasena.
+ * @param {number|string} idUsuario
+ * @param {{nombre: string, correo: string, rol: string}} datosUsuario
+ * @returns {Promise<object>} Usuario actualizado.
+ * @throws {Error} 404 si no existe; 409 si el correo es de otro usuario; 400 si el rol no es valido.
+ */
+async function actualizarUsuario(idUsuario, datosUsuario) {
+  await obtenerUsuarioPorId(idUsuario);
+
+  // RN-01: el correo sigue siendo unico, salvo que sea el del propio usuario
+  const correoExistente = await usuarioRepository.buscarPorCorreo(datosUsuario.correo);
+
+  if (correoExistente && correoExistente.id_usuario !== Number(idUsuario)) {
+    const error = new Error('El correo ya está registrado');
+    error.status = 409;
+    throw error;
+  }
+
+  if (!ROLES_VALIDOS.includes(datosUsuario.rol)) {
+    const error = new Error('El rol indicado no existe');
+    error.status = 400;
+    throw error;
+  }
+
+  await usuarioRepository.actualizar(idUsuario, datosUsuario);
+
+  return usuarioRepository.buscarPorId(idUsuario);
+}
+
+/**
+ * Activa o restringe la cuenta de un usuario (RN-23).
+ * @param {number|string} idUsuario
+ * @param {string} estado - activo o restringido.
+ * @returns {Promise<object>} Usuario actualizado.
+ */
+async function cambiarEstadoUsuario(idUsuario, estado) {
+  await obtenerUsuarioPorId(idUsuario);
+
+  await usuarioRepository.actualizarEstado(idUsuario, estado);
+
+  return usuarioRepository.buscarPorId(idUsuario);
+}
+
+/**
+ * Elimina logicamente un usuario: deja de estar disponible, pero su
+ * informacion y sus relaciones se conservan.
+ * @param {number|string} idUsuario
+ */
+async function eliminarUsuario(idUsuario) {
+  await obtenerUsuarioPorId(idUsuario);
+
+  await usuarioRepository.eliminarLogico(idUsuario);
+}
+
 module.exports = {
-  crearUsuario
+  crearUsuario,
+  listarUsuarios,
+  obtenerUsuarioPorId,
+  actualizarUsuario,
+  cambiarEstadoUsuario,
+  eliminarUsuario
 };
