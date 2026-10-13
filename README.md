@@ -10,11 +10,12 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Parte | Estado |
 |---|---|
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
-| Base de datos MySQL `qr_empresarial` (8 tablas, 3 migraciones) | Implementada |
+| Base de datos MySQL `qr_empresarial` (9 tablas, 4 migraciones) | Implementada |
 | Frontend HTML/CSS/JS (11 pantallas, PWA, pruebas Playwright) | Implementado con datos en `localStorage` |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
-| Backend — autenticación, perfiles, contenido, QR, estadísticas y administración | Pendiente |
+| Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
+| Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
 
@@ -24,22 +25,35 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v0.2.0` | Proyecto Node, estructura del backend y servidor Express con `/api/health` |
 | `v0.3.0` | `POST /api/usuarios` con arquitectura por capas |
 | `v0.4.0` | CRUD completo del módulo Usuarios y colección de Postman |
+| `v0.5.0` | Autenticación con JWT, autorización por roles y registro público |
 
 ## API disponible
 
 Base: `http://localhost:3000/api`
 
-| Método | Endpoint | Operación | Respuestas |
+| Método | Endpoint | Acceso | Operación |
 |---|---|---|---|
-| GET | `/health` | Comprobación del servidor | 200 |
-| POST | `/usuarios` | Crear usuario | 201, 400, 409 |
-| GET | `/usuarios` | Listar usuarios activos | 200 |
-| GET | `/usuarios/:idUsuario` | Consultar un usuario | 200, 400, 404 |
-| PUT | `/usuarios/:idUsuario` | Actualizar nombre, correo y rol | 200, 400, 404, 409 |
-| PATCH | `/usuarios/:idUsuario/estado` | Activar o restringir la cuenta | 200, 400, 404 |
-| DELETE | `/usuarios/:idUsuario` | Eliminación lógica | 200, 400, 404 |
+| GET | `/health` | Público | Comprobación del servidor |
+| POST | `/auth/registro` | Público | Registro de una empresa (rol forzado a `empresa`) |
+| POST | `/auth/login` | Público | Iniciar sesión y obtener el JWT |
+| GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
+| POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
+| GET | `/usuarios` | Administrador | Listar usuarios activos |
+| GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
+| PUT | `/usuarios/:idUsuario` | Administrador | Actualizar nombre, correo y rol |
+| PATCH | `/usuarios/:idUsuario/estado` | Administrador | Activar o restringir la cuenta |
+| DELETE | `/usuarios/:idUsuario` | Administrador | Eliminación lógica |
 
-Las pruebas de estos endpoints están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 21 peticiones organizadas en tres carpetas, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**.
+El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
+
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 45 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+
+### Seguridad
+
+- Las contraseñas se guardan cifradas con bcrypt (10 rondas) y nunca viajan en las respuestas.
+- El token JWT contiene el `id` y el `rol`, se firma con `JWT_SECRET` y vence a las 2 horas.
+- En cada petición protegida se consulta el estado de la cuenta: si fue restringida o eliminada, el token deja de servir de inmediato.
+- El registro público siempre asigna el rol `empresa`; crear administradores es exclusivo de `POST /api/usuarios`.
 
 ## Stack tecnológico
 
@@ -49,7 +63,8 @@ Las pruebas de estos endpoints están en `docs/postman/QR-Empresarial-Usuarios.p
 | Base de datos | MySQL 8.0 con `mysql2` y consultas parametrizadas | En uso |
 | Frontend | HTML5, CSS3 y JavaScript ES2022, sin framework (PWA) | En uso |
 | Seguridad | `bcrypt` (contraseñas) | En uso |
-| Seguridad | `jsonwebtoken`, `helmet`, `cors`, `express-rate-limit`, `zod` | Previsto |
+| Seguridad | `jsonwebtoken` (JWT y middlewares de rol) | En uso |
+| Seguridad | `helmet`, `cors`, `express-rate-limit`, `zod` | Previsto |
 | QR | `qrcode` (servidor) y `qrcode.min.js` (navegador) | Previsto / en uso |
 | Gráficos | `chart.js` | En uso |
 | Pruebas | Postman; Jest + Supertest (API) y Playwright + axe-core (E2E) | Parcial |
@@ -65,8 +80,8 @@ Las pruebas de estos endpoints están en `docs/postman/QR-Empresarial-Usuarios.p
 |---|---|---|---|---|
 | 0 | 22/09 – 28/09 | Configuración: repositorio, Express base, conexión MySQL, migraciones | — | Terminado |
 | 1 | 29/09 – 05/10 | M1. Usuarios y cuentas | RF-01, RF-13 a RF-15 | Terminado |
-| 1 | 06/10 – 12/10 | M1. Autenticación (JWT, recuperación) | RF-02, RF-03 | En curso |
-| 2 | 13/10 – 19/10 | M2. Perfil empresarial | RF-04, RF-10 | Pendiente |
+| 1 | 06/10 – 13/10 | M1. Autenticación con JWT y registro público | RF-01, RF-02 | Terminado |
+| 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Siguiente |
 | 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Pendiente |
 | 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Pendiente |
 | 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Pendiente |
@@ -80,27 +95,27 @@ El orden sigue las dependencias entre módulos (usuario → perfil → contenido
 
 - **RN-01** El correo es único entre las cuentas activas.
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
-- **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no podrá iniciar sesión.
+- **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403.
+- **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no puede iniciar sesión ni seguir usando tokens emitidos antes.
 - **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas.
 
 ### Reglas previstas
 
-- Bloqueo del inicio de sesión durante 15 minutos tras 5 intentos fallidos.
+- Bloqueo del inicio de sesión durante 15 minutos tras 5 intentos fallidos (RN-03).
+- Recuperación de contraseña por correo: enlace de un solo uso que expira en 30 minutos (RF-03). La tabla `token_recuperacion` ya existe.
 - Un único QR por perfil activo, con URL fija `/p/{slug}`, generado solo si el perfil tiene contenido activo.
 - URL válidas (http/https); no se puede eliminar el último enlace activo.
-- Módulo de administración exclusivo del rol `administrador`.
 
 ## Base de datos
 
-Esquema `qr_empresarial` con 8 tablas: `usuario`, `perfil_empresarial`, `codigo_qr`, `enlace`, `elemento`, `categoria_enlace`, `categoria_elemento` y `evento`.
+Esquema `qr_empresarial` con 9 tablas: `usuario`, `perfil_empresarial`, `codigo_qr`, `enlace`, `elemento`, `categoria_enlace`, `categoria_elemento`, `evento` y `token_recuperacion`.
 
 | Migración | Cambio |
 |---|---|
 | `001-agregar-rol-slug-evento.sql` | Campos `rol` y `estado` en `usuario`, `slug` en `perfil_empresarial` y tabla `evento` |
 | `002-renombrar-columna-contrasena.sql` | `contraseña` → `contrasena`, para evitar caracteres no ASCII en el código |
 | `003-agregar-deleted-at-usuario.sql` | Columna `deleted_at` y valor por defecto para `fecha_registro` |
-
-Pendiente: `token_recuperacion`, para la recuperación de contraseña (RF-03).
+| `004-crear-token-recuperacion.sql` | Tabla `token_recuperacion` para el enlace de recuperación (RF-03) |
 
 ## Estructura de carpetas
 
@@ -111,10 +126,12 @@ qr-empresarial/
 │   │   ├── config/
 │   │   │   └── database.js          # pool de conexiones a MySQL
 │   │   ├── middlewares/
-│   │   │   └── error.middleware.js  # manejo centralizado de errores
+│   │   │   ├── error.middleware.js  # manejo centralizado de errores
+│   │   │   ├── auth.middleware.js   # verifica el token JWT
+│   │   │   └── rol.middleware.js    # autorizacion por rol
 │   │   ├── modules/
 │   │   │   ├── usuarios/            # route, validator, controller, service, repository
-│   │   │   ├── auth/                # pendiente
+│   │   │   ├── auth/                # login, perfil propio y registro publico
 │   │   │   ├── perfiles/            # pendiente
 │   │   │   ├── contenido/           # pendiente
 │   │   │   ├── qr/                  # pendiente
@@ -180,11 +197,12 @@ mysql -u root -p < database/schema.sql
 mysql -u root -p qr_empresarial < database/migrations/001-agregar-rol-slug-evento.sql
 mysql -u root -p qr_empresarial < database/migrations/002-renombrar-columna-contrasena.sql
 mysql -u root -p qr_empresarial < database/migrations/003-agregar-deleted-at-usuario.sql
+mysql -u root -p qr_empresarial < database/migrations/004-crear-token-recuperacion.sql
 
 # 2. Backend
 cd backend
 npm install
-cp .env.example .env      # completar DB_PASSWORD con la contraseña local de MySQL
+cp .env.example .env      # completar DB_PASSWORD y generar JWT_SECRET
 npm run dev               # servidor con nodemon en http://localhost:3000
 
 # 3. Comprobación
@@ -197,7 +215,7 @@ npx playwright install chromium
 npm test
 ```
 
-Variables de entorno (`backend/.env`): `PORT`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` y `DB_PORT`. El archivo nunca se versiona; use `.env.example` como plantilla.
+Variables de entorno (`backend/.env`): `PORT`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`, `JWT_SECRET` y `JWT_EXPIRES_IN`. El secreto se genera con el comando que aparece como comentario en `.env.example`. El archivo nunca se versiona; use `.env.example` como plantilla.
 
 ## Autor
 
