@@ -1,10 +1,13 @@
 // ============================================
 // USUARIO.ROUTES.JS — endpoints del modulo Usuarios
-// Define que ruta recibe cada peticion y en que orden se ejecutan
-// los validadores y el controlador.
+// Todas las rutas requieren un token valido. Las operaciones
+// administrativas exigen ademas el rol administrador (RN-22).
 // ============================================
 
 const express = require('express');
+
+const autenticar = require('../../middlewares/auth.middleware');
+const autorizarRoles = require('../../middlewares/rol.middleware');
 
 const usuarioController = require('./usuario.controller');
 const {
@@ -16,18 +19,43 @@ const {
 
 const router = express.Router();
 
-// POST /api/usuarios — registra un usuario nuevo
-router.post('/', validarCrearUsuario, usuarioController.crearUsuario);
+// Todas las rutas de este modulo requieren un token valido
+router.use(autenticar);
+
+// --- Perfil propio: cualquier usuario autenticado ---
+// Debe declararse ANTES de /:idUsuario, o Express interpretaria "me"
+// como un identificador y el validador responderia 400.
+router.get('/me', usuarioController.obtenerMiPerfil);
+
+// --- Operaciones administrativas: solo el rol administrador ---
+
+// POST /api/usuarios — registra un usuario con cualquier rol
+router.post(
+  '/',
+  autorizarRoles('administrador'),
+  validarCrearUsuario,
+  usuarioController.crearUsuario
+);
 
 // GET /api/usuarios — lista los usuarios activos
-router.get('/', usuarioController.listarUsuarios);
+router.get(
+  '/',
+  autorizarRoles('administrador'),
+  usuarioController.listarUsuarios
+);
 
 // GET /api/usuarios/:idUsuario — consulta un usuario
-router.get('/:idUsuario', validarIdUsuario, usuarioController.obtenerUsuario);
+router.get(
+  '/:idUsuario',
+  autorizarRoles('administrador'),
+  validarIdUsuario,
+  usuarioController.obtenerUsuario
+);
 
 // PUT /api/usuarios/:idUsuario — actualiza nombre, correo y rol
 router.put(
   '/:idUsuario',
+  autorizarRoles('administrador'),
   validarIdUsuario,
   validarActualizarUsuario,
   usuarioController.actualizarUsuario
@@ -36,12 +64,18 @@ router.put(
 // PATCH /api/usuarios/:idUsuario/estado — activa o restringe la cuenta
 router.patch(
   '/:idUsuario/estado',
+  autorizarRoles('administrador'),
   validarIdUsuario,
   validarEstado,
   usuarioController.cambiarEstadoUsuario
 );
 
 // DELETE /api/usuarios/:idUsuario — eliminacion logica
-router.delete('/:idUsuario', validarIdUsuario, usuarioController.eliminarUsuario);
+router.delete(
+  '/:idUsuario',
+  autorizarRoles('administrador'),
+  validarIdUsuario,
+  usuarioController.eliminarUsuario
+);
 
 module.exports = router;

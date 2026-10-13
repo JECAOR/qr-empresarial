@@ -7,6 +7,7 @@
 
 const express = require('express');
 
+const authRoutes = require('./modules/auth/auth.routes');
 const usuarioRoutes = require('./modules/usuarios/usuario.routes');
 const errorHandler = require('./middlewares/error.middleware');
 
@@ -24,6 +25,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Rutas de cada modulo
+app.use('/api/auth', authRoutes);          // publicas: login y registro
 app.use('/api/usuarios', usuarioRoutes);
 
 // Middleware global de errores: siempre despues de las rutas
