@@ -5,6 +5,7 @@
 // ============================================
 
 const usuarioService = require('./usuario.service');
+const authService = require('../auth/auth.service');
 
 /**
  * POST /api/usuarios — registra un usuario nuevo.
@@ -101,8 +102,23 @@ async function eliminarUsuario(req, res, next) {
   }
 }
 
+/**
+ * GET /api/usuarios/me — devuelve el perfil del usuario autenticado.
+ * El identificador sale del token, no de la URL.
+ */
+async function obtenerMiPerfil(req, res, next) {
+  try {
+    const usuario = await authService.obtenerPerfil(req.usuario.id);
+
+    return res.status(200).json({ data: usuario });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   crearUsuario,
+  obtenerMiPerfil,
   listarUsuarios,
   obtenerUsuario,
   actualizarUsuario,

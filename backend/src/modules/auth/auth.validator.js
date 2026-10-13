@@ -1,0 +1,75 @@
+// ============================================
+// AUTH.VALIDATOR.JS — validacion de los datos de entrada del login
+// Solo comprueba que lleguen los dos campos. El formato del correo y la
+// fuerza de la contrasena no se revisan aqui: en el login, unas credenciales
+// mal escritas deben responder 401, no 400.
+// ============================================
+
+/**
+ * Valida el cuerpo de POST /api/auth/login.
+ */
+function validarLogin(req, res, next) {
+  const { correo, contrasena } = req.body;
+
+  const datosCompletos =
+    typeof correo === 'string' && correo.trim() &&
+    typeof contrasena === 'string' && contrasena;
+
+  if (!datosCompletos) {
+    return res.status(400).json({
+      message: 'El correo y la contrasena son obligatorios'
+    });
+  }
+
+  next();
+}
+
+/**
+ * Valida el cuerpo de POST /api/auth/registro.
+ * Aqui si se revisan formato y fuerza, igual que en la creacion
+ * administrativa: son los datos con los que nacera la cuenta.
+ */
+function validarRegistro(req, res, next) {
+  const { nombre, correo, contrasena } = req.body;
+
+  if (!nombre || !correo || !contrasena) {
+    return res.status(400).json({
+      message: 'Los campos nombre, correo y contrasena son obligatorios'
+    });
+  }
+
+  if (typeof nombre !== 'string' || nombre.trim().length < 2) {
+    return res.status(400).json({
+      message: 'El nombre debe tener al menos 2 caracteres'
+    });
+  }
+
+  const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!FORMATO_CORREO.test(correo)) {
+    return res.status(400).json({
+      message: 'El formato del correo no es válido'
+    });
+  }
+
+  // RN-02: minimo 8 caracteres, mayuscula, numero y simbolo
+  const esSegura =
+    typeof contrasena === 'string' &&
+    contrasena.length >= 8 &&
+    /[A-Z]/.test(contrasena) &&
+    /[0-9]/.test(contrasena) &&
+    /[^A-Za-z0-9]/.test(contrasena);
+
+  if (!esSegura) {
+    return res.status(400).json({
+      message: 'La contrasena debe tener mínimo 8 caracteres, una mayúscula, un número y un símbolo'
+    });
+  }
+
+  next();
+}
+
+module.exports = {
+  validarLogin,
+  validarRegistro
+};
