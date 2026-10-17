@@ -90,19 +90,26 @@ test.describe("Gestión de Contenido", () => {
   });
 });
 
-test.describe("Persistencia en LocalStorage", () => {
-  test("crear un elemento se guarda en localStorage y sobrevive a recargar la página", async ({ page }) => {
+// El contenido ya no vive en el navegador: lo guarda el servidor (RF-05 y
+// RF-06). Estas pruebas comprobaban localStorage; ahora comprueban lo que
+// importa igual de bien y con el mismo rigor: que el cambio sobreviva a
+// recargar la página, porque quedó del otro lado de la API. El simulador
+// recuerda lo que se le manda, como haría el servidor (ver ayudas.js).
+test.describe("Persistencia en el servidor", () => {
+  test("crear un elemento lo manda al servidor y sobrevive a recargar la página", async ({ page }) => {
     await page.goto("/contenido.html");
     await page.click("#btn-open-add");
     await page.fill("#etiqueta", "Elemento persistente");
-    await page.fill("#subtitulo", "Prueba de LocalStorage");
+    await page.fill("#subtitulo", "https://ejemplo.co/persistente");
     await page.click('#add-item-form button[type="submit"]');
 
-    // El dato debe existir en localStorage, no solo en memoria
-    const guardado = await page.evaluate(() => localStorage.getItem("qre-content-items"));
-    expect(guardado).toContain("Elemento persistente");
+    await expect(page.locator("text=Elemento persistente")).toBeVisible();
 
-    // Y debe seguir visible tras una recarga real de la página
+    // Nada de esto se guarda en el navegador
+    const enElNavegador = await page.evaluate(() => localStorage.getItem("qre-content-items"));
+    expect(enElNavegador).toBeNull();
+
+    // Y sigue ahí tras una recarga real, porque quedó del otro lado de la API
     await page.reload();
     await expect(page.locator("text=Elemento persistente")).toBeVisible();
   });
@@ -118,7 +125,7 @@ test.describe("Persistencia en LocalStorage", () => {
     await expect(page.locator("text=Nombre editado y persistido")).toBeVisible();
   });
 
-  test("eliminar un elemento lo quita de localStorage de forma permanente", async ({ page }) => {
+  test("eliminar un elemento lo quita de forma permanente", async ({ page }) => {
     await page.goto("/contenido.html");
     const primerNombre = await page.locator(".item-card").first().locator(".item-label").textContent();
     await page.locator(".item-card").first().locator('[data-action="delete"]').click();

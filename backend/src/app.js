@@ -13,6 +13,7 @@ const express = require('express');
 const authRoutes = require('./modules/auth/auth.routes');
 const usuarioRoutes = require('./modules/usuarios/usuario.routes');
 const perfilRoutes = require('./modules/perfiles/perfil.routes');
+const contenidoRoutes = require('./modules/contenido/contenido.routes');
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
@@ -62,6 +63,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);          // publicas, salvo el cierre de sesion
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/perfiles', perfilRoutes);   // RF-04: perfil empresarial
+app.use('/api/contenido', contenidoRoutes); // RF-05 y RF-06: contenido
 
 // Cualquier otra ruta /api/... no existe: se responde en JSON, no con el
 // HTML que Express devuelve por defecto, porque quien llama espera JSON.

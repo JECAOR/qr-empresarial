@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.1.0
+- **Versión:** v1.2.0
 
 ## Resumen
 
@@ -23,6 +23,13 @@ Documentación de los endpoints disponibles.
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
 | PUT | `/perfiles/me` | Autenticado | Crear o actualizar el perfil empresarial |
+| GET | `/contenido` | Autenticado | Listar el contenido del perfil |
+| GET | `/contenido/categorias` | Autenticado | Categorías disponibles |
+| POST | `/contenido` | Autenticado | Agregar un enlace, texto o botón |
+| PUT | `/contenido/orden` | Autenticado | Reordenar una sección |
+| PUT | `/contenido/:id` | Autenticado | Editar un bloque |
+| PATCH | `/contenido/:id/estado` | Autenticado | Activar o desactivar |
+| DELETE | `/contenido/:id` | Autenticado | Eliminar un bloque |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -572,13 +579,141 @@ teléfono» y «teléfono en blanco» no sean dos cosas distintas en la base.
 
 ---
 
+## Contenido del perfil
+
+Son los bloques que ve quien escanea el código QR: enlaces a otras partes, textos y
+botones. Cuelgan del perfil empresarial, así que una cuenta sin perfil no puede tener
+contenido (404).
+
+**Una sola lista sobre dos tablas.** El esquema separa `enlace` —lo que lleva a otro
+sitio— de `elemento` —los textos y botones—, pero la pantalla y la vista pública
+muestran una lista sola. La API expone esa lista única y el servicio decide a qué tabla
+escribir según el `tipo`.
+
+Por eso **el identificador es compuesto**: `enlace-12`, `elemento-7`. Los dos contadores
+de la base empiezan en 1, así que sin el prefijo el enlace 3 y el elemento 3 serían el
+mismo «3» para el cliente.
+
+| `tipo` | Tabla | Para qué |
+|---|---|---|
+| `enlace` | `enlace` | WhatsApp, Instagram, web, PDF, Google Maps... las ocho del RF-05 |
+| `texto` | `elemento` | Un bloque de texto |
+| `boton` | `elemento` | Un botón con su destino |
+
+**Las secciones** son las pestañas de la pantalla (`menu`, `promos`, `reservas`). Es texto
+libre: la empresa puede renombrarlas. El `orden` es de la sección completa, no de cada
+tabla, porque en la pantalla los enlaces y los textos se intercalan.
+
+### GET /api/contenido
+
+Devuelve la lista plana en `data` y la misma agrupada por sección en `porSeccion`, que es
+como la pinta la pantalla.
+
+```json
+{
+  "data": [
+    {
+      "id": "enlace-12",
+      "tipo": "enlace",
+      "seccion": "menu",
+      "titulo": "Ver el menú",
+      "detalle": "https://laespiga.co/menu",
+      "categoria": { "id": 4, "nombre": "Página Web", "icono": "globe" },
+      "orden": 1,
+      "activo": true
+    }
+  ],
+  "porSeccion": { "menu": [] }
+}
+```
+
+**Errores:** 401 (sin token), 404 (la cuenta no tiene perfil empresarial).
+
+---
+
+### GET /api/contenido/categorias
+
+Las ocho categorías de enlace del RF-05 y las cinco de elemento, para que la pantalla las
+ofrezca sin tenerlas escritas en el código.
+
+---
+
+### POST /api/contenido
+
+**Cuerpo**
+
+```json
+{
+  "tipo": "enlace",
+  "titulo": "Pedidos por WhatsApp",
+  "detalle": "+57 301 222 3344",
+  "idCategoria": 1,
+  "seccion": "menu"
+}
+```
+
+El bloque se coloca al final de su sección. `detalle` es la dirección en los enlaces y el
+cuerpo en los textos y botones.
+
+**Validación de las URL (RF-10).** Los enlaces solo admiten `http` y `https`: un
+`javascript:` acabaría ejecutándose en la vista pública. **El WhatsApp es la excepción**:
+acepta el teléfono tal como lo escribiría cualquiera y lo guarda convertido en
+`https://wa.me/573012223344`, de modo que la vista pública no tenga que adivinar si lo
+que hay es un número o una dirección.
+
+**Errores:** 400 (tipo o categoría inválidos, falta el título o el detalle, URL que no
+sirve), 401, 404 (sin perfil).
+
+---
+
+### PUT /api/contenido/:id
+
+Mismo cuerpo que el POST, **sin `tipo`**: cambiarlo significaría mover la fila a la otra
+tabla, así que no se permite. La pantalla tampoco lo ofrece al editar.
+
+**Errores:** 400 (el identificador no tiene la forma `enlace-N`), 401, 404 (no existe o es
+de otra cuenta).
+
+---
+
+### PATCH /api/contenido/:id/estado
+
+**Cuerpo:** `{ "activo": false }`
+
+Desactivar no es borrar: el bloque sigue en el panel y deja de salir en la vista pública
+(RF-06).
+
+**Errores:** 400 (`activo` no es booleano), 401, 404.
+
+---
+
+### PUT /api/contenido/orden
+
+**Cuerpo:** `{ "ids": ["elemento-7", "enlace-12"] }`
+
+Las posiciones se asignan en ese orden, que es lo que sabe la pantalla después de
+arrastrar. Antes de tocar nada se comprueba que todos los bloques sean de esta cuenta,
+para no dejar la sección a medio reordenar.
+
+---
+
+### DELETE /api/contenido/:id
+
+Aquí el borrado **sí es definitivo**, a diferencia del de usuarios: un enlace que se quita
+no tiene historial que conservar. Los eventos del RF-11 que apuntaban a él se borran con
+él.
+
+**Errores:** 400, 401, 404.
+
+---
+
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 94 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 120 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
 | Endpoint | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Módulos Perfil, Contenido, QR, Público, Estadísticas, Configuración y Administración | RF-04 a RF-15 | Pendientes |
+| Módulos QR, Público, Estadísticas, Configuración y Administración | RF-07 a RF-15 | Pendientes |
