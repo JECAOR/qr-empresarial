@@ -695,6 +695,10 @@ Las posiciones se asignan en ese orden, que es lo que sabe la pantalla después 
 arrastrar. Antes de tocar nada se comprueba que todos los bloques sean de esta cuenta,
 para no dejar la sección a medio reordenar.
 
+La pantalla lo llama de dos maneras: al soltar una tarjeta arrastrada y al pulsar las
+flechas arriba o abajo sobre el asa de un bloque. Si la petición falla, la lista se vuelve
+a pedir al servidor, para no quedar mostrando un orden que no se guardó.
+
 ---
 
 ### DELETE /api/contenido/:id

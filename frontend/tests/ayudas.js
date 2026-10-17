@@ -107,7 +107,8 @@ async function simularApi(page, opciones = {}) {
     contrasenaActualIncorrecta = false,
     contrasenaIncorrectaAlBorrar = false,
     sinPerfil = false,
-    errorAlGuardarPerfil = null
+    errorAlGuardarPerfil = null,
+    errorAlOrdenar = null
   } = opciones;
 
   // El simulador recuerda el perfil y el contenido, como haría el servidor:
@@ -189,6 +190,10 @@ async function simularApi(page, opciones = {}) {
       }
 
       if (metodo === "PUT" && url.includes("/contenido/orden")) {
+        if (errorAlOrdenar) {
+          return responder(400, { message: errorAlOrdenar });
+        }
+
         cuerpo.ids.forEach((id, indice) => {
           const item = contenidoActual.find((i) => i.id === id);
           if (item) item.orden = indice + 1;

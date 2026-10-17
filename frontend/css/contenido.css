@@ -78,6 +78,39 @@
   cursor: grab;
   flex-shrink: 0;
   display: flex;
+  /* Es un <button> para que se pueda enfocar y usar con el teclado, pero no
+     debe parecer uno: se le quitan el fondo y el borde propios. */
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.item-grip:hover {
+  color: var(--slate-500);
+}
+
+.item-grip:active {
+  cursor: grabbing;
+}
+
+/* La tarjeta que se está arrastrando */
+.item-card.is-dragging {
+  opacity: 0.45;
+}
+
+/* Dónde va a caer: una línea en el borde por el que entraría */
+.item-card.drop-above {
+  box-shadow: inset 0 3px 0 0 var(--color-primary);
+}
+
+.item-card.drop-below {
+  box-shadow: inset 0 -3px 0 0 var(--color-primary);
+}
+
+/* Mientras se guarda el orden nuevo, la lista no acepta más cambios */
+.item-list.is-saving {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .item-icon {

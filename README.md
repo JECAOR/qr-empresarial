@@ -21,7 +21,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Cambio de contraseña y cierre de todas las sesiones | Terminado (`v0.9.0`) |
 | Eliminación de la cuenta propia | Terminado (`v1.0.0`) |
 | M2. Perfil empresarial (RF-04 y RF-10) | Terminado (`v1.1.0`) |
-| M3. Gestión de contenido (RF-05 y RF-06) | Terminado (`v1.2.0`) |
+| M3. Gestión de contenido (RF-05 y RF-06) | Terminado (`v1.3.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -40,6 +40,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v1.0.0` | Eliminación de la cuenta propia. Módulo 1 completo |
 | `v1.1.0` | Módulo 2: perfil empresarial, con validación de campos y URL |
 | `v1.2.0` | Módulo 3: enlaces, textos y botones del perfil, con secciones y orden |
+| `v1.3.0` | Reordenar el contenido arrastrando o con el teclado |
 
 ## API disponible
 
@@ -112,7 +113,7 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `dashboard`, `contenido`, `qr`, `configuracion` | `GET /usuarios/me` y `POST /auth/logout` |
 | `configuracion.html` | además `PUT /usuarios/me/contrasena`, `DELETE /usuarios/me` y `PUT /perfiles/me` |
 | Toda pantalla privada | `GET /perfiles/me` al cargar, para traer los datos del negocio |
-| `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido` y `GET /contenido/categorias` |
+| `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido`, `GET /contenido/categorias` y `PUT /contenido/orden` |
 
 Los datos del negocio ya vienen del servidor: `js/guardia.js` consulta
 `GET /perfiles/me` al abrir cualquier pantalla privada y los deja en el almacén
@@ -178,6 +179,7 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **RN-01** El correo es único entre las cuentas activas.
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
 - **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP; los inicios correctos no gastan cupo. La solicitud de recuperación lleva su propio contador (10 por 15 minutos, contando todas), para que agotar uno no inhabilite el otro.
+- **El contenido se reordena arrastrando o con el teclado.** El asa de cada bloque es un botón enfocable: con las flechas arriba y abajo también se mueve. Arrastrar es cómodo con el ratón e imposible sin él, así que ofrecer solo esa vía dejaría fuera a quien no pueda usarlo.
 - **Desactivar no es borrar.** Un bloque de contenido inactivo sigue en el panel y deja de aparecer en la vista pública (RF-06). Sirve para una promoción que vuelve cada temporada, sin volver a escribirla.
 - **Los enlaces solo admiten `http` y `https`.** Un `javascript:` guardado como enlace acabaría ejecutándose en la vista pública. El WhatsApp es la excepción: acepta un teléfono y se guarda convertido en `https://wa.me/<dígitos>`.
 - **RN-04** El enlace de recuperación sirve una sola vez y expira en 30 minutos. En la base solo se guarda su hash SHA-256: aunque alguien leyera la tabla, no podría reconstruir el enlace.
