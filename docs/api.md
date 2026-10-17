@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v0.6.0
+- **Versión:** v0.7.0
 
 ## Resumen
 
@@ -14,6 +14,7 @@ Documentación de los endpoints disponibles.
 | GET | `/health` | Público | Comprobación del servidor |
 | POST | `/auth/registro` | Público | Registro de una empresa |
 | POST | `/auth/login` | Público | Iniciar sesión |
+| POST | `/auth/logout` | Autenticado | Cerrar la sesión actual |
 | POST | `/auth/recuperar-contrasena` | Público | Solicitar el enlace de recuperación |
 | GET | `/auth/restablecer/:token` | Público | Comprobar el enlace |
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
@@ -131,11 +132,47 @@ El token contiene el `id` y el `rol`, se firma con `JWT_SECRET` y vence según `
 
 ---
 
+### POST /api/auth/logout
+
+Cierra la sesión actual. Requiere el token en la cabecera `Authorization`, porque lo que se revoca es
+precisamente ese token.
+
+**Respuesta 200**
+
+```json
+{
+  "message": "Sesión cerrada correctamente"
+}
+```
+
+Un JWT no se puede borrar: una vez firmado es válido hasta que vence, y el servidor no guarda ninguna
+sesión que pueda eliminar. Por eso el cierre se implementa al revés: el token lleva un identificador
+propio (`jti`), y al cerrar sesión ese identificador queda anotado en la tabla `sesion_revocada`. El
+middleware de autenticación la consulta en cada petición protegida y rechaza los tokens que figuren
+allí, aunque su firma y su fecha sigan siendo correctas.
+
+Solo se revoca el token con el que se hizo la petición. Las demás sesiones del mismo usuario —otro
+navegador, otro dispositivo— siguen abiertas.
+
+Las filas cuya fecha de vencimiento ya pasó se eliminan en cada cierre de sesión: el token que
+representan sería rechazado por fecha de todos modos, así que conservarlas no cambiaría ninguna
+respuesta y la tabla crecería sin límite.
+
+**Errores:** 401 (falta el token, es inválido, venció o la sesión ya estaba cerrada).
+
+---
+
 ## Recuperación de contraseña
 
 Son tres pasos: la empresa pide el enlace, el frontend comprueba que siga sirviendo y luego envía la contraseña nueva.
 
 En la tabla `token_recuperacion` no se guarda el token, sino su hash SHA-256. El token son 32 bytes aleatorios, así que no hace falta bcrypt: no hay nada que adivinar por fuerza bruta y el hash directo permite buscarlo en un solo `SELECT`.
+
+El enlace se envía por correo con `nodemailer`. Si el `.env` trae `SMTP_HOST`, `SMTP_USER` y `SMTP_PASS`,
+se usa ese servidor; si no, y `NODE_ENV` no es `production`, el backend crea una cuenta de prueba en
+Ethereal y escribe en la consola la URL donde puede verse el mensaje. Así el requisito se prueba
+completo sin guardar credenciales de correo en el repositorio. En producción, la falta de configuración
+SMTP es un error de despliegue y el envío falla de forma visible.
 
 ### POST /api/auth/recuperar-contrasena
 
@@ -160,7 +197,13 @@ Responde 200 aunque el correo no exista o la cuenta esté restringida: así nadi
 
 Cada solicitud invalida los enlaces anteriores de esa cuenta, y el nuevo vence según `RECUPERACION_EXPIRA_MINUTOS` (30 por defecto).
 
-**Errores:** 400 (falta el correo), 429 (más de 3 solicitudes fallidas en 15 minutos desde la misma IP; el contador es independiente del login).
+Si el envío del correo falla, la petición responde 200 igualmente y el error queda en la consola. El
+token ya está guardado, y devolver un 500 solo cuando el correo existe delataría qué cuentas están
+registradas, que es justo lo que este endpoint evita.
+
+**Errores:** 400 (falta el correo), 429 (más de 10 solicitudes en 15 minutos desde la misma IP). Aquí se
+cuentan todas las solicitudes, no solo las fallidas: como el endpoint responde 200 siempre, un contador
+de fallos no subiría nunca y el límite no serviría de nada. El cupo es independiente del login.
 
 ---
 
@@ -324,12 +367,12 @@ Eliminación lógica. El registro permanece en la base para no romper las relaci
 
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 56 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 62 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
 | Endpoint | Requisito | Estado |
 |---|---|---|
-| Envío del enlace por correo electrónico | RF-03 | El flujo está completo; falta conectar un servicio de correo. Mientras tanto el enlace se devuelve en la respuesta en desarrollo |
-| `POST /api/auth/logout` | — | Previsto |
+| Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
+| Conexión del frontend con la API | RF-01 a RF-03 | Las pantallas siguen trabajando con `localStorage` |
 | Módulos Perfil, Contenido, QR, Público, Estadísticas, Configuración y Administración | RF-04 a RF-15 | Pendientes |

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "QR Empresarial API - Modulo Usuarios",
-    "description": "Casos de prueba del backend de QR Empresarial.\n\nCarpeta 1 (Guia 1): entorno, servidor y los dos inicios de sesion que guardan los tokens.\nCarpeta 2 (Guia 2): creacion de usuarios y validaciones.\nCarpeta 3 (Guia 3): CRUD completo del modulo Usuarios.\nCarpeta 4 (Guia 4): autenticacion, seguridad y registro publico.\n\nRequisito: servidor corriendo con npm run dev dentro de backend.\nEjecute la coleccion completa en orden: los logins de la carpeta 1 guardan los tokens\nque usan las carpetas 2 y 3, protegidas desde la Guia 4.\n\nNota sobre RN-03: el inicio de sesion se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP. Si prueba el bloqueo a proposito, reinicie el servidor para limpiar el contador antes de volver a ejecutar la coleccion.",
+    "description": "Casos de prueba del backend de QR Empresarial.\n\nCarpeta 1 (Guia 1): entorno, servidor y los dos inicios de sesion que guardan los tokens.\nCarpeta 2 (Guia 2): creacion de usuarios y validaciones.\nCarpeta 3 (Guia 3): CRUD completo del modulo Usuarios.\nCarpeta 4 (Guia 4): autenticacion, seguridad y registro publico.\n\nRequisito: servidor corriendo con npm run dev dentro de backend.\nEjecute la coleccion completa en orden: los logins de la carpeta 1 guardan los tokens\nque usan las carpetas 2 y 3, protegidas desde la Guia 4.\n\nLimites por direccion IP:\n- Inicio de sesion: 5 intentos fallidos por 15 minutos. Los logins correctos no gastan cupo, asi que la coleccion no los agota; si prueba el bloqueo a proposito, reinicie el servidor para limpiar el contador.\n- Solicitud de recuperacion: 10 por 15 minutos, contando todas. La coleccion usa 3 por ejecucion, de modo que caben tres pasadas seguidas.\n\nLos contadores viven en memoria: al reiniciar el servidor se reinician.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -39,6 +39,10 @@
     },
     {
       "key": "tokenRecuperacion",
+      "value": ""
+    },
+    {
+      "key": "tokenDesechable",
       "value": ""
     }
   ],
@@ -2412,6 +2416,255 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia 4 - Cierre de sesion (RF-02)",
+      "item": [
+        {
+          "name": "53 Login de una sesion aparte (guarda {{tokenDesechable}})",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Se abre una segunda sesion de la misma empresa. Es la que se cerrara, para no invalidar el token que usan las demas carpetas de la coleccion.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenDesechable', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es una sesion distinta', () => pm.expect(json.data.token).to.not.eql(pm.collectionVariables.get('tokenEmpresa')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "54 Consultar el perfil con esa sesion (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "La sesion recien abierta funciona con normalidad.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDesechable}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "55 Cerrar la sesion (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/auth/logout",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "RF-02. El servidor anota el jti del token en la tabla sesion_revocada.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDesechable}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "56 Reutilizar el token ya cerrado (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "La firma y la fecha del token siguen siendo correctas, pero la sesion fue cerrada: el middleware lo rechaza.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDesechable}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Indica que la sesion fue cerrada', () => pm.expect(pm.response.json().message).to.include('cerrada'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "57 La otra sesion sigue abierta (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Cerrar una sesion no cierra las demas del mismo usuario: solo se revoca el token con el que se pidio el cierre.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEmpresa}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "58 Cerrar sesion sin token (401)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/auth/logout",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Para revocar un token hay que presentarlo.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
                 ]
               }
             }

@@ -11,8 +11,8 @@ const authRepository = require('../modules/auth/auth.repository');
 
 /**
  * Comprueba la cabecera Authorization: Bearer <token>.
- * Responde 401 si falta el token, es invalido, vencido, o si el usuario
- * ya no existe o fue restringido.
+ * Responde 401 si falta el token, es invalido, vencido, si la sesion fue
+ * cerrada, o si el usuario ya no existe o fue restringido.
  */
 async function autenticar(req, res, next) {
   try {
@@ -27,6 +27,19 @@ async function autenticar(req, res, next) {
     // Verifica la firma y la vigencia; lanza si algo no cuadra
     const datos = jwt.verify(token, process.env.JWT_SECRET);
 
+    // RF-02: un token sin jti no se puede revocar, asi que no se acepta.
+    // Solo ocurre con tokens emitidos antes de incorporar el cierre de
+    // sesion; basta volver a iniciar sesion para obtener uno nuevo.
+    if (!datos.jti) {
+      return res.status(401).json({ message: 'Token inválido o vencido' });
+    }
+
+    // RF-02: si el usuario cerro sesion, el token queda inservible aunque
+    // su firma y su fecha sigan siendo correctas
+    if (await authRepository.sesionRevocada(datos.jti)) {
+      return res.status(401).json({ message: 'La sesión fue cerrada' });
+    }
+
     // Se consulta de nuevo porque el token no cambia hasta que vence:
     // la cuenta pudo ser restringida o eliminada despues de emitirlo
     const usuario = await authRepository.buscarPorId(datos.id);
@@ -37,7 +50,12 @@ async function autenticar(req, res, next) {
 
     req.usuario = {
       id: usuario.id_usuario,
-      rol: usuario.rol
+      rol: usuario.rol,
+
+      // Los necesita el cierre de sesion para anotar este token concreto.
+      // exp viene en segundos, como define el estandar JWT.
+      jti: datos.jti,
+      expiraEn: new Date(datos.exp * 1000)
     };
 
     next();
