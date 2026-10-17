@@ -21,6 +21,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Cambio de contraseña y cierre de todas las sesiones | Terminado (`v0.9.0`) |
 | Eliminación de la cuenta propia | Terminado (`v1.0.0`) |
 | M2. Perfil empresarial (RF-04 y RF-10) | Terminado (`v1.1.0`) |
+| M3. Gestión de contenido (RF-05 y RF-06) | Terminado (`v1.2.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -38,6 +39,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v0.9.0` | Cambio de contraseña propio y cierre de todas las sesiones al cambiarla |
 | `v1.0.0` | Eliminación de la cuenta propia. Módulo 1 completo |
 | `v1.1.0` | Módulo 2: perfil empresarial, con validación de campos y URL |
+| `v1.2.0` | Módulo 3: enlaces, textos y botones del perfil, con secciones y orden |
 
 ## API disponible
 
@@ -57,6 +59,13 @@ Base: `http://localhost:3000/api`
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
 | PUT | `/perfiles/me` | Autenticado | Crear o actualizar el perfil empresarial |
+| GET | `/contenido` | Autenticado | Listar el contenido del perfil |
+| GET | `/contenido/categorias` | Autenticado | Categorías disponibles (las 8 del RF-05) |
+| POST | `/contenido` | Autenticado | Agregar un enlace, texto o botón |
+| PUT | `/contenido/orden` | Autenticado | Reordenar una sección |
+| PUT | `/contenido/:id` | Autenticado | Editar un bloque |
+| PATCH | `/contenido/:id/estado` | Autenticado | Activar o desactivar un bloque |
+| DELETE | `/contenido/:id` | Autenticado | Eliminar un bloque |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -66,7 +75,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 94 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 120 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Cómo consume la API el frontend
 
@@ -103,15 +112,16 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `dashboard`, `contenido`, `qr`, `configuracion` | `GET /usuarios/me` y `POST /auth/logout` |
 | `configuracion.html` | además `PUT /usuarios/me/contrasena`, `DELETE /usuarios/me` y `PUT /perfiles/me` |
 | Toda pantalla privada | `GET /perfiles/me` al cargar, para traer los datos del negocio |
+| `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido` y `GET /contenido/categorias` |
 
 Los datos del negocio ya vienen del servidor: `js/guardia.js` consulta
 `GET /perfiles/me` al abrir cualquier pantalla privada y los deja en el almacén
 local, que pasó de ser la fuente de verdad a ser una caché. Así el dashboard, el
 código QR y la barra lateral siguieron funcionando sin cambios.
 
-Las pantallas de contenido y código QR aún guardan lo suyo en `localStorage`:
-sus endpoints son los módulos 3 y 4. La vista pública lee la caché del navegador
-hasta que exista la ruta por slug del módulo 5. Y
+La pantalla de código QR aún guarda lo suyo en `localStorage`: sus endpoints son
+el módulo 4. La vista pública lee la caché del navegador hasta que exista la ruta
+por slug del módulo 5. Y
 los seis endpoints de administración de usuarios no tienen pantalla: son el
 módulo 8 (RF-13 a RF-15).
 
@@ -152,8 +162,8 @@ módulo 8 (RF-13 a RF-15).
 | 1 | 29/09 – 05/10 | M1. Usuarios y cuentas (CRUD que usará el módulo 8) | RF-01 | Terminado |
 | 1 | 06/10 – 13/10 | M1. Autenticación, registro público, cierre de sesión, recuperación y cambio de contraseña | RF-01, RF-02, RF-03 | Terminado |
 | 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Terminado |
-| 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Siguiente |
-| 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Pendiente |
+| 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Terminado |
+| 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Siguiente |
 | 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Pendiente |
 | 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Pendiente |
 | 7 | 17/11 – 23/11 | Pruebas de integración, aceptación y seguridad | Todos | Pendiente |
@@ -168,6 +178,8 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **RN-01** El correo es único entre las cuentas activas.
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
 - **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP; los inicios correctos no gastan cupo. La solicitud de recuperación lleva su propio contador (10 por 15 minutos, contando todas), para que agotar uno no inhabilite el otro.
+- **Desactivar no es borrar.** Un bloque de contenido inactivo sigue en el panel y deja de aparecer en la vista pública (RF-06). Sirve para una promoción que vuelve cada temporada, sin volver a escribirla.
+- **Los enlaces solo admiten `http` y `https`.** Un `javascript:` guardado como enlace acabaría ejecutándose en la vista pública. El WhatsApp es la excepción: acepta un teléfono y se guarda convertido en `https://wa.me/<dígitos>`.
 - **RN-04** El enlace de recuperación sirve una sola vez y expira en 30 minutos. En la base solo se guarda su hash SHA-256: aunque alguien leyera la tabla, no podría reconstruir el enlace.
 - **Cambio de contraseña:** al restablecerla o cambiarla se cierran todas las sesiones de la cuenta. Quien recupera su cuenta suele hacerlo porque perdió el control de ella, así que las sesiones abiertas antes del cambio dejan de servir. Al cambiarla desde Configuración se devuelve un token nuevo, para no echar de la pantalla a quien la cambió.
 - **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403.
@@ -196,6 +208,7 @@ Esquema `qr_empresarial` con 10 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `005-crear-sesion-revocada.sql` | Tabla `sesion_revocada`, que permite cerrar sesión en el servidor (RF-02) |
 | `006-agregar-sesiones-validas-desde.sql` | Columna `sesiones_validas_desde` en `usuario`, para cerrar todas las sesiones de una cuenta de una vez |
 | `007-ampliar-perfil-empresarial.sql` | Seis campos más en `perfil_empresarial`, fechas automáticas y un perfil único por cuenta |
+| `008-ampliar-contenido.sql` | Secciones y título en el contenido, y las tres categorías de enlace que faltaban del RF-05 |
 
 ## Estructura de carpetas
 
@@ -214,7 +227,7 @@ qr-empresarial/
 │   │   │   ├── usuarios/            # route, validator, controller, service, repository
 │   │   │   ├── auth/                # login, registro publico y recuperacion
 │   │   │   ├── perfiles/            # route, validator, controller, service, repository
-│   │   │   ├── contenido/           # pendiente
+│   │   │   ├── contenido/           # route, validator, controller, service, repository
 │   │   │   ├── qr/                  # pendiente
 │   │   │   ├── publico/             # pendiente
 │   │   │   ├── estadisticas/        # pendiente
@@ -286,6 +299,7 @@ mysql -u root -p qr_empresarial < database/migrations/004-crear-token-recuperaci
 mysql -u root -p qr_empresarial < database/migrations/005-crear-sesion-revocada.sql
 mysql -u root -p qr_empresarial < database/migrations/006-agregar-sesiones-validas-desde.sql
 mysql -u root -p qr_empresarial < database/migrations/007-ampliar-perfil-empresarial.sql
+mysql -u root -p qr_empresarial < database/migrations/008-ampliar-contenido.sql
 
 # 2. Backend
 cd backend

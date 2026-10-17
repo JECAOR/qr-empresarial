@@ -72,6 +72,26 @@
     {
       "key": "slugPerfil",
       "value": ""
+    },
+    {
+      "key": "tokenContenido",
+      "value": ""
+    },
+    {
+      "key": "idEnlaceWeb",
+      "value": ""
+    },
+    {
+      "key": "idWhatsapp",
+      "value": ""
+    },
+    {
+      "key": "idTexto",
+      "value": ""
+    },
+    {
+      "key": "idBoton",
+      "value": ""
     }
   ],
   "item": [
@@ -4315,6 +4335,1274 @@
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia 5 - Contenido del perfil (RF-05 y RF-06)",
+      "item": [
+        {
+          "name": "90 Login de la empresa (guarda el token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Se abre una sesion propia: las carpetas anteriores pudieron invalidar {{tokenEmpresa}} al restablecer o cambiar la contrasena.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenContenido', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "91 Categorias disponibles (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/categorias",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "categorias"
+              ]
+            },
+            "description": "El RF-05 enumera ocho clases de enlace: WhatsApp, Facebook, Instagram, web, LinkedIn, YouTube, PDF y Google Maps. Vienen de la base, no escritas en la pantalla.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Las ocho categorias de enlace del RF-05', () => pm.expect(d.enlaces).to.have.lengthOf(8));",
+                  "pm.test('Trae tambien las de elemento', () => pm.expect(d.elementos.length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "92 Listar el contenido propio (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "Devuelve la lista plana y tambien agrupada por seccion, que es como la pinta la pantalla.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae el agrupado por seccion', () => pm.expect(pm.response.json()).to.have.property('porSeccion'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "93 Agregar un enlace de pagina web (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "Guarda el identificador en {{idEnlaceWeb}}. Es compuesto -enlace-12- porque el esquema parte el contenido en dos tablas y los dos contadores empiezan en 1.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"Ver el menu\",\n  \"detalle\": \"https://laespiga.co/menu\",\n  \"idCategoria\": 4,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idEnlaceWeb', json.data.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "94 Agregar un WhatsApp con un telefono (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "Se admite el telefono tal como lo escribiria cualquiera, y se guarda convertido en un enlace wa.me: asi la vista publica no tiene que adivinar que es.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"Pedidos por WhatsApp\",\n  \"detalle\": \"+57 301 222 3344\",\n  \"idCategoria\": 1,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idWhatsapp', json.data.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Lo guarda como enlace de WhatsApp', () => pm.expect(json.data.detalle).to.eql('https://wa.me/573012223344'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "95 Agregar un texto (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "Los textos y los botones viven en la tabla elemento.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"texto\",\n  \"titulo\": \"Horario de hornada\",\n  \"detalle\": \"Pan recien salido a las 6:00 y a las 16:00\",\n  \"idCategoria\": 1,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idTexto', json.data.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "96 Agregar un boton en otra seccion (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "Las secciones son las pestanas de la pantalla (migracion 008).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"boton\",\n  \"titulo\": \"Pedir domicilio\",\n  \"detalle\": \"/domicilios\",\n  \"idCategoria\": 2,\n  \"seccion\": \"promos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idBoton', json.data.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "97 Enlace que no es una URL (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"Ver el menu\",\n  \"detalle\": \"asdf\",\n  \"idCategoria\": 4,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "98 Enlace con javascript: (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "Solo http y https: un javascript: acabaria en la vista publica.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"Ver el menu\",\n  \"detalle\": \"javascript:alert(1)\",\n  \"idCategoria\": 4,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "99 Sin titulo (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"texto\",\n  \"detalle\": \"algo\",\n  \"idCategoria\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "100 Tipo inventado (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "Los tipos son enlace, texto y boton.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"video\",\n  \"titulo\": \"x\",\n  \"detalle\": \"y\",\n  \"idCategoria\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "101 Categoria que no existe (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"Ver el menu\",\n  \"detalle\": \"https://laespiga.co/menu\",\n  \"idCategoria\": 99,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "102 WhatsApp con un numero demasiado corto (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"x\",\n  \"detalle\": \"123\",\n  \"idCategoria\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "103 Editar un bloque (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idEnlaceWeb}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idEnlaceWeb}}"
+              ]
+            },
+            "description": "El tipo no viaja en el PUT: cambiarlo seria mover la fila a la otra tabla.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Ver el menu completo\",\n  \"detalle\": \"https://laespiga.co/menu-2026\",\n  \"idCategoria\": 4,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Guardo el titulo nuevo', () => pm.expect(d.titulo).to.include('completo'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "104 Desactivar un bloque (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idEnlaceWeb}}/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idEnlaceWeb}}",
+                "estado"
+              ]
+            },
+            "description": "Desactivar no es borrar: el bloque sigue en el panel y deja de salir en la vista publica. Sirve para una promocion que vuelve cada temporada.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda inactivo', () => pm.expect(d.activo).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "105 Reactivarlo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idEnlaceWeb}}/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idEnlaceWeb}}",
+                "estado"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda activo', () => pm.expect(d.activo).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "106 Estado con un valor que no es booleano (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idEnlaceWeb}}/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idEnlaceWeb}}",
+                "estado"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": \"si\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "107 Reordenar la seccion (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/orden",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "orden"
+              ]
+            },
+            "description": "Se manda la lista en el orden deseado, que es lo que sabe la pantalla despues de arrastrar. El orden es de la seccion completa, no de cada tabla.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"{{idTexto}}\",\n    \"{{idWhatsapp}}\",\n    \"{{idEnlaceWeb}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "108 Comprobar el orden nuevo (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const menu = pm.response.json().porSeccion.menu;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El texto quedo primero', () => pm.expect(menu[0].id).to.eql(pm.collectionVariables.get('idTexto')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "109 Identificador que no existe (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/enlace-999999",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "enlace-999999"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "110 Identificador con forma invalida (400)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/pepito",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "pepito"
+              ]
+            },
+            "description": "Debe ser enlace-N o elemento-N.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "111 Sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "Cada cuenta solo ve el contenido de su propio perfil.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "112 Eliminar el enlace (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idEnlaceWeb}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idEnlaceWeb}}"
+              ]
+            },
+            "description": "Aqui el borrado si es definitivo: un enlace que se quita no tiene historial que conservar, a diferencia de una cuenta.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "113 Eliminar el WhatsApp (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idWhatsapp}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idWhatsapp}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "114 Eliminar el texto (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idTexto}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idTexto}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "115 Eliminar el boton (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idBoton}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idBoton}}"
+              ]
+            },
+            "description": "Deja la base como estaba para que la coleccion se pueda repetir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": [],

@@ -218,6 +218,29 @@ const Api = {
       autenticada: false
     }),
 
+  // Contenido del perfil (RF-05 y RF-06)
+  listarContenido: () => peticion("/contenido"),
+
+  listarCategoriasContenido: () => peticion("/contenido/categorias"),
+
+  crearContenido: (datos) =>
+    peticion("/contenido", { metodo: "POST", cuerpo: datos }),
+
+  actualizarContenido: (id, datos) =>
+    peticion("/contenido/" + encodeURIComponent(id), { metodo: "PUT", cuerpo: datos }),
+
+  cambiarEstadoContenido: (id, activo) =>
+    peticion("/contenido/" + encodeURIComponent(id) + "/estado", {
+      metodo: "PATCH",
+      cuerpo: { activo }
+    }),
+
+  eliminarContenido: (id) =>
+    peticion("/contenido/" + encodeURIComponent(id), { metodo: "DELETE" }),
+
+  reordenarContenido: (ids) =>
+    peticion("/contenido/orden", { metodo: "PUT", cuerpo: { ids } }),
+
   // Perfil propio
   miPerfil: () => peticion("/usuarios/me"),
 

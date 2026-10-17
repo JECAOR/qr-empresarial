@@ -40,6 +40,61 @@ const PERFIL = {
 };
 const TOKEN_NUEVO = "token-de-prueba-emitido-tras-el-cambio";
 
+// Categorías que devuelve la API simulada: las ocho de enlace del RF-05 y
+// las cinco de elemento.
+const CATEGORIAS = {
+  enlaces: [
+    { id: 1, nombre: "WhatsApp", icono: "whatsapp" },
+    { id: 2, nombre: "Facebook", icono: "facebook" },
+    { id: 3, nombre: "Instagram", icono: "instagram" },
+    { id: 4, nombre: "Página Web", icono: "globe" },
+    { id: 5, nombre: "LinkedIn", icono: "linkedin" },
+    { id: 6, nombre: "YouTube", icono: "youtube" },
+    { id: 7, nombre: "PDF", icono: "file-text" },
+    { id: 8, nombre: "Google Maps", icono: "map-pin" }
+  ],
+  elementos: [
+    { id: 1, nombre: "Texto", icono: "text" },
+    { id: 2, nombre: "Botón", icono: "button" },
+    { id: 3, nombre: "Imagen", icono: "image" },
+    { id: 4, nombre: "Video", icono: "video" },
+    { id: 5, nombre: "Horario", icono: "clock" }
+  ]
+};
+
+// Contenido de partida. Repite las etiquetas del contenido de demostración
+// que antes vivía en el navegador, porque varias pruebas las buscan por
+// texto ("Menú del día", "Reservar mesa hoy").
+function contenidoInicial() {
+  const bloque = (id, tipo, seccion, titulo, detalle, categoria, orden, activo = true) => ({
+    id, tipo, seccion, titulo, detalle,
+    categoria: { id: categoria.id, nombre: categoria.nombre, icono: categoria.icono },
+    orden, activo
+  });
+
+  const web = CATEGORIAS.enlaces[3];
+  const insta = CATEGORIAS.enlaces[2];
+  const wa = CATEGORIAS.enlaces[0];
+  const texto = CATEGORIAS.elementos[0];
+  const boton = CATEGORIAS.elementos[1];
+
+  return [
+    bloque("enlace-1", "enlace", "menu", "Ver menú completo", "https://fondalacosecha.co/menu", web, 1),
+    bloque("elemento-1", "boton", "menu", "Reservar mesa", "/reservar", boton, 2),
+    bloque("elemento-2", "texto", "menu", "Descripción del negocio", "Sabor casero de Antioquia desde 2015", texto, 3),
+    bloque("enlace-2", "enlace", "menu", "Instagram", "https://instagram.com/fondalacosecha", insta, 4, false),
+    bloque("enlace-3", "enlace", "menu", "WhatsApp directo", "https://wa.me/573004567890", wa, 5),
+
+    bloque("enlace-4", "enlace", "promos", "Menú del día", "https://fondalacosecha.co/dia", web, 1),
+    bloque("elemento-3", "boton", "promos", "2x1 en jugos naturales", "Martes y jueves", boton, 2),
+    bloque("elemento-4", "texto", "promos", "Promo especial", "Bandeja paisa + bebida $28.000", texto, 3),
+
+    bloque("elemento-5", "boton", "reservas", "Reservar mesa hoy", "/reservar", boton, 1),
+    bloque("elemento-6", "boton", "reservas", "Reservas grupos grandes (+10 personas)", "/reservas-grupos", boton, 2),
+    bloque("elemento-7", "texto", "reservas", "Política de cancelación", "Cancela hasta 2 horas antes sin costo", texto, 3)
+  ];
+}
+
 /**
  * Intercepta todas las peticiones a la API y las responde con datos fijos.
  *
@@ -55,9 +110,12 @@ async function simularApi(page, opciones = {}) {
     errorAlGuardarPerfil = null
   } = opciones;
 
-  // El simulador recuerda el perfil, como haría el servidor: si una prueba
-  // guarda y luego abre otra pantalla, debe encontrar lo que guardó.
+  // El simulador recuerda el perfil y el contenido, como haría el servidor:
+  // si una prueba guarda y luego abre otra pantalla o recarga, debe
+  // encontrar lo que guardó.
   let perfilActual = { ...PERFIL };
+  let contenidoActual = contenidoInicial();
+  let siguienteId = 100;
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
@@ -97,6 +155,94 @@ async function simularApi(page, opciones = {}) {
       }
 
       return responder(200, { message: "El enlace es válido" });
+    }
+
+    if (url.includes("/contenido/categorias")) {
+      return responder(200, { data: CATEGORIAS });
+    }
+
+    if (url.includes("/contenido")) {
+      const idEnLaUrl = (url.match(/\/contenido\/((?:enlace|elemento)-\d+)/) || [])[1];
+      const cuerpo = route.request().postData() ? JSON.parse(route.request().postData()) : {};
+
+      if (metodo === "POST") {
+        const lista = cuerpo.tipo === "enlace" ? CATEGORIAS.enlaces : CATEGORIAS.elementos;
+        const categoria = lista.find((c) => c.id === cuerpo.idCategoria) || lista[0];
+        const clase = cuerpo.tipo === "enlace" ? "enlace" : "elemento";
+
+        siguienteId += 1;
+
+        const nuevo = {
+          id: `${clase}-${siguienteId}`,
+          tipo: cuerpo.tipo,
+          seccion: cuerpo.seccion || "menu",
+          titulo: cuerpo.titulo,
+          detalle: cuerpo.detalle,
+          categoria,
+          orden: contenidoActual.filter((i) => i.seccion === (cuerpo.seccion || "menu")).length + 1,
+          activo: true
+        };
+
+        contenidoActual.push(nuevo);
+
+        return responder(201, { message: "Contenido agregado correctamente", data: nuevo });
+      }
+
+      if (metodo === "PUT" && url.includes("/contenido/orden")) {
+        cuerpo.ids.forEach((id, indice) => {
+          const item = contenidoActual.find((i) => i.id === id);
+          if (item) item.orden = indice + 1;
+        });
+
+        return responder(200, { message: "Orden actualizado correctamente" });
+      }
+
+      if (metodo === "PUT" && idEnLaUrl) {
+        const item = contenidoActual.find((i) => i.id === idEnLaUrl);
+
+        if (!item) return responder(404, { message: "El contenido no existe" });
+
+        Object.assign(item, {
+          titulo: cuerpo.titulo,
+          detalle: cuerpo.detalle,
+          seccion: cuerpo.seccion || item.seccion
+        });
+
+        return responder(200, { message: "Contenido actualizado correctamente", data: item });
+      }
+
+      if (metodo === "PATCH" && idEnLaUrl) {
+        const item = contenidoActual.find((i) => i.id === idEnLaUrl);
+
+        if (!item) return responder(404, { message: "El contenido no existe" });
+
+        item.activo = cuerpo.activo;
+
+        return responder(200, {
+          message: item.activo ? "Contenido activado" : "Contenido desactivado",
+          data: item
+        });
+      }
+
+      if (metodo === "DELETE" && idEnLaUrl) {
+        contenidoActual = contenidoActual.filter((i) => i.id !== idEnLaUrl);
+
+        return responder(200, { message: "Contenido eliminado correctamente" });
+      }
+
+      // GET: lista completa, plana y agrupada por sección
+      const porSeccion = {};
+
+      for (const item of contenidoActual) {
+        if (!porSeccion[item.seccion]) porSeccion[item.seccion] = [];
+        porSeccion[item.seccion].push(item);
+      }
+
+      for (const seccion of Object.keys(porSeccion)) {
+        porSeccion[seccion].sort((a, b) => a.orden - b.orden);
+      }
+
+      return responder(200, { data: contenidoActual, porSeccion });
     }
 
     if (url.includes("/perfiles/me")) {
@@ -188,6 +334,6 @@ async function prepararSesion(page) {
 }
 
 module.exports = {
-  USUARIO, TOKEN, TOKEN_NUEVO, PERFIL,
+  USUARIO, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS,
   simularApi, sembrarSesion, prepararSesion
 };
