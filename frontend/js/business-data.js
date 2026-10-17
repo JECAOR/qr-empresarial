@@ -51,8 +51,18 @@ function slugify(name) {
     .trim();
 }
 
+/**
+ * Dirección pública del perfil, la que codifica el QR.
+ *
+ * Se usa el slug que asignó el servidor, no uno derivado del nombre: el slug
+ * no cambia aunque el negocio se renombre, y de eso depende el RF-09 —un QR
+ * ya impreso tiene que seguir llevando al mismo perfil—. Solo se recurre al
+ * nombre mientras no haya slug, como en la vista pública de demostración.
+ */
 function getQrUrl(biz) {
-  return `https://qr.${slugify(biz.name)}.co/menu`;
+  const identificador = biz.slug || slugify(biz.name);
+
+  return `https://qr.${identificador}.co/menu`;
 }
 
 // Deja solo dígitos y el "+" inicial, para enlaces tel:/wa.me
@@ -72,4 +82,46 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+// --- Puente con la API (RF-04) ---
+//
+// Las pantallas siguen leyendo getBusinessData(), que ahora funciona como
+// caché de lo que hay en el servidor: la guardia lo sincroniza al cargar
+// cualquier pantalla privada. Así el dashboard, el código QR y la barra
+// lateral no tuvieron que cambiar.
+//
+// Las claves del negocio en el navegador y en la API no se llaman igual: el
+// frontend ya existía con nombres en inglés y la API sigue el español del
+// esquema. Estas dos funciones son el único punto donde se traducen.
+
+function perfilApiADatosLocales(perfil) {
+  return {
+    name: perfil.nombreNegocio || "",
+    category: perfil.categoria || "",
+    description: perfil.descripcion || "",
+    address: perfil.direccion || "",
+    phone: perfil.telefono || "",
+    email: perfil.correoContacto || "",
+    instagram: perfil.instagram || "",
+    hours: perfil.horario || "",
+    image: perfil.imagen || "",
+    // El slug lo decide el servidor y no cambia aunque se edite el nombre:
+    // los códigos QR ya impresos deben seguir funcionando (RF-09).
+    slug: perfil.slug || ""
+  };
+}
+
+function datosLocalesAPerfilApi(datos) {
+  return {
+    nombreNegocio: datos.name || "",
+    categoria: datos.category || "",
+    descripcion: datos.description || "",
+    direccion: datos.address || "",
+    telefono: datos.phone || "",
+    correoContacto: datos.email || "",
+    instagram: datos.instagram || "",
+    horario: datos.hours || "",
+    imagen: datos.image || ""
+  };
 }

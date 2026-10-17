@@ -20,6 +20,24 @@ const USUARIO = {
 };
 
 const TOKEN = "token-de-prueba-sin-valor-real";
+
+// Perfil empresarial que devuelve la API simulada (RF-04)
+const PERFIL = {
+  idPerfil: 7,
+  nombreNegocio: "Fonda La Cosecha",
+  categoria: "Restaurante colombiano",
+  descripcion: "Sabores tradicionales de Antioquia.",
+  direccion: "Cra. 35 #8A-45, El Poblado, Medellín",
+  telefono: "+57 300 456 7890",
+  correoContacto: "contacto@fondalacosecha.co",
+  instagram: "@fondalacosecha",
+  horario: "Mar-Dom 11:00–21:00",
+  imagen: "https://ejemplo.co/logo.png",
+  slug: "fonda-la-cosecha",
+  urlPublica: "/p/fonda-la-cosecha",
+  fechaCreacion: "2026-10-01T10:00:00.000Z",
+  fechaActualizacion: null
+};
 const TOKEN_NUEVO = "token-de-prueba-emitido-tras-el-cambio";
 
 /**
@@ -32,8 +50,14 @@ async function simularApi(page, opciones = {}) {
   const {
     enlaceInvalido = false,
     contrasenaActualIncorrecta = false,
-    contrasenaIncorrectaAlBorrar = false
+    contrasenaIncorrectaAlBorrar = false,
+    sinPerfil = false,
+    errorAlGuardarPerfil = null
   } = opciones;
+
+  // El simulador recuerda el perfil, como haría el servidor: si una prueba
+  // guarda y luego abre otra pantalla, debe encontrar lo que guardó.
+  let perfilActual = { ...PERFIL };
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
@@ -73,6 +97,37 @@ async function simularApi(page, opciones = {}) {
       }
 
       return responder(200, { message: "El enlace es válido" });
+    }
+
+    if (url.includes("/perfiles/me")) {
+      if (metodo === "PUT") {
+        if (errorAlGuardarPerfil) {
+          return responder(400, { message: errorAlGuardarPerfil });
+        }
+
+        // El servidor devuelve el perfil como queda guardado: el slug lo
+        // decide él y no cambia aunque se edite el nombre
+        const enviado = JSON.parse(route.request().postData() || "{}");
+
+        perfilActual = {
+          ...perfilActual,
+          ...enviado,
+          // El slug lo decide el servidor y no cambia al renombrar (RF-09)
+          slug: PERFIL.slug,
+          urlPublica: PERFIL.urlPublica
+        };
+
+        return responder(200, {
+          message: "Perfil empresarial guardado correctamente",
+          data: perfilActual
+        });
+      }
+
+      if (sinPerfil) {
+        return responder(404, { message: "Esta cuenta todavía no tiene un perfil empresarial" });
+      }
+
+      return responder(200, { data: perfilActual });
     }
 
     if (url.includes("/usuarios/me") && metodo === "DELETE") {
@@ -132,4 +187,7 @@ async function prepararSesion(page) {
   await sembrarSesion(page);
 }
 
-module.exports = { USUARIO, TOKEN, TOKEN_NUEVO, simularApi, sembrarSesion, prepararSesion };
+module.exports = {
+  USUARIO, TOKEN, TOKEN_NUEVO, PERFIL,
+  simularApi, sembrarSesion, prepararSesion
+};

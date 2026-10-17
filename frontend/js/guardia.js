@@ -1,5 +1,5 @@
 // ============================================
-// GUARDIA.JS — protege las pantallas privadas
+// GUARDIA.JS — protege las pantallas privadas y trae los datos del negocio
 // Se carga después de api.js en el dashboard, contenido, código QR y
 // configuración. Las pantallas públicas (login, registro, vista pública,
 // menú) no lo usan.
@@ -18,6 +18,43 @@ if (!Sesion.token()) {
   redirigirALogin();
 }
 
+/**
+ * Trae el perfil empresarial del servidor y lo deja en el almacén local
+ * (RF-04).
+ *
+ * Las pantallas leen `getBusinessData()`, que antes solo vivía en el
+ * navegador. Ahora el servidor es la fuente de verdad y esto lo sincroniza:
+ * así el dashboard, el código QR y la barra lateral no tuvieron que cambiar.
+ *
+ * Al terminar avisa con un evento, porque las pantallas ya se dibujaron con
+ * lo que había en caché y puede que haya cambiado.
+ */
+async function sincronizarPerfilEmpresarial() {
+  try {
+    const respuesta = await Api.miPerfilEmpresarial();
+
+    saveBusinessData({
+      ...getBusinessData(),
+      ...perfilApiADatosLocales(respuesta.data)
+    });
+
+    window.dispatchEvent(new CustomEvent("perfil:sincronizado"));
+  } catch (error) {
+    // 404: la cuenta no tiene perfil todavía. Les pasa a las que creó el
+    // administrador desde POST /api/usuarios, y a las registradas antes de
+    // que el registro lo creara. Se sigue con los datos locales y se creará
+    // en cuanto la persona guarde Configuración.
+    if (error.status === 404) {
+      console.warn("Esta cuenta todavía no tiene perfil empresarial.");
+      return;
+    }
+
+    // El 401 ya lo manejó peticion(); cualquier otro fallo no debe dejar la
+    // pantalla en blanco, así que se trabaja con lo último que se sabe.
+    console.warn("No se pudo traer el perfil del negocio:", error.message);
+  }
+}
+
 (async () => {
   const usuario = await protegerPantalla();
 
@@ -28,4 +65,6 @@ if (!Sesion.token()) {
   // el dato confirmado del servidor, se vuelve a dibujar. El nombre o el
   // rol pueden haber cambiado desde el último inicio de sesión.
   if (typeof renderSidebar === "function") renderSidebar();
+
+  await sincronizarPerfilEmpresarial();
 })();

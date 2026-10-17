@@ -9,7 +9,10 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+const pool = require('../../config/database');
+
 const authRepository = require('./auth.repository');
+const perfilService = require('../perfiles/perfil.service');
 const usuarioService = require('../usuarios/usuario.service');
 const { enviarEnlaceRecuperacion } = require('../../utils/correo');
 
@@ -136,14 +139,46 @@ async function obtenerPerfil(idUsuario) {
  * @returns {Promise<object>} Usuario creado, sin la contrasena.
  */
 async function registrar(datos) {
-  const { nombre, correo, contrasena } = datos;
+  const { nombre, correo, contrasena, negocio } = datos;
 
-  return usuarioService.crearUsuario({
-    nombre,
-    correo,
-    contrasena,
-    rol: ROL_POR_DEFECTO
-  });
+  // La cuenta y su perfil empresarial se crean juntos o no se crea ninguno.
+  // Sin transaccion, un fallo al insertar el perfil dejaria una cuenta sin
+  // perfil y el correo ya ocupado: la persona no podria registrarse otra vez
+  // ni tendria perfil que editar.
+  const conexion = await pool.getConnection();
+
+  try {
+    await conexion.beginTransaction();
+
+    const usuario = await usuarioService.crearUsuario({
+      nombre,
+      correo,
+      contrasena,
+      rol: ROL_POR_DEFECTO
+    }, conexion);
+
+    // Si no llega el nombre del negocio se usa el de la cuenta: el perfil
+    // siempre nace con algo que mostrar y la persona lo corrige despues.
+    const { slug } = await perfilService.crearParaUsuario({
+      idUsuario: usuario.idUsuario,
+      nombreNegocio: (negocio && negocio.nombreNegocio) || nombre,
+      categoria: (negocio && negocio.categoria) || null,
+      direccion: (negocio && negocio.direccion) || null,
+      telefono: (negocio && negocio.telefono) || null,
+      correoContacto: (negocio && negocio.correoContacto) || correo
+    }, conexion);
+
+    await conexion.commit();
+
+    return { ...usuario, slug };
+  } catch (error) {
+    await conexion.rollback();
+    throw error;
+  } finally {
+    // Siempre, pase lo que pase: una conexion sin devolver se queda fuera
+    // del pool y acaba agotandolo.
+    conexion.release();
+  }
 }
 
 const RONDAS_BCRYPT = 10;

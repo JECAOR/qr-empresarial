@@ -220,3 +220,15 @@ function initLayout({ title, subtitle, actionHtml }) {
   renderTopBar(title, subtitle, actionHtml);
   renderMobileNav();
 }
+
+// La guardia trae el perfil del servidor después de que la página ya se dibujó
+// con lo que había en caché (RF-04), así que el nombre del negocio puede haber
+// cambiado y hay que repintarlo.
+//
+// Solo se repinta la barra lateral. La superior no se toca a propósito: su
+// `actionHtml` lo define cada pantalla y es donde cuelgan botones con sus
+// propios listeners —el de agregar contenido, por ejemplo—. Reconstruirla
+// borraría esos listeners y dejaría botones que no responden.
+window.addEventListener("perfil:sincronizado", () => {
+  renderSidebar();
+});
