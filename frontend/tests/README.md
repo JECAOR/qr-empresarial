@@ -41,7 +41,7 @@ npm run test:ui
 | Archivo | Qué prueba |
 |---|---|
 | `auth.spec.js` | Login, registro (3 pasos), recuperar contraseña, la pantalla del enlace, la guardia de las pantallas privadas y el cierre de sesión |
-| `contenido.spec.js` | Pestañas, agregar/editar/eliminar bloques, estado vacío y persistencia en el servidor |
+| `contenido.spec.js` | Pestañas, agregar/editar/eliminar bloques, reordenar (arrastre y teclado), estado vacío y persistencia en el servidor |
 | `qr.spec.js` | Generación real del QR, colores, tamaño, descarga, copiar enlace |
 | `theme-and-business-sync.spec.js` | Los 3 temas de color, y que Configuración sincronice con el resto del sitio |
 | `accessibility.spec.js` | Auditoría automática con axe-core en las 11 páginas y los 3 temas |

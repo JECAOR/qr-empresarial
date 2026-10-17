@@ -2,7 +2,7 @@
 // tests/contenido.spec.js
 // ============================================
 const { test, expect } = require("@playwright/test");
-const { prepararSesion } = require("./ayudas");
+const { prepararSesion, simularApi } = require("./ayudas");
 
 // El frontend ahora pide los datos a la API: se simula la respuesta y se deja
 // una sesión guardada, para que estas pruebas sigan sin necesitar el backend
@@ -144,5 +144,113 @@ test.describe("Persistencia en el servidor", () => {
 
     const inactivaAhora = await page.locator(".item-card").first().evaluate((el) => el.classList.contains("is-inactive"));
     expect(inactivaAhora).toBe(!estabaInactiva);
+  });
+});
+
+// El asa de seis puntos de cada tarjeta estuvo ahí desde el diseño, pero era
+// decorativa. Ahora reordena de verdad contra PUT /api/contenido/orden.
+//
+// Se prueban las dos formas porque se ofrecen las dos a propósito: arrastrar
+// es cómodo con el ratón e imposible con el teclado.
+test.describe("Reordenar los bloques", () => {
+  const etiquetas = (page) => page.locator(".item-card .item-label").allTextContents();
+
+  test("el asa es un botón enfocable y dice cómo usarse", async ({ page }) => {
+    await page.goto("/contenido.html");
+
+    const asa = page.locator('.item-card [data-action="mover"]').first();
+
+    await expect(asa).toHaveAttribute("aria-label", /flechas arriba y abajo/);
+
+    await asa.focus();
+    await expect(asa).toBeFocused();
+  });
+
+  test("la flecha arriba sube el bloque y el cambio persiste", async ({ page }) => {
+    await page.goto("/contenido.html");
+
+    const antes = await etiquetas(page);
+
+    // Se mueve el segundo hacia arriba: debe quedar primero
+    await page.locator('.item-card [data-action="mover"]').nth(1).focus();
+    await page.keyboard.press("ArrowUp");
+
+    await expect(page.locator(".item-card .item-label").first()).toHaveText(antes[1]);
+
+    // Y sigue así tras recargar, porque quedó guardado en el servidor
+    await page.reload();
+    await expect(page.locator(".item-card .item-label").first()).toHaveText(antes[1]);
+  });
+
+  test("la flecha abajo baja el bloque", async ({ page }) => {
+    await page.goto("/contenido.html");
+
+    const antes = await etiquetas(page);
+
+    await page.locator('.item-card [data-action="mover"]').first().focus();
+    await page.keyboard.press("ArrowDown");
+
+    await expect(page.locator(".item-card .item-label").nth(1)).toHaveText(antes[0]);
+  });
+
+  test("el foco se queda en el asa para poder mover varias veces", async ({ page }) => {
+    await page.goto("/contenido.html");
+
+    const antes = await etiquetas(page);
+
+    const asa = page.locator('.item-card [data-action="mover"]').nth(2);
+    await asa.focus();
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowUp");
+
+    // Dos flechas seguidas sin volver a enfocar: el tercero quedó primero
+    await expect(page.locator(".item-card .item-label").first()).toHaveText(antes[2]);
+  });
+
+  test("el primer bloque no sube más allá del principio", async ({ page }) => {
+    await page.goto("/contenido.html");
+
+    const antes = await etiquetas(page);
+
+    await page.locator('.item-card [data-action="mover"]').first().focus();
+    await page.keyboard.press("ArrowUp");
+
+    expect(await etiquetas(page)).toEqual(antes);
+  });
+
+  test("arrastrar un bloque cambia el orden y lo guarda", async ({ page }) => {
+    await page.goto("/contenido.html");
+
+    const antes = await etiquetas(page);
+
+    const tercera = page.locator(".item-card").nth(2);
+    const primera = page.locator(".item-card").first();
+
+    await tercera.dragTo(primera, { targetPosition: { x: 10, y: 2 } });
+
+    await expect(page.locator(".item-card .item-label").first()).toHaveText(antes[2]);
+
+    await page.reload();
+    await expect(page.locator(".item-card .item-label").first()).toHaveText(antes[2]);
+  });
+
+  test("si el servidor rechaza el orden, se avisa y se recupera el real", async ({ page }) => {
+    await page.unroute("**/api/**");
+    await simularApi(page, { errorAlOrdenar: "No se pudo guardar el orden" });
+
+    await page.goto("/contenido.html");
+
+    const antes = await etiquetas(page);
+
+    await page.locator('.item-card [data-action="mover"]').nth(1).focus();
+    await page.keyboard.press("ArrowUp");
+
+    await expect(page.locator(".form-alert")).toContainText("No se pudo guardar el orden");
+
+    // La lista vuelve a lo que dice el servidor, para no mostrar un orden
+    // que en realidad no se guardó
+    await expect
+      .poll(async () => (await etiquetas(page)).join("|"))
+      .toBe(antes.join("|"));
   });
 });

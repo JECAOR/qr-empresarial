@@ -101,10 +101,11 @@ function renderItems() {
       const pillColor = item.activo ? style.color : "var(--slate-500)";
       const pillBg = item.activo ? style.bg : "var(--slate-100)";
       return `
-      <div class="item-card ${item.activo ? "" : "is-inactive"}" data-id="${item.id}">
-        <span class="item-grip">
+      <div class="item-card ${item.activo ? "" : "is-inactive"}" data-id="${item.id}" draggable="true">
+        <button type="button" class="item-grip" data-action="mover"
+                aria-label="Mover ${label}. Use las flechas arriba y abajo para cambiar el orden">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
-        </span>
+        </button>
         <div class="item-icon" style="background:${style.bg}">
           ${iconSvg(clave, 17, style.color)}
         </div>
@@ -131,18 +132,23 @@ function renderItems() {
     .join("");
 }
 
-/** Aviso de error. La pantalla no tiene un sitio fijo, así que se usa la lista. */
+/**
+ * Aviso de error, encima de la lista.
+ *
+ * Tiene su propio elemento y no se mete dentro de la lista: renderItems()
+ * reemplaza el contenido de la lista entero, así que un aviso puesto ahí
+ * desaparecía en el siguiente dibujado, justo cuando hacía falta leerlo.
+ */
 function avisarError(mensaje) {
-  const list = document.getElementById("item-list");
+  const aviso = document.getElementById("content-alert");
 
-  const aviso = document.createElement("p");
-  aviso.className = "form-alert form-alert--error";
-  aviso.setAttribute("role", "alert");
   aviso.textContent = mensaje;
+  aviso.hidden = false;
 
-  list.prepend(aviso);
-
-  setTimeout(() => aviso.remove(), 5000);
+  clearTimeout(aviso._t);
+  aviso._t = setTimeout(() => {
+    aviso.hidden = true;
+  }, 6000);
 }
 
 // --- Carga inicial ---
@@ -187,6 +193,10 @@ document.getElementById("item-list").addEventListener("click", async (e) => {
 
   if (!item) return;
 
+  // El asa no hace nada al pulsarla: sirve para arrastrar con el ratón o
+  // para recibir el foco y mover con las flechas
+  if (action === "mover") return;
+
   // Se bloquea el botón mientras se espera: dos clics seguidos mandarían
   // dos peticiones contradictorias
   btn.disabled = true;
@@ -212,6 +222,157 @@ document.getElementById("item-list").addEventListener("click", async (e) => {
   } finally {
     btn.disabled = false;
   }
+});
+
+// --- Reordenar (arrastrando o con el teclado) ---
+//
+// La pantalla siempre tuvo el asa de seis puntos, pero era decorativa. Ahora
+// mueve de verdad y el orden nuevo se guarda con PUT /api/contenido/orden.
+//
+// Se ofrecen las dos formas a propósito: arrastrar es cómodo con el ratón e
+// imposible con el teclado, así que el asa también responde a las flechas.
+// Si no, quien no pueda usar un ratón no podría reordenar nada.
+
+const listaEl = document.getElementById("item-list");
+
+/**
+ * Guarda en el servidor el orden en que están los bloques de la pestaña.
+ *
+ * Si el servidor lo rechaza se vuelve a pedir la lista, para no quedar
+ * mostrando un orden que no es el que quedó guardado.
+ */
+async function guardarOrden() {
+  const ids = itemsByTab[currentTab].map((i) => i.id);
+
+  listaEl.classList.add("is-saving");
+
+  try {
+    await Api.reordenarContenido(ids);
+
+    // Las posiciones las asigna el servidor; se reflejan aquí para que
+    // coincidan si algo las vuelve a leer
+    itemsByTab[currentTab].forEach((item, indice) => {
+      item.orden = indice + 1;
+    });
+  } catch (error) {
+    avisarError(error.message);
+    await cargarContenido();
+  } finally {
+    listaEl.classList.remove("is-saving");
+  }
+}
+
+/**
+ * Mueve un bloque de una posición a otra dentro de su pestaña.
+ * @returns {boolean} false si no había dónde moverlo.
+ */
+function moverEnLaLista(desde, hasta) {
+  const items = itemsByTab[currentTab];
+
+  if (hasta < 0 || hasta >= items.length || desde === hasta) return false;
+
+  const [movido] = items.splice(desde, 1);
+  items.splice(hasta, 0, movido);
+
+  return true;
+}
+
+// --- Con el teclado: flechas sobre el asa ---
+listaEl.addEventListener("keydown", async (e) => {
+  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+
+  const asa = e.target.closest('[data-action="mover"]');
+  if (!asa) return;
+
+  e.preventDefault();
+
+  const id = asa.closest(".item-card").dataset.id;
+  const desde = itemsByTab[currentTab].findIndex((i) => i.id === id);
+  const hasta = e.key === "ArrowUp" ? desde - 1 : desde + 1;
+
+  if (!moverEnLaLista(desde, hasta)) return;
+
+  renderItems();
+
+  // El elemento se volvió a dibujar, así que hay que devolverle el foco o
+  // se perdería después de la primera flecha
+  const asaNueva = listaEl.querySelector(`.item-card[data-id="${id}"] [data-action="mover"]`);
+  if (asaNueva) asaNueva.focus();
+
+  await guardarOrden();
+});
+
+// --- Arrastrando con el ratón ---
+let idArrastrado = null;
+
+listaEl.addEventListener("dragstart", (e) => {
+  const card = e.target.closest(".item-card");
+  if (!card) return;
+
+  idArrastrado = card.dataset.id;
+  card.classList.add("is-dragging");
+
+  // Firefox no inicia el arrastre si no se escribe algo en dataTransfer
+  e.dataTransfer.setData("text/plain", idArrastrado);
+  e.dataTransfer.effectAllowed = "move";
+});
+
+listaEl.addEventListener("dragend", () => {
+  idArrastrado = null;
+  listaEl.querySelectorAll(".item-card").forEach((c) => {
+    c.classList.remove("is-dragging", "drop-above", "drop-below");
+  });
+});
+
+listaEl.addEventListener("dragover", (e) => {
+  if (!idArrastrado) return;
+
+  const card = e.target.closest(".item-card");
+  if (!card || card.dataset.id === idArrastrado) return;
+
+  // Sin esto el navegador no permite soltar
+  e.preventDefault();
+
+  // Se marca el borde por el que entraría, según si el cursor va por la
+  // mitad de arriba o la de abajo de la tarjeta
+  const limites = card.getBoundingClientRect();
+  const arriba = e.clientY < limites.top + limites.height / 2;
+
+  listaEl.querySelectorAll(".item-card").forEach((c) => {
+    c.classList.remove("drop-above", "drop-below");
+  });
+
+  card.classList.add(arriba ? "drop-above" : "drop-below");
+});
+
+listaEl.addEventListener("drop", async (e) => {
+  if (!idArrastrado) return;
+
+  const card = e.target.closest(".item-card");
+  if (!card || card.dataset.id === idArrastrado) return;
+
+  e.preventDefault();
+
+  const items = itemsByTab[currentTab];
+  const desde = items.findIndex((i) => i.id === idArrastrado);
+  let hasta = items.findIndex((i) => i.id === card.dataset.id);
+
+  // Si se suelta en la mitad de abajo, va después de esa tarjeta
+  const limites = card.getBoundingClientRect();
+  const arriba = e.clientY < limites.top + limites.height / 2;
+
+  if (!arriba && hasta < desde) hasta += 1;
+  if (arriba && hasta > desde) hasta -= 1;
+
+  idArrastrado = null;
+
+  if (!moverEnLaLista(desde, hasta)) {
+    renderItems();
+    return;
+  }
+
+  renderItems();
+  await guardarOrden();
 });
 
 // --- Modal de agregar / editar elemento ---
