@@ -8,13 +8,14 @@
 // internet, y la app sigue abriendo si se queda sin señal.
 // ============================================
 
-const CACHE_NAME = "qr-empresarial-v1";
+const CACHE_NAME = "qr-empresarial-v2";
 
 // El "app shell": lo mínimo para que el sitio abra sin conexión.
 const APP_SHELL = [
   "login.html",
   "register.html",
   "forgot-password.html",
+  "restablecer.html",
   "dashboard.html",
   "contenido.html",
   "qr.html",
@@ -36,10 +37,13 @@ const APP_SHELL = [
   "css/404.css",
   "js/theme.js",
   "js/business-data.js",
+  "js/api.js",
+  "js/guardia.js",
   "js/layout.js",
   "js/auth.js",
   "js/register-steps.js",
   "js/forgot-password.js",
+  "js/restablecer.js",
   "js/contenido.js",
   "js/qr.js",
   "js/dashboard.js",

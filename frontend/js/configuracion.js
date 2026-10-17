@@ -62,6 +62,31 @@ businessForm.addEventListener("submit", (e) => {
   // Aquí, más adelante, esto también se enviará a un backend real (fase de base de datos).
 });
 
+// --- Sesión (RF-02) ---
+//
+// La barra lateral tiene su propio botón de salida, pero desaparece en
+// pantallas angostas: ahí la navegación inferior la reemplaza y no incluye
+// uno. Este es el único cierre de sesión al alcance desde un teléfono.
+function prepararCierreDeSesion() {
+  const correo = document.getElementById("session-email");
+  const boton = document.getElementById("btn-logout");
+
+  if (!correo || !boton) return;
+
+  const cuenta = typeof Sesion !== "undefined" ? Sesion.usuario() : null;
+  correo.textContent = cuenta && cuenta.correo ? cuenta.correo : "—";
+
+  boton.addEventListener("click", () => {
+    if (typeof cerrarSesionYSalir === "function") {
+      cerrarSesionYSalir();
+    } else {
+      window.location.href = "login.html";
+    }
+  });
+}
+
+prepararCierreDeSesion();
+
 function showSavedToast(id) {
   const toast = document.getElementById(id);
   toast.textContent = "✓ Cambios guardados";

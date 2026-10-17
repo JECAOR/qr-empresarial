@@ -189,6 +189,9 @@
 
 .sidebar-logout {
   cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
   color: var(--slate-500);
   flex-shrink: 0;
   display: flex;

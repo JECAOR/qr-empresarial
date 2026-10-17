@@ -173,6 +173,15 @@
             </div>
           </form>
 
+          <!-- Sesión -->
+          <div class="settings-card">
+            <h2>Sesión</h2>
+            <p class="settings-sub">
+              Sesión iniciada como <strong id="session-email">—</strong>
+            </p>
+            <button type="button" id="btn-logout" class="btn-secondary">Cerrar sesión</button>
+          </div>
+
           <!-- Zona de peligro -->
           <div class="settings-card danger">
             <h2 style="color:#d92525;">Zona de peligro</h2>
@@ -202,6 +211,8 @@
   </dialog>
 
   <script src="js/business-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/guardia.js"></script>
   <script src="js/layout.js"></script>
   <script>
     initLayout({ title: "Configuración", subtitle: "Ajustes de tu cuenta y negocio" });

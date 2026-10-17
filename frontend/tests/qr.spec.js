@@ -2,6 +2,15 @@
 // tests/qr.spec.js
 // ============================================
 const { test, expect } = require("@playwright/test");
+const { prepararSesion } = require("./ayudas");
+
+// El frontend ahora pide los datos a la API: se simula la respuesta y se deja
+// una sesión guardada, para que estas pruebas sigan sin necesitar el backend
+// encendido (ver ayudas.js). Va fuera de los describe para que valga en todos.
+test.beforeEach(async ({ page }) => {
+  await prepararSesion(page);
+});
+
 
 test.describe("Código QR", () => {
   test("cambiar de color repinta el canvas sin errores", async ({ page }) => {

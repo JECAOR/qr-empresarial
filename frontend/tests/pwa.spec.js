@@ -5,6 +5,15 @@
 // real sin conexión (no solo la teoría).
 // ============================================
 const { test, expect } = require("@playwright/test");
+const { prepararSesion } = require("./ayudas");
+
+// El frontend ahora pide los datos a la API: se simula la respuesta y se deja
+// una sesión guardada, para que estas pruebas sigan sin necesitar el backend
+// encendido (ver ayudas.js). Va fuera de los describe para que valga en todos.
+test.beforeEach(async ({ page }) => {
+  await prepararSesion(page);
+});
+
 
 test.describe("PWA", () => {
   test("el manifest.json es válido y tiene los íconos requeridos", async ({ page }) => {

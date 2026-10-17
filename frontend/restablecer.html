@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nueva contraseña · QR Empresarial</title>
+  <meta name="description" content="Define una contraseña nueva para tu cuenta de QR Empresarial." />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/theme.css" />
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+</head>
+<body>
+
+  <main class="auth-layout">
+
+    <!-- Panel izquierdo: marca -->
+    <div class="auth-brand">
+      <div>
+        <div class="auth-logo">
+          <div class="auth-logo-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/>
+              <path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>
+            </svg>
+          </div>
+          <span class="auth-logo-text">QR Empresarial</span>
+        </div>
+        <h2>Define una<br>contraseña nueva</h2>
+        <p class="auth-subtitle">Es el último paso. Elige una contraseña que no uses en otro sitio y vuelve a entrar a tu panel.</p>
+      </div>
+
+      <div class="auth-benefits">
+        <div class="auth-benefit-row">
+          <div class="auth-benefit-check">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-mid)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span>Mínimo 8 caracteres, una mayúscula, un número y un símbolo</span>
+        </div>
+        <div class="auth-benefit-row">
+          <div class="auth-benefit-check">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-mid)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span>El enlace sirve una sola vez</span>
+        </div>
+        <div class="auth-benefit-row">
+          <div class="auth-benefit-check">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-mid)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span>El enlace vence 30 minutos después de pedirlo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel derecho -->
+    <div class="auth-form-panel">
+      <div class="auth-form-wrap">
+
+        <!-- Estado 1: comprobando el enlace -->
+        <div id="checking-step">
+          <h1>Un momento</h1>
+          <p class="auth-form-subtitle">Estamos comprobando el enlace...</p>
+        </div>
+
+        <!-- Estado 2: el enlace sirve, se pide la contraseña nueva -->
+        <div id="form-step" hidden>
+          <h1>Nueva contraseña</h1>
+          <p class="auth-form-subtitle">Escríbela dos veces para evitar errores</p>
+
+          <form id="reset-form" novalidate>
+            <div id="form-alert" class="form-alert" role="alert" hidden></div>
+
+            <div class="form-field">
+              <label for="password">Contraseña nueva</label>
+              <div class="form-input-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                <input type="password" id="password" placeholder="••••••••••" data-required>
+                <button type="button" class="toggle-password" aria-label="Mostrar contraseña">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <div class="password-strength-track">
+                <div id="password-strength-bar" class="password-strength-fill"></div>
+              </div>
+              <div class="password-strength-row">
+                <span id="password-strength-label" class="password-strength-text"></span>
+                <span class="password-hint">Mín. 8 caracteres, una mayúscula, un número y un símbolo</span>
+              </div>
+              <span class="form-error">Ingresa una contraseña.</span>
+            </div>
+
+            <div class="form-field">
+              <label for="confirm-password">Repite la contraseña</label>
+              <div class="form-input-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                <input type="password" id="confirm-password" placeholder="••••••••••" data-required>
+              </div>
+              <span class="form-error">Las contraseñas no coinciden.</span>
+            </div>
+
+            <button type="submit" class="btn-primary">
+              Guardar la contraseña
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- Estado 3: el enlace no sirve -->
+        <div id="invalid-step" hidden>
+          <div class="forgot-sent-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          </div>
+          <h1>Este enlace ya no sirve</h1>
+          <p class="auth-form-subtitle" id="invalid-message">
+            Puede que haya vencido, que ya lo hayas usado o que se haya pedido uno más reciente.
+          </p>
+          <button type="button" class="btn-primary" style="width:100%;margin-top:10px;"
+                  onclick="window.location.href='forgot-password.html'">
+            Pedir un enlace nuevo
+          </button>
+        </div>
+
+        <!-- Estado 4: listo -->
+        <div id="done-step" hidden>
+          <div class="forgot-sent-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h1>Contraseña actualizada</h1>
+          <p class="auth-form-subtitle">Ya puedes entrar con tu contraseña nueva.</p>
+          <button type="button" class="btn-primary" style="width:100%;margin-top:10px;"
+                  onclick="window.location.href='login.html'">
+            Iniciar sesión
+          </button>
+        </div>
+
+        <p class="auth-switch" style="margin-top:20px;">
+          <a href="login.html" class="link-primary" style="text-decoration:none;">← Volver a Iniciar sesión</a>
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/restablecer.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
