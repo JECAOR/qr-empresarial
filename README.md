@@ -15,6 +15,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
+| Backend — recuperación de contraseña y límite de intentos | Terminado (`v0.6.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -26,6 +27,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v0.3.0` | `POST /api/usuarios` con arquitectura por capas |
 | `v0.4.0` | CRUD completo del módulo Usuarios y colección de Postman |
 | `v0.5.0` | Autenticación con JWT, autorización por roles y registro público |
+| `v0.6.0` | Recuperación de contraseña (RF-03) y límite de intentos de inicio de sesión (RN-03) |
 
 ## API disponible
 
@@ -36,6 +38,9 @@ Base: `http://localhost:3000/api`
 | GET | `/health` | Público | Comprobación del servidor |
 | POST | `/auth/registro` | Público | Registro de una empresa (rol forzado a `empresa`) |
 | POST | `/auth/login` | Público | Iniciar sesión y obtener el JWT |
+| POST | `/auth/recuperar-contrasena` | Público | Solicitar el enlace de recuperación |
+| GET | `/auth/restablecer/:token` | Público | Comprobar que el enlace siga siendo válido |
+| POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
@@ -46,7 +51,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 45 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 56 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Seguridad
 
@@ -80,7 +85,7 @@ Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.j
 |---|---|---|---|---|
 | 0 | 22/09 – 28/09 | Configuración: repositorio, Express base, conexión MySQL, migraciones | — | Terminado |
 | 1 | 29/09 – 05/10 | M1. Usuarios y cuentas | RF-01, RF-13 a RF-15 | Terminado |
-| 1 | 06/10 – 13/10 | M1. Autenticación con JWT y registro público | RF-01, RF-02 | Terminado |
+| 1 | 06/10 – 13/10 | M1. Autenticación con JWT, registro público y recuperación de contraseña | RF-01, RF-02, RF-03 | Terminado |
 | 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Siguiente |
 | 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Pendiente |
 | 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Pendiente |
@@ -95,14 +100,14 @@ El orden sigue las dependencias entre módulos (usuario → perfil → contenido
 
 - **RN-01** El correo es único entre las cuentas activas.
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
+- **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP. La solicitud de recuperación lleva su propio contador (3 intentos), para que agotar uno no inhabilite el otro.
+- **RN-04** El enlace de recuperación sirve una sola vez y expira en 30 minutos. En la base solo se guarda su hash SHA-256: aunque alguien leyera la tabla, no podría reconstruir el enlace.
 - **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403.
 - **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no puede iniciar sesión ni seguir usando tokens emitidos antes.
 - **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas.
 
 ### Reglas previstas
 
-- Bloqueo del inicio de sesión durante 15 minutos tras 5 intentos fallidos (RN-03).
-- Recuperación de contraseña por correo: enlace de un solo uso que expira en 30 minutos (RF-03). La tabla `token_recuperacion` ya existe.
 - Un único QR por perfil activo, con URL fija `/p/{slug}`, generado solo si el perfil tiene contenido activo.
 - URL válidas (http/https); no se puede eliminar el último enlace activo.
 
@@ -128,10 +133,11 @@ qr-empresarial/
 │   │   ├── middlewares/
 │   │   │   ├── error.middleware.js  # manejo centralizado de errores
 │   │   │   ├── auth.middleware.js   # verifica el token JWT
-│   │   │   └── rol.middleware.js    # autorizacion por rol
+│   │   │   ├── rol.middleware.js    # autorizacion por rol
+│   │   │   └── limite.middleware.js # limite de intentos (RN-03)
 │   │   ├── modules/
 │   │   │   ├── usuarios/            # route, validator, controller, service, repository
-│   │   │   ├── auth/                # login, perfil propio y registro publico
+│   │   │   ├── auth/                # login, registro publico y recuperacion
 │   │   │   ├── perfiles/            # pendiente
 │   │   │   ├── contenido/           # pendiente
 │   │   │   ├── qr/                  # pendiente

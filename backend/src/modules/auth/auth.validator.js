@@ -69,7 +69,53 @@ function validarRegistro(req, res, next) {
   next();
 }
 
+/**
+ * Valida el cuerpo de POST /api/auth/recuperar-contrasena.
+ */
+function validarSolicitudRecuperacion(req, res, next) {
+  const { correo } = req.body;
+
+  if (typeof correo !== 'string' || !correo.trim()) {
+    return res.status(400).json({
+      message: 'El correo es obligatorio'
+    });
+  }
+
+  next();
+}
+
+/**
+ * Valida el cuerpo de POST /api/auth/restablecer-contrasena.
+ * La nueva contrasena debe cumplir RN-02, igual que en el registro.
+ */
+function validarRestablecer(req, res, next) {
+  const { token, contrasena } = req.body;
+
+  if (typeof token !== 'string' || token.length < 32) {
+    return res.status(400).json({
+      message: 'El enlace de recuperación no es válido'
+    });
+  }
+
+  const esSegura =
+    typeof contrasena === 'string' &&
+    contrasena.length >= 8 &&
+    /[A-Z]/.test(contrasena) &&
+    /[0-9]/.test(contrasena) &&
+    /[^A-Za-z0-9]/.test(contrasena);
+
+  if (!esSegura) {
+    return res.status(400).json({
+      message: 'La contrasena debe tener mínimo 8 caracteres, una mayúscula, un número y un símbolo'
+    });
+  }
+
+  next();
+}
+
 module.exports = {
   validarLogin,
-  validarRegistro
+  validarRegistro,
+  validarSolicitudRecuperacion,
+  validarRestablecer
 };

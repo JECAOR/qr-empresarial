@@ -39,7 +39,63 @@ async function registrar(req, res, next) {
   }
 }
 
+/**
+ * POST /api/auth/recuperar-contrasena — solicita el enlace de recuperacion.
+ * Responde siempre 200, exista o no el correo (no revela que cuentas hay).
+ */
+async function solicitarRecuperacion(req, res, next) {
+  try {
+    const { enlace } = await authService.solicitarRecuperacion(req.body.correo);
+
+    const respuesta = {
+      message: 'Si el correo está registrado, recibirá un enlace para restablecer su contrasena'
+    };
+
+    // Solo en desarrollo se devuelve el enlace, para poder probar sin correo
+    if (enlace && process.env.NODE_ENV !== 'production') {
+      respuesta.enlaceDesarrollo = enlace;
+    }
+
+    return res.status(200).json(respuesta);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/auth/restablecer/:token — comprueba que el enlace siga sirviendo.
+ */
+async function validarEnlaceRecuperacion(req, res, next) {
+  try {
+    await authService.validarTokenRecuperacion(req.params.token);
+
+    return res.status(200).json({ message: 'El enlace es válido' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/auth/restablecer-contrasena — define la nueva contrasena.
+ */
+async function restablecerContrasena(req, res, next) {
+  try {
+    const { token, contrasena } = req.body;
+
+    await authService.restablecerContrasena(token, contrasena);
+
+    return res.status(200).json({
+      message: 'Contrasena restablecida correctamente'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   iniciarSesion,
-  registrar
+  registrar,
+  solicitarRecuperacion,
+  validarEnlaceRecuperacion,
+  restablecerContrasena
 };
