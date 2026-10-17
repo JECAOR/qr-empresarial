@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v0.7.0
+- **Versión:** v0.8.0
 
 ## Resumen
 
@@ -38,6 +38,35 @@ Documentación de los endpoints disponibles.
 | 404 | Not Found | El usuario no existe |
 | 409 | Conflict | El correo ya está registrado |
 | 500 | Internal Server Error | Error inesperado; el detalle queda en el log del servidor |
+
+---
+
+## Origen de las peticiones
+
+El servidor hace dos trabajos a la vez: expone la API bajo `/api` y publica las
+pantallas del frontend en el resto de las rutas. Por eso la aplicación completa
+queda en `http://localhost:3000` y no hace falta un segundo servidor. Importa
+para el RF-03: el enlace del correo de recuperación apunta a
+`APP_URL/restablecer.html`, que este mismo servidor resuelve.
+
+Las rutas bajo `/api` que no existen responden JSON, no el HTML que Express
+devuelve por defecto, porque quien llama a la API espera JSON:
+
+```json
+{ "message": "Recurso no encontrado" }
+```
+
+**CORS.** El navegador bloquea las peticiones entre orígenes distintos salvo que
+el servidor las autorice. Hace falta cuando el frontend se sirve aparte: las
+pruebas de Playwright lo publican en el 4173 y Live Server suele usar el 5500.
+
+| Entorno | Orígenes aceptados |
+|---|---|
+| `NODE_ENV=production` | Solo los de `CORS_ORIGINS`, separados por comas |
+| Cualquier otro | Todos, para no registrar cada puerto que se use al probar |
+
+Postman y `curl` no están sujetos a CORS: es una restricción que aplica el
+navegador, no el servidor.
 
 ---
 
@@ -374,5 +403,6 @@ La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collectio
 | Endpoint | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Conexión del frontend con la API | RF-01 a RF-03 | Las pantallas siguen trabajando con `localStorage` |
+| Cambio de contraseña desde Configuración | — | La pantalla existe, pero no hay endpoint: hoy el formulario no envía nada |
+| Cierre de las sesiones abiertas al restablecer la contraseña | RF-03 | Tras un restablecimiento, los tokens emitidos antes siguen sirviendo hasta que vencen |
 | Módulos Perfil, Contenido, QR, Público, Estadísticas, Configuración y Administración | RF-04 a RF-15 | Pendientes |

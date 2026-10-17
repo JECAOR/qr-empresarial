@@ -58,6 +58,45 @@ El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [
 
 Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 62 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
+### Cómo consume la API el frontend
+
+Las pantallas no llaman a `fetch` por su cuenta. Todo pasa por
+[`frontend/js/api.js`](frontend/js/api.js), que concentra cuatro cosas:
+
+- **La dirección de la API.** Si la página se sirve desde el puerto 3000 usa una
+  ruta relativa; si se sirve desde otro puerto (`http-server` en el 4173, Live
+  Server en el 5500) apunta al backend. Se puede fijar a mano con
+  `window.QR_API_URL`.
+- **La sesión.** El token y los datos de la cuenta van a `localStorage` si se
+  marcó «Mantenerme conectado», y a `sessionStorage` si no, que se borra al
+  cerrar la pestaña.
+- **El token.** Se adjunta como `Authorization: Bearer` en las peticiones que lo
+  necesitan.
+- **Los errores.** Llegan como un `ErrorApi` con el código HTTP, de modo que la
+  pantalla distingue un 401 de un 409 sin leer el texto del mensaje. Cuando no
+  hay respuesta —servidor apagado— el código es 0 y se avisa en pantalla en
+  lugar de quedarse callado.
+
+Las pantallas privadas cargan además
+[`frontend/js/guardia.js`](frontend/js/guardia.js), que hace dos comprobaciones
+distintas: sin token guardado sale de inmediato, y con token pregunta al
+servidor, porque el navegador no se entera si la cuenta fue restringida, si el
+token venció o si se cerró la sesión desde otro dispositivo. Un 401 en cualquier
+petición borra la sesión y devuelve al login con el aviso correspondiente.
+
+| Pantalla | Qué consume |
+|---|---|
+| `login.html` | `POST /auth/login` |
+| `register.html` | `POST /auth/registro` y después `POST /auth/login` |
+| `forgot-password.html` | `POST /auth/recuperar-contrasena` |
+| `restablecer.html` | `GET /auth/restablecer/:token` y `POST /auth/restablecer-contrasena` |
+| `dashboard`, `contenido`, `qr`, `configuracion` | `GET /usuarios/me` y `POST /auth/logout` |
+
+Las pantallas de contenido, código QR y vista pública siguen trabajando con
+`localStorage`: sus endpoints son los módulos 2 a 8, que todavía no existen. Y
+los seis endpoints de administración de usuarios no tienen pantalla: son el
+módulo 8 (RF-13 a RF-15).
+
 ### Seguridad
 
 - Las contraseñas se guardan cifradas con bcrypt (10 rondas) y nunca viajan en las respuestas.
@@ -74,7 +113,10 @@ Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.j
 | Frontend | HTML5, CSS3 y JavaScript ES2022, sin framework (PWA) | En uso |
 | Seguridad | `bcrypt` (contraseñas) | En uso |
 | Seguridad | `jsonwebtoken` (JWT y middlewares de rol) | En uso |
-| Seguridad | `helmet`, `cors`, `express-rate-limit`, `zod` | Previsto |
+| Seguridad | `express-rate-limit` (límite de intentos, RN-03) | En uso |
+| Seguridad | `cors` (origen de las peticiones del frontend) | En uso |
+| Seguridad | `helmet` y `zod` | Previsto |
+| Correo | `nodemailer`; cuenta de prueba de Ethereal en desarrollo | En uso |
 | QR | `qrcode` (servidor) y `qrcode.min.js` (navegador) | Previsto / en uso |
 | Gráficos | `chart.js` | En uso |
 | Pruebas | Postman; Jest + Supertest (API) y Playwright + axe-core (E2E) | Parcial |

@@ -40,12 +40,36 @@ npm run test:ui
 
 | Archivo | Qué prueba |
 |---|---|
-| `auth.spec.js` | Login, Registro (3 pasos), Recuperar contraseña |
+| `auth.spec.js` | Login, registro (3 pasos), recuperar contraseña, la pantalla del enlace, la guardia de las pantallas privadas y el cierre de sesión |
 | `contenido.spec.js` | Pestañas, agregar/editar/eliminar elementos, estado vacío |
 | `qr.spec.js` | Generación real del QR, colores, tamaño, descarga, copiar enlace |
 | `theme-and-business-sync.spec.js` | Los 3 temas de color, y que Configuración sincronice con el resto del sitio |
-| `accessibility.spec.js` | Auditoría automática con axe-core en las 10 páginas y los 3 temas |
+| `accessibility.spec.js` | Auditoría automática con axe-core en las 11 páginas y los 3 temas |
 | `responsive.spec.js` | Que ninguna página se desborde horizontalmente en móvil |
+| `ayudas.js` | No es una prueba: es el apoyo compartido que simula la API |
+
+## Por qué no hace falta el backend
+
+Desde que el frontend habla con la API, las pantallas privadas necesitan una
+sesión y las públicas hacen peticiones al servidor. Aun así, estas pruebas
+**no levantan el backend ni necesitan MySQL**: comprueban el frontend, y deben
+pasar igual en una máquina donde no haya nada de eso instalado.
+
+`ayudas.js` se encarga de las dos cosas que hacen falta:
+
+- `simularApi(page)` intercepta las peticiones a `/api/...` y las responde con
+  datos fijos, sin salir del navegador.
+- `sembrarSesion(page)` deja un token guardado antes de que cargue la página.
+  Sin él, la guardia redirige al login antes de que haya algo que comprobar.
+
+Lo habitual es `prepararSesion(page)`, que hace las dos. Varias pruebas de
+`auth.spec.js` simulan a propósito respuestas distintas —un 401, un 409, o la
+caída del servidor— para comprobar que la pantalla lo informa.
+
+Así que estas pruebas responden a «¿la pantalla envía bien, guarda la sesión,
+muestra el error y navega a donde debe?». Que el backend responda lo que debe
+se comprueba aparte, con la colección de Postman (`docs/postman/`), que sí
+necesita el servidor y la base de datos.
 
 ## Sobre las pruebas marcadas `[seguridad]`
 
