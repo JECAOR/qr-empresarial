@@ -145,10 +145,29 @@ async function cambiarMiContrasena(req, res, next) {
   }
 }
 
+/**
+ * DELETE /api/usuarios/me — elimina la cuenta propia.
+ *
+ * La contrasena viaja en el cuerpo: es una accion irreversible y no basta con
+ * tener la sesion abierta. El identificador sale del token.
+ */
+async function eliminarMiCuenta(req, res, next) {
+  try {
+    await authService.eliminarMiCuenta(req.usuario.id, req.body.contrasena);
+
+    return res.status(200).json({
+      message: 'Cuenta eliminada correctamente'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   crearUsuario,
   obtenerMiPerfil,
   cambiarMiContrasena,
+  eliminarMiCuenta,
   listarUsuarios,
   obtenerUsuario,
   actualizarUsuario,

@@ -352,10 +352,64 @@ async function cambiarContrasena(idUsuario, contrasenaActual, contrasenaNueva) {
   return { token: firmarToken(usuario.id_usuario, usuario.rol) };
 }
 
+/**
+ * Elimina la cuenta del propio usuario.
+ *
+ * Es el mismo borrado logico que usa el administrador: se marca deleted_at y
+ * se libera el correo con el prefijo "eliminado_<id>_". No se borra la fila,
+ * para no romper las claves foraneas ni perder el historial.
+ *
+ * Se exige la contrasena por la misma razon que al cambiarla, y aqui con mas
+ * motivo: es la accion menos reversible de la aplicacion.
+ *
+ * Un administrador no puede eliminarse a si mismo. Si fuera el unico, nadie
+ * podria volver a administrar el sistema, y la cuenta no se recupera porque
+ * su correo queda renombrado.
+ *
+ * @param {number} idUsuario - De req.usuario.id.
+ * @param {string} contrasena
+ * @throws {Error} 401 si la contrasena no coincide, 403 si es administrador,
+ *   404 si la cuenta ya no existe.
+ */
+async function eliminarMiCuenta(idUsuario, contrasena) {
+  const usuario = await authRepository.buscarPorIdConContrasena(idUsuario);
+
+  if (!usuario || usuario.estado !== 'activo') {
+    const error = new Error('Usuario no encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  if (usuario.rol === 'administrador') {
+    const error = new Error(
+      'Un administrador no puede eliminar su propia cuenta. Solicítelo a otro administrador'
+    );
+    error.status = 403;
+    throw error;
+  }
+
+  const contrasenaValida = await bcrypt.compare(contrasena, usuario.contrasena);
+
+  if (!contrasenaValida) {
+    console.warn('Eliminacion de cuenta rechazada: la contrasena no coincide');
+
+    const error = new Error('La contraseña no es correcta');
+    error.status = 401;
+    throw error;
+  }
+
+  await usuarioService.eliminarUsuario(idUsuario);
+
+  // No hace falta cerrar las sesiones: el middleware consulta la cuenta en
+  // cada peticion y ya no la encuentra, asi que los tokens dejan de servir.
+  console.warn('Cuenta eliminada por su propio dueno:', idUsuario);
+}
+
 module.exports = {
   iniciarSesion,
   cerrarSesion,
   cambiarContrasena,
+  eliminarMiCuenta,
   obtenerPerfil,
   registrar,
   solicitarRecuperacion,

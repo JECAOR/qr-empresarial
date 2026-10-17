@@ -222,6 +222,16 @@ const Api = {
       metodo: "PUT",
       cuerpo: { contrasenaActual, contrasenaNueva },
       salirSi401: false
+    }),
+
+  // La contraseña viaja en el cuerpo porque es una acción irreversible y no
+  // basta con tener la sesión abierta. Igual que al cambiarla, un 401 aquí
+  // significa que la contraseña está mal escrita, no que la sesión venció.
+  eliminarMiCuenta: (contrasena) =>
+    peticion("/usuarios/me", {
+      metodo: "DELETE",
+      cuerpo: { contrasena },
+      salirSi401: false
     })
 };
 

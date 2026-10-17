@@ -15,7 +15,8 @@ const {
   validarIdUsuario,
   validarActualizarUsuario,
   validarEstado,
-  validarCambioContrasena
+  validarCambioContrasena,
+  validarEliminarMiCuenta
 } = require('./usuario.validator');
 
 const router = express.Router();
@@ -34,6 +35,13 @@ router.put(
   '/me/contrasena',
   validarCambioContrasena,
   usuarioController.cambiarMiContrasena
+);
+
+// DELETE /api/usuarios/me — elimina la cuenta propia (borrado logico)
+router.delete(
+  '/me',
+  validarEliminarMiCuenta,
+  usuarioController.eliminarMiCuenta
 );
 
 // --- Operaciones administrativas: solo el rol administrador ---

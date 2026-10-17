@@ -81,8 +81,12 @@ const loginForm = document.getElementById("login-form");
 if (loginForm) {
   // Si llegó aquí porque su sesión dejó de servir, conviene explicarlo:
   // de lo contrario parecería que la aplicación lo expulsó sin motivo.
-  if (new URLSearchParams(window.location.search).get("motivo") === "sesion-expirada") {
+  const motivo = new URLSearchParams(window.location.search).get("motivo");
+
+  if (motivo === "sesion-expirada") {
     mostrarAviso("Su sesión terminó. Inicie sesión de nuevo.", "error");
+  } else if (motivo === "cuenta-eliminada") {
+    mostrarAviso("Su cuenta fue eliminada. Gracias por usar QR Empresarial.", "ok");
   }
 
   loginForm.addEventListener("submit", async (e) => {

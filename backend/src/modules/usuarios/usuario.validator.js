@@ -158,10 +158,28 @@ function validarCambioContrasena(req, res, next) {
   next();
 }
 
+/**
+ * Valida el cuerpo de DELETE /api/usuarios/me.
+ * Solo se comprueba que la contrasena venga; si esta equivocada, el Service
+ * responde 401.
+ */
+function validarEliminarMiCuenta(req, res, next) {
+  const { contrasena } = req.body;
+
+  if (typeof contrasena !== 'string' || !contrasena) {
+    return res.status(400).json({
+      message: 'Debe confirmar su contraseña para eliminar la cuenta'
+    });
+  }
+
+  next();
+}
+
 module.exports = {
   validarCrearUsuario,
   validarIdUsuario,
   validarActualizarUsuario,
   validarEstado,
-  validarCambioContrasena
+  validarCambioContrasena,
+  validarEliminarMiCuenta
 };

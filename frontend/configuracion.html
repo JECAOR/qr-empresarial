@@ -200,9 +200,21 @@
   <dialog id="delete-account-dialog">
     <div class="dialog-inner">
       <h3>¿Eliminar tu cuenta?</h3>
-      <p style="font-size:12px;color:var(--slate-500);line-height:1.6;margin:0 0 18px;">
-        Se eliminará tu perfil, tu código QR y todo el contenido asociado a Fonda La Cosecha. Esta acción no se puede deshacer.
+      <p style="font-size:12px;color:var(--slate-500);line-height:1.6;margin:0 0 16px;">
+        Se eliminará tu perfil, tu código QR y todo el contenido asociado a
+        <strong id="delete-biz-name">tu negocio</strong>. Esta acción no se puede deshacer.
       </p>
+
+      <div class="form-field">
+        <label for="delete-password">Confirma tu contraseña para continuar</label>
+        <div class="form-input-wrap">
+          <input type="password" id="delete-password" placeholder="••••••••••" autocomplete="current-password">
+        </div>
+        <span class="form-error">Ingresa tu contraseña.</span>
+      </div>
+
+      <div id="delete-alert" class="form-alert form-alert--error" role="alert" hidden></div>
+
       <div class="dialog-actions">
         <button type="button" id="cancel-delete" class="btn-secondary">Cancelar</button>
         <button type="button" id="confirm-delete" class="btn-danger-outline" style="flex:1;">Sí, eliminar</button>

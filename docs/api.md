@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v0.9.0
+- **Versión:** v1.0.0
 
 ## Resumen
 
@@ -20,6 +20,7 @@ Documentación de los endpoints disponibles.
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
 | PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
+| DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -351,6 +352,46 @@ restringida).
 
 ---
 
+### DELETE /api/usuarios/me
+
+Elimina la cuenta del propio usuario.
+
+**Cuerpo**
+
+```json
+{
+  "contrasena": "Clave123*"
+}
+```
+
+**Respuesta 200**
+
+```json
+{
+  "message": "Cuenta eliminada correctamente"
+}
+```
+
+Es el mismo borrado lógico que usa el administrador: se marca `deleted_at` y el correo se
+libera con el prefijo `eliminado_<id>_`. La fila no se borra, para no romper las claves
+foráneas ni perder el historial, y la dirección queda disponible para registrarse de nuevo.
+
+La contraseña viaja en el cuerpo porque tener la sesión abierta no basta: es la acción menos
+reversible de la aplicación. Igual que al cambiar la contraseña, un 401 aquí significa que la
+contraseña está mal escrita, no que la sesión haya vencido.
+
+No hace falta revocar los tokens de la cuenta: el middleware la consulta en cada petición y
+ya no la encuentra, así que dejan de servir de inmediato.
+
+**Un administrador no puede eliminarse a sí mismo** (403). Si fuera el único, nadie podría
+volver a administrar el sistema, y la cuenta no se recupera porque su correo queda
+renombrado. Debe pedírselo a otro administrador.
+
+**Errores:** 400 (falta la contraseña), 401 (la contraseña no es correcta), 403 (es
+administrador), 404 (la cuenta ya no existe o fue restringida).
+
+---
+
 ### POST /api/usuarios
 
 Creación administrativa: permite asignar cualquier rol, incluido `administrador`. Solo para el rol administrador.
@@ -448,7 +489,7 @@ Eliminación lógica. El registro permanece en la base para no romper las relaci
 
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 74 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 82 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
