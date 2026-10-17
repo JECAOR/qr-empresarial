@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "QR Empresarial API - Modulo Usuarios",
-    "description": "Casos de prueba del backend de QR Empresarial.\n\nCarpeta 1 (Guia 1): entorno, servidor y los dos inicios de sesion que guardan los tokens.\nCarpeta 2 (Guia 2): creacion de usuarios y validaciones.\nCarpeta 3 (Guia 3): CRUD completo del modulo Usuarios.\nCarpeta 4 (Guia 4): autenticacion, seguridad y registro publico.\n\nRequisito: servidor corriendo con npm run dev dentro de backend.\nEjecute la coleccion completa en orden: los logins de la carpeta 1 guardan los tokens\nque usan las carpetas 2 y 3, protegidas desde la Guia 4.",
+    "description": "Casos de prueba del backend de QR Empresarial.\n\nCarpeta 1 (Guia 1): entorno, servidor y los dos inicios de sesion que guardan los tokens.\nCarpeta 2 (Guia 2): creacion de usuarios y validaciones.\nCarpeta 3 (Guia 3): CRUD completo del modulo Usuarios.\nCarpeta 4 (Guia 4): autenticacion, seguridad y registro publico.\n\nRequisito: servidor corriendo con npm run dev dentro de backend.\nEjecute la coleccion completa en orden: los logins de la carpeta 1 guardan los tokens\nque usan las carpetas 2 y 3, protegidas desde la Guia 4.\n\nNota sobre RN-03: el inicio de sesion se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP. Si prueba el bloqueo a proposito, reinicie el servidor para limpiar el contador antes de volver a ejecutar la coleccion.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -35,6 +35,10 @@
     },
     {
       "key": "idReutilizado",
+      "value": ""
+    },
+    {
+      "key": "tokenRecuperacion",
       "value": ""
     }
   ],
@@ -1905,6 +1909,513 @@
             }
           ],
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Guia 4 - Recuperacion de contrasena (RF-03)",
+      "item": [
+        {
+          "name": "42 Solicitar enlace de recuperacion (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/recuperar-contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "recuperar-contrasena"
+              ]
+            },
+            "description": "Genera el enlace y guarda el token en {{tokenRecuperacion}}. En desarrollo el enlace viaja en la respuesta; en produccion solo llega por correo.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.enlaceDesarrollo) {",
+                  "  const token = json.enlaceDesarrollo.split('token=')[1];",
+                  "  pm.collectionVariables.set('tokenRecuperacion', token);",
+                  "  console.log('token de recuperacion guardado');",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "43 Solicitar con correo inexistente (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/recuperar-contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "recuperar-contrasena"
+              ]
+            },
+            "description": "Responde igual que con un correo real: no revela que cuentas existen.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"nadie@ejemplo.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No entrega enlace', () => pm.expect(pm.response.json()).to.not.have.property('enlaceDesarrollo'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "44 Validar el enlace (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/auth/restablecer/{{tokenRecuperacion}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "restablecer",
+                "{{tokenRecuperacion}}"
+              ]
+            },
+            "description": "El frontend lo consulta antes de mostrar el formulario.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "45 Validar un enlace inventado (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/auth/restablecer/0000000000000000000000000000000000000000000000000000000000000000",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "restablecer",
+                "0000000000000000000000000000000000000000000000000000000000000000"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "46 Restablecer con contrasena debil (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/restablecer-contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "restablecer-contrasena"
+              ]
+            },
+            "description": "RN-02 tambien aplica a la contrasena nueva.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{tokenRecuperacion}}\",\n  \"contrasena\": \"12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "47 Restablecer la contrasena (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/restablecer-contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "restablecer-contrasena"
+              ]
+            },
+            "description": "Cambia la contrasena y consume el enlace.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{tokenRecuperacion}}\",\n  \"contrasena\": \"NuevaClave1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "48 Reusar el mismo enlace (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/restablecer-contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "restablecer-contrasena"
+              ]
+            },
+            "description": "RN-04: el enlace sirve una sola vez.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{tokenRecuperacion}}\",\n  \"contrasena\": \"OtraClave1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "49 Login con la contrasena anterior (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "La contrasena vieja dejo de servir.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "50 Login con la contrasena nueva (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Cierra el ciclo de RF-03.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"NuevaClave1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "51 Devolver la contrasena original (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/recuperar-contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "recuperar-contrasena"
+              ]
+            },
+            "description": "Pide un enlace nuevo para dejar la cuenta como estaba y poder repetir la coleccion.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.enlaceDesarrollo) {",
+                  "  pm.collectionVariables.set('tokenRecuperacion', json.enlaceDesarrollo.split('token=')[1]);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "52 Restaurar Clave123* (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/restablecer-contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "restablecer-contrasena"
+              ]
+            },
+            "description": "Deja la base como estaba al inicio.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{tokenRecuperacion}}\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

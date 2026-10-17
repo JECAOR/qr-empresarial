@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v0.5.0
+- **Versión:** v0.6.0
 
 ## Resumen
 
@@ -14,6 +14,9 @@ Documentación de los endpoints disponibles.
 | GET | `/health` | Público | Comprobación del servidor |
 | POST | `/auth/registro` | Público | Registro de una empresa |
 | POST | `/auth/login` | Público | Iniciar sesión |
+| POST | `/auth/recuperar-contrasena` | Público | Solicitar el enlace de recuperación |
+| GET | `/auth/restablecer/:token` | Público | Comprobar el enlace |
+| POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
@@ -123,6 +126,82 @@ Registro público: una empresa crea su propia cuenta desde el formulario. **El r
 El token contiene el `id` y el `rol`, se firma con `JWT_SECRET` y vence según `JWT_EXPIRES_IN` (2 horas por defecto).
 
 **Errores:** 400 (falta correo o contraseña), 401 (credenciales inválidas o cuenta restringida). Los tres motivos de fallo devuelven el mismo mensaje para no revelar qué correos existen.
+
+**RN-03.** Tras 5 intentos fallidos desde la misma dirección IP, el endpoint responde 429 durante 15 minutos. Los inicios de sesión correctos no gastan cupo (`skipSuccessfulRequests`), así que un usuario que escribe bien su contraseña nunca se topa con el límite. El contador vive en memoria: al reiniciar el servidor se reinicia.
+
+---
+
+## Recuperación de contraseña
+
+Son tres pasos: la empresa pide el enlace, el frontend comprueba que siga sirviendo y luego envía la contraseña nueva.
+
+En la tabla `token_recuperacion` no se guarda el token, sino su hash SHA-256. El token son 32 bytes aleatorios, así que no hace falta bcrypt: no hay nada que adivinar por fuerza bruta y el hash directo permite buscarlo en un solo `SELECT`.
+
+### POST /api/auth/recuperar-contrasena
+
+**Cuerpo**
+
+```json
+{
+  "correo": "contacto@laespiga.co"
+}
+```
+
+**Respuesta 200**
+
+```json
+{
+  "message": "Si el correo está registrado, recibirá un enlace para restablecer su contrasena",
+  "enlaceDesarrollo": "http://localhost:3000/restablecer.html?token=a1b2c3..."
+}
+```
+
+Responde 200 aunque el correo no exista o la cuenta esté restringida: así nadie puede usar este endpoint para averiguar qué correos están registrados. El campo `enlaceDesarrollo` solo aparece cuando `NODE_ENV` no es `production`, para poder probar sin servidor de correo; en producción el enlace únicamente viaja por correo.
+
+Cada solicitud invalida los enlaces anteriores de esa cuenta, y el nuevo vence según `RECUPERACION_EXPIRA_MINUTOS` (30 por defecto).
+
+**Errores:** 400 (falta el correo), 429 (más de 3 solicitudes fallidas en 15 minutos desde la misma IP; el contador es independiente del login).
+
+---
+
+### GET /api/auth/restablecer/:token
+
+El frontend lo consulta al abrir el enlace, antes de mostrar el formulario.
+
+**Respuesta 200**
+
+```json
+{
+  "message": "El enlace es válido"
+}
+```
+
+**Errores:** 400 (el enlace no existe, ya se usó o expiró). Un solo mensaje para los tres casos.
+
+---
+
+### POST /api/auth/restablecer-contrasena
+
+**Cuerpo**
+
+```json
+{
+  "token": "a1b2c3...",
+  "contrasena": "NuevaClave1*"
+}
+```
+
+**Respuesta 200**
+
+```json
+{
+  "message": "Contrasena restablecida correctamente"
+}
+```
+
+La contraseña nueva se cifra con bcrypt y debe cumplir RN-02, igual que en el registro. El enlace queda consumido: reutilizarlo devuelve 400 (RN-04).
+
+**Errores:** 400 (enlace inválido, expirado o ya usado; contraseña que no cumple RN-02).
 
 ---
 
@@ -245,12 +324,12 @@ Eliminación lógica. El registro permanece en la base para no romper las relaci
 
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 45 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 56 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
 | Endpoint | Requisito | Estado |
 |---|---|---|
-| `POST /api/auth/recuperar-contrasena` | RF-03 | Tabla `token_recuperacion` creada (migración 004); faltan los endpoints y el envío del correo |
+| Envío del enlace por correo electrónico | RF-03 | El flujo está completo; falta conectar un servicio de correo. Mientras tanto el enlace se devuelve en la respuesta en desarrollo |
 | `POST /api/auth/logout` | — | Previsto |
 | Módulos Perfil, Contenido, QR, Público, Estadísticas, Configuración y Administración | RF-04 a RF-15 | Pendientes |

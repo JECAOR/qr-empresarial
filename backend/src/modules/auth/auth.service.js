@@ -4,6 +4,8 @@
 // No conoce HTTP: no usa req ni res.
 // ============================================
 
+const crypto = require('crypto');
+
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -124,8 +126,109 @@ async function registrar(datos) {
   });
 }
 
+const RONDAS_BCRYPT = 10;
+
+/**
+ * Calcula el hash que se guarda en la base para un token de recuperacion.
+ * Se usa SHA-256 y no bcrypt porque el token ya es aleatorio de 32 bytes:
+ * no hace falta un algoritmo lento contra fuerza bruta, y asi la busqueda
+ * por hash es directa.
+ */
+function hashDelToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/**
+ * Paso 1 de RF-03: genera el enlace de recuperacion.
+ *
+ * Responde siempre lo mismo exista o no el correo, para no revelar que
+ * cuentas estan registradas. Si el correo existe, invalida los enlaces
+ * anteriores y emite uno nuevo.
+ *
+ * @param {string} correo
+ * @returns {Promise<{enlace: string|null}>} El enlace solo en desarrollo.
+ */
+async function solicitarRecuperacion(correo) {
+  const usuario = await authRepository.buscarPorCorreo(correo);
+
+  if (!usuario || usuario.estado !== 'activo') {
+    console.warn('Recuperacion solicitada para un correo inexistente o restringido');
+    return { enlace: null };
+  }
+
+  await authRepository.invalidarTokensAnteriores(usuario.id_usuario);
+
+  // Token aleatorio: viaja en el enlace, pero en la base solo queda su hash
+  const token = crypto.randomBytes(32).toString('hex');
+  const minutos = Number(process.env.RECUPERACION_EXPIRA_MINUTOS || 30);
+  const expiraEn = new Date(Date.now() + minutos * 60 * 1000);
+
+  await authRepository.crearTokenRecuperacion(usuario.id_usuario, hashDelToken(token), expiraEn);
+
+  const enlace = `${process.env.APP_URL}/restablecer.html?token=${token}`;
+
+  // Mientras no haya servidor de correo, el enlace se imprime en la consola.
+  // Al conectar nodemailer, basta reemplazar este bloque por el envio real.
+  console.log('--------------------------------------------------');
+  console.log('Enlace de recuperacion para', usuario.correo);
+  console.log(enlace);
+  console.log('Vence:', expiraEn.toLocaleString('es-CO'));
+  console.log('--------------------------------------------------');
+
+  return { enlace };
+}
+
+/**
+ * Paso 2 de RF-03: comprueba que un enlace siga sirviendo.
+ * Lo usa el frontend al abrir la pantalla, antes de mostrar el formulario.
+ *
+ * @param {string} token
+ * @returns {Promise<{valido: true}>}
+ * @throws {Error} 400 si el enlace vencio, ya se uso o no existe.
+ */
+async function validarTokenRecuperacion(token) {
+  const registro = await authRepository.buscarTokenVigente(hashDelToken(token));
+
+  if (!registro) {
+    const error = new Error('El enlace de recuperación no es válido o ya expiró');
+    error.status = 400;
+    throw error;
+  }
+
+  return { valido: true };
+}
+
+/**
+ * Paso 3 de RF-03: define la nueva contrasena y consume el enlace.
+ *
+ * @param {string} token
+ * @param {string} contrasena - Nueva contrasena en texto plano.
+ * @throws {Error} 400 si el enlace no sirve.
+ */
+async function restablecerContrasena(token, contrasena) {
+  const registro = await authRepository.buscarTokenVigente(hashDelToken(token));
+
+  if (!registro) {
+    const error = new Error('El enlace de recuperación no es válido o ya expiró');
+    error.status = 400;
+    throw error;
+  }
+
+  const contrasenaCifrada = await bcrypt.hash(contrasena, RONDAS_BCRYPT);
+
+  await authRepository.actualizarContrasena(registro.id_usuario, contrasenaCifrada);
+
+  // RN-04: el enlace sirve una sola vez
+  await authRepository.marcarTokenUsado(registro.id_token);
+
+  console.warn('Contrasena restablecida para el usuario', registro.id_usuario);
+}
+
 module.exports = {
   iniciarSesion,
   obtenerPerfil,
-  registrar
+  registrar,
+  solicitarRecuperacion,
+  validarTokenRecuperacion,
+  restablecerContrasena
 };
