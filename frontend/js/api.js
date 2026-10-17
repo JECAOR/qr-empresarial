@@ -22,6 +22,21 @@ function direccionApi() {
   return "http://localhost:3000/api";
 }
 
+/**
+ * Origen donde vive el backend, sin el /api.
+ *
+ * Lo usan las direcciones públicas del perfil: la API las devuelve relativas
+ * (`/p/panaderia-la-espiga`) y la pantalla necesita la absoluta para
+ * mostrarla, compartirla o meterla en un código QR.
+ */
+function origenDelBackend() {
+  const base = direccionApi();
+
+  if (base.startsWith("/")) return window.location.origin;
+
+  return base.replace(/\/api$/, "");
+}
+
 // --- Error de la API ---
 //
 // Lleva el código HTTP junto al mensaje, para que quien llama pueda
@@ -241,6 +256,14 @@ const Api = {
   reordenarContenido: (ids) =>
     peticion("/contenido/orden", { metodo: "PUT", cuerpo: { ids } }),
 
+  // Código QR (RF-07 y RF-08)
+  miQr: () => peticion("/qr"),
+
+  generarMiQr: () => peticion("/qr", { metodo: "POST" }),
+
+  cambiarEstadoQr: (activo) =>
+    peticion("/qr/estado", { metodo: "PATCH", cuerpo: { activo } }),
+
   // Perfil propio
   miPerfil: () => peticion("/usuarios/me"),
 
@@ -269,6 +292,62 @@ const Api = {
       salirSi401: false
     })
 };
+
+/**
+ * Descarga la imagen del código QR (RF-08).
+ *
+ * No usa peticion() porque la respuesta es un archivo, no JSON, y porque
+ * hace falta leer el nombre que propone el servidor en Content-Disposition.
+ *
+ * Tampoco se puede apuntar el navegador a la dirección directamente: el
+ * endpoint exige el token en la cabecera, y una navegación normal no la
+ * lleva. De ahí que se pida con fetch y se descargue el blob.
+ *
+ * @param {{formato: string, tamano: number, color: string}} opciones
+ * @returns {Promise<{blob: Blob, nombre: string}>}
+ */
+async function descargarImagenQr({ formato, tamano, color }) {
+  const parametros = new URLSearchParams({
+    formato,
+    tamano: String(tamano),
+    // El servidor espera el color sin la almohadilla
+    color: String(color).replace(/^#/, "")
+  });
+
+  const cabeceras = {};
+  const token = Sesion.token();
+  if (token) cabeceras.Authorization = "Bearer " + token;
+
+  let respuesta;
+
+  try {
+    respuesta = await fetch(`${direccionApi()}/qr/imagen?${parametros}`, { headers: cabeceras });
+  } catch (error) {
+    throw new ErrorApi("No se pudo conectar con el servidor.", 0);
+  }
+
+  if (!respuesta.ok) {
+    // El error sí viene en JSON
+    let mensaje = "No se pudo generar la imagen del código.";
+
+    try {
+      const datos = await respuesta.json();
+      if (datos && datos.message) mensaje = datos.message;
+    } catch (error) {
+      // Se queda el mensaje genérico
+    }
+
+    throw new ErrorApi(mensaje, respuesta.status);
+  }
+
+  const cabecera = respuesta.headers.get("Content-Disposition") || "";
+  const coincidencia = cabecera.match(/filename="?([^"]+)"?/);
+
+  return {
+    blob: await respuesta.blob(),
+    nombre: coincidencia ? coincidencia[1] : `codigo-qr.${formato}`
+  };
+}
 
 // --- Ayudas para las pantallas ---
 

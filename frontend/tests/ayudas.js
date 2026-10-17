@@ -21,6 +21,16 @@ const USUARIO = {
 
 const TOKEN = "token-de-prueba-sin-valor-real";
 
+// Codigo QR que devuelve la API simulada (RF-07)
+const QR = {
+  idQr: 1,
+  url: "http://localhost:3000/p/fonda-la-cosecha",
+  slug: "fonda-la-cosecha",
+  activo: true,
+  fechaCreacion: "2026-10-17T12:00:00.000Z",
+  fechaActualizacion: null
+};
+
 // Perfil empresarial que devuelve la API simulada (RF-04)
 const PERFIL = {
   idPerfil: 7,
@@ -108,7 +118,9 @@ async function simularApi(page, opciones = {}) {
     contrasenaIncorrectaAlBorrar = false,
     sinPerfil = false,
     errorAlGuardarPerfil = null,
-    errorAlOrdenar = null
+    errorAlOrdenar = null,
+    sinQr = false,
+    errorAlGenerarQr = null
   } = opciones;
 
   // El simulador recuerda el perfil y el contenido, como haría el servidor:
@@ -156,6 +168,64 @@ async function simularApi(page, opciones = {}) {
       }
 
       return responder(200, { message: "El enlace es válido" });
+    }
+
+    if (url.includes("/qr/imagen")) {
+      // La descarga responde un archivo, no JSON. Basta un cuerpo minimo con
+      // la firma del formato: las pruebas comprueban el tipo y el nombre.
+      const formato = (url.match(/formato=(\w+)/) || [])[1] || "png";
+
+      // El cuerpo no necesita ser una imagen de verdad: estas pruebas
+      // comprueban el tipo de archivo y el nombre, no los pixeles.
+      const cuerpos = {
+        png: "imagen-png-de-prueba",
+        svg: '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+        pdf: "%PDF-1.3 documento de prueba"
+      };
+
+      const tipos = {
+        png: "image/png",
+        svg: "image/svg+xml",
+        pdf: "application/pdf"
+      };
+
+      return route.fulfill({
+        status: 200,
+        contentType: tipos[formato] || "application/octet-stream",
+        headers: {
+          "Content-Disposition": `attachment; filename="qr-${QR.slug}.${formato}"`,
+          // Igual que el servidor: sin esto el navegador no deja leerla
+          // desde otro origen y el archivo se guardaria con nombre generico
+          "Access-Control-Expose-Headers": "Content-Disposition"
+        },
+        body: cuerpos[formato] || ""
+      });
+    }
+
+    if (url.includes("/qr")) {
+      if (metodo === "PATCH") {
+        const cuerpo = JSON.parse(route.request().postData() || "{}");
+        QR.activo = cuerpo.activo;
+
+        return responder(200, {
+          message: QR.activo ? "Código QR activado" : "Código QR desactivado",
+          data: QR
+        });
+      }
+
+      if (metodo === "POST") {
+        if (errorAlGenerarQr) {
+          return responder(409, { message: errorAlGenerarQr });
+        }
+
+        return responder(201, { message: "Código QR generado correctamente", data: QR });
+      }
+
+      if (sinQr) {
+        return responder(404, { message: "Este perfil todavía no tiene un código QR generado" });
+      }
+
+      return responder(200, { data: QR });
     }
 
     if (url.includes("/contenido/categorias")) {
@@ -339,6 +409,6 @@ async function prepararSesion(page) {
 }
 
 module.exports = {
-  USUARIO, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS,
+  USUARIO, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS, QR,
   simularApi, sembrarSesion, prepararSesion
 };

@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.2.0
+- **Versión:** v1.4.0
 
 ## Resumen
 
@@ -30,6 +30,10 @@ Documentación de los endpoints disponibles.
 | PUT | `/contenido/:id` | Autenticado | Editar un bloque |
 | PATCH | `/contenido/:id/estado` | Autenticado | Activar o desactivar |
 | DELETE | `/contenido/:id` | Autenticado | Eliminar un bloque |
+| GET | `/qr` | Autenticado | Consultar el código QR |
+| POST | `/qr` | Autenticado | Generar el código QR |
+| GET | `/qr/imagen` | Autenticado | Descargar en PNG, SVG o PDF |
+| PATCH | `/qr/estado` | Autenticado | Activar o desactivar |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -711,13 +715,97 @@ no tiene historial que conservar. Los eventos del RF-11 que apuntaban a él se b
 
 ---
 
+## Código QR
+
+**Qué lo hace dinámico.** No la imagen, que nunca cambia, sino que la dirección es fija y
+lo que hay detrás se puede editar. De ahí que el `slug` del perfil no cambie al renombrar
+el negocio: un código ya impreso tiene que seguir llevando al mismo sitio (RF-09).
+
+**Hay uno por perfil** y la base lo garantiza: `codigo_qr.id_perfil` es `UNIQUE`. No es una
+comprobación del código que se pueda olvidar.
+
+### GET /api/qr
+
+```json
+{
+  "data": {
+    "idQr": 1,
+    "url": "http://localhost:3000/p/panaderia-la-espiga",
+    "slug": "panaderia-la-espiga",
+    "activo": true,
+    "fechaCreacion": "2026-10-17T21:40:00.000Z",
+    "fechaActualizacion": null
+  }
+}
+```
+
+La dirección se arma con `APP_URL`, la misma variable que usa el enlace de recuperación de
+contraseña, para que todo apunte a donde está publicada la aplicación.
+
+**Errores:** 401, 404 (la cuenta no tiene perfil, o el perfil no tiene código generado).
+
+---
+
+### POST /api/qr
+
+Genera el código. No lleva cuerpo.
+
+**Es idempotente:** la primera vez responde **201**; las siguientes, **200** con el mismo
+código y la misma dirección. Así la pantalla puede llamarlo sin preguntar antes.
+
+**No se genera para un perfil sin contenido activo** (409). Un código que lleva a una página
+en blanco es peor que no tener código: quien lo escanea se queda sin saber si el negocio
+existe.
+
+**Errores:** 401, 404 (sin perfil), 409 (sin contenido activo).
+
+---
+
+### GET /api/qr/imagen
+
+Descarga la imagen del código (RF-08). **Responde el archivo, no JSON.**
+
+| Parámetro | Valores | Por defecto |
+|---|---|---|
+| `formato` | `png`, `svg`, `pdf` | `png` |
+| `tamano` | 120 a 1200 píxeles | 400 |
+| `color` | Hexadecimal de seis dígitos, sin `#` | `111827` |
+
+Un `tamano` fuera de rango no falla: se recorta al límite, para que el servidor no se quede
+generando una imagen enorme. El `color`, en cambio, sí se valida, porque va directo a la
+librería.
+
+El PDF es una página A4 con el código centrado, un título y la dirección debajo como enlace
+—listo para llevar a una imprenta—. Las tres imágenes las genera el servidor, así que el
+archivo sale igual en cualquier equipo; la vista previa de la pantalla se sigue dibujando en
+el navegador porque es instantánea.
+
+**La respuesta lleva `Content-Disposition` con el nombre del archivo**, y la configuración de
+CORS lo expone (`exposedHeaders`). Sin eso, un frontend servido desde otro puerto no puede
+leer esa cabecera y guardaría los archivos con un nombre genérico.
+
+**Errores:** 400 (formato o color inválidos), 401, 404.
+
+---
+
+### PATCH /api/qr/estado
+
+**Cuerpo:** `{ "activo": false }`
+
+Desactivarlo no lo borra: el código impreso sigue existiendo en el mundo, y esta bandera es
+la que decidirá si la vista pública responde (RF-09).
+
+**Errores:** 400, 401, 404.
+
+---
+
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 120 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 137 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
 | Endpoint | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Módulos QR, Público, Estadísticas, Configuración y Administración | RF-07 a RF-15 | Pendientes |
+| Módulos Público, Estadísticas, Configuración y Administración | RF-09 a RF-15 | Pendientes |

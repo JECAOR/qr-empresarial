@@ -138,7 +138,7 @@ function hexToRgba(hex, alpha) {
 function renderBusinessInfo() {
   const biz = getBusinessData();
   document.getElementById("dash-biz-name").textContent = biz.name;
-  document.getElementById("dash-qr-url").textContent = getQrUrl(biz).replace("https://", "");
+  document.getElementById("dash-qr-url").textContent = getQrUrl(biz).replace(/^https?:\/\//, "");
 }
 
 // --- QR activo (mismo generador real de la Fase 5) ---

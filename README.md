@@ -22,6 +22,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Eliminación de la cuenta propia | Terminado (`v1.0.0`) |
 | M2. Perfil empresarial (RF-04 y RF-10) | Terminado (`v1.1.0`) |
 | M3. Gestión de contenido (RF-05 y RF-06) | Terminado (`v1.3.0`) |
+| M4. Código QR (RF-07 y RF-08) | Terminado (`v1.4.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -41,6 +42,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v1.1.0` | Módulo 2: perfil empresarial, con validación de campos y URL |
 | `v1.2.0` | Módulo 3: enlaces, textos y botones del perfil, con secciones y orden |
 | `v1.3.0` | Reordenar el contenido arrastrando o con el teclado |
+| `v1.4.0` | Módulo 4: código QR por perfil y descarga en PNG, SVG y PDF |
 
 ## API disponible
 
@@ -67,6 +69,10 @@ Base: `http://localhost:3000/api`
 | PUT | `/contenido/:id` | Autenticado | Editar un bloque |
 | PATCH | `/contenido/:id/estado` | Autenticado | Activar o desactivar un bloque |
 | DELETE | `/contenido/:id` | Autenticado | Eliminar un bloque |
+| GET | `/qr` | Autenticado | Consultar el código QR del perfil |
+| POST | `/qr` | Autenticado | Generar el código QR |
+| GET | `/qr/imagen` | Autenticado | Descargar el código en PNG, SVG o PDF |
+| PATCH | `/qr/estado` | Autenticado | Activar o desactivar el código |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -76,7 +82,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 120 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 137 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Cómo consume la API el frontend
 
@@ -114,15 +120,17 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `configuracion.html` | además `PUT /usuarios/me/contrasena`, `DELETE /usuarios/me` y `PUT /perfiles/me` |
 | Toda pantalla privada | `GET /perfiles/me` al cargar, para traer los datos del negocio |
 | `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido`, `GET /contenido/categorias` y `PUT /contenido/orden` |
+| `qr.html` | `GET/POST /qr` y `GET /qr/imagen` |
 
 Los datos del negocio ya vienen del servidor: `js/guardia.js` consulta
 `GET /perfiles/me` al abrir cualquier pantalla privada y los deja en el almacén
 local, que pasó de ser la fuente de verdad a ser una caché. Así el dashboard, el
 código QR y la barra lateral siguieron funcionando sin cambios.
 
-La pantalla de código QR aún guarda lo suyo en `localStorage`: sus endpoints son
-el módulo 4. La vista pública lee la caché del navegador hasta que exista la ruta
-por slug del módulo 5. Y
+La vista pública lee la caché del navegador hasta que exista la ruta por slug del
+módulo 5. El color, el tamaño y el formato elegidos en la pantalla del código QR
+sí siguen en `localStorage`, y ahí se quedan: son preferencias de quien mira esa
+pantalla, no datos del negocio. Y
 los seis endpoints de administración de usuarios no tienen pantalla: son el
 módulo 8 (RF-13 a RF-15).
 
@@ -146,7 +154,8 @@ módulo 8 (RF-13 a RF-15).
 | Seguridad | `cors` (origen de las peticiones del frontend) | En uso |
 | Seguridad | `helmet` y `zod` | Previsto |
 | Correo | `nodemailer`; cuenta de prueba de Ethereal en desarrollo | En uso |
-| QR | `qrcode` (servidor) y `qrcode.min.js` (navegador) | Previsto / en uso |
+| QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
+| PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
 | Pruebas | Postman; Jest + Supertest (API) y Playwright + axe-core (E2E) | Parcial |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
@@ -164,7 +173,7 @@ módulo 8 (RF-13 a RF-15).
 | 1 | 06/10 – 13/10 | M1. Autenticación, registro público, cierre de sesión, recuperación y cambio de contraseña | RF-01, RF-02, RF-03 | Terminado |
 | 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Terminado |
 | 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Terminado |
-| 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Siguiente |
+| 4 | 27/10 – 02/11 | M4. Código QR dinámico (terminado) + M5. Vista pública | RF-07, RF-08, RF-09 | En curso |
 | 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Pendiente |
 | 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Pendiente |
 | 7 | 17/11 – 23/11 | Pruebas de integración, aceptación y seguridad | Todos | Pendiente |
@@ -179,6 +188,8 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **RN-01** El correo es único entre las cuentas activas.
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
 - **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP; los inicios correctos no gastan cupo. La solicitud de recuperación lleva su propio contador (10 por 15 minutos, contando todas), para que agotar uno no inhabilite el otro.
+- **Un código QR por perfil, y no se regenera.** La base lo garantiza con un `UNIQUE` sobre `id_perfil` (RF-07). Pedirlo otra vez devuelve el mismo: cambiar su dirección invalidaría los códigos ya impresos.
+- **No se genera un código para un perfil vacío.** Hace falta al menos un bloque de contenido activo. Un código que lleva a una página en blanco es peor que no tener código: quien lo escanea se queda sin saber si el negocio existe.
 - **El contenido se reordena arrastrando o con el teclado.** El asa de cada bloque es un botón enfocable: con las flechas arriba y abajo también se mueve. Arrastrar es cómodo con el ratón e imposible sin él, así que ofrecer solo esa vía dejaría fuera a quien no pueda usarlo.
 - **Desactivar no es borrar.** Un bloque de contenido inactivo sigue en el panel y deja de aparecer en la vista pública (RF-06). Sirve para una promoción que vuelve cada temporada, sin volver a escribirla.
 - **Los enlaces solo admiten `http` y `https`.** Un `javascript:` guardado como enlace acabaría ejecutándose en la vista pública. El WhatsApp es la excepción: acepta un teléfono y se guarda convertido en `https://wa.me/<dígitos>`.
@@ -211,6 +222,7 @@ Esquema `qr_empresarial` con 10 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `006-agregar-sesiones-validas-desde.sql` | Columna `sesiones_validas_desde` en `usuario`, para cerrar todas las sesiones de una cuenta de una vez |
 | `007-ampliar-perfil-empresarial.sql` | Seis campos más en `perfil_empresarial`, fechas automáticas y un perfil único por cuenta |
 | `008-ampliar-contenido.sql` | Secciones y título en el contenido, y las tres categorías de enlace que faltaban del RF-05 |
+| `009-corregir-fechas-codigo-qr.sql` | Fechas automáticas y estado por defecto en `codigo_qr` |
 
 ## Estructura de carpetas
 
@@ -230,7 +242,7 @@ qr-empresarial/
 │   │   │   ├── auth/                # login, registro publico y recuperacion
 │   │   │   ├── perfiles/            # route, validator, controller, service, repository
 │   │   │   ├── contenido/           # route, validator, controller, service, repository
-│   │   │   ├── qr/                  # pendiente
+│   │   │   ├── qr/                  # route, validator, controller, service, repository
 │   │   │   ├── publico/             # pendiente
 │   │   │   ├── estadisticas/        # pendiente
 │   │   │   ├── configuracion/       # pendiente
@@ -302,6 +314,7 @@ mysql -u root -p qr_empresarial < database/migrations/005-crear-sesion-revocada.
 mysql -u root -p qr_empresarial < database/migrations/006-agregar-sesiones-validas-desde.sql
 mysql -u root -p qr_empresarial < database/migrations/007-ampliar-perfil-empresarial.sql
 mysql -u root -p qr_empresarial < database/migrations/008-ampliar-contenido.sql
+mysql -u root -p qr_empresarial < database/migrations/009-corregir-fechas-codigo-qr.sql
 
 # 2. Backend
 cd backend
