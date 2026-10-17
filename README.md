@@ -11,7 +11,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 |---|---|
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
 | Base de datos MySQL `qr_empresarial` (9 tablas, 4 migraciones) | Implementada |
-| Frontend HTML/CSS/JS (12 pantallas, PWA, pruebas Playwright) | Implementado. Autenticación conectada a la API; el resto de las pantallas sigue con datos en `localStorage` |
+| Frontend HTML/CSS/JS (11 pantallas, PWA, pruebas Playwright) | Implementado. Autenticación conectada a la API; el resto de las pantallas sigue con datos en `localStorage` |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
