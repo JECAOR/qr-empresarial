@@ -127,9 +127,61 @@ async function actualizarContrasena(idUsuario, contrasenaCifrada) {
   return resultado.affectedRows;
 }
 
+/**
+ * Anota el token como revocado al cerrar sesion (RF-02).
+ *
+ * Usa INSERT IGNORE porque cerrar sesion dos veces con el mismo token no
+ * es un error: la segunda vez el jti ya esta en la tabla y basta con dejarlo
+ * como esta. El UNIQUE de la columna es el que hace que no se duplique.
+ *
+ * @param {string} jti - Identificador del token.
+ * @param {number} idUsuario
+ * @param {Date} expiraEn - Vencimiento del propio token.
+ */
+async function revocarSesion(jti, idUsuario, expiraEn) {
+  const [resultado] = await pool.execute(
+    `INSERT IGNORE INTO sesion_revocada (jti, id_usuario, expira_en)
+     VALUES (?, ?, ?)`,
+    [jti, idUsuario, expiraEn]
+  );
+
+  return resultado.affectedRows;
+}
+
+/**
+ * Comprueba si un token fue revocado. La consulta el middleware de
+ * autenticacion en cada peticion protegida.
+ *
+ * @param {string} jti
+ * @returns {Promise<boolean>}
+ */
+async function sesionRevocada(jti) {
+  const [filas] = await pool.execute(
+    'SELECT id_sesion FROM sesion_revocada WHERE jti = ?',
+    [jti]
+  );
+
+  return filas.length > 0;
+}
+
+/**
+ * Elimina las revocaciones cuyo token ya habria vencido por si solo.
+ * Mantenerlas no cambiaria ninguna respuesta y la tabla creceria sin fin.
+ */
+async function limpiarSesionesVencidas() {
+  const [resultado] = await pool.execute(
+    'DELETE FROM sesion_revocada WHERE expira_en < NOW()'
+  );
+
+  return resultado.affectedRows;
+}
+
 module.exports = {
   buscarPorCorreo,
   buscarPorId,
+  revocarSesion,
+  sesionRevocada,
+  limpiarSesionesVencidas,
   crearTokenRecuperacion,
   buscarTokenVigente,
   marcarTokenUsado,

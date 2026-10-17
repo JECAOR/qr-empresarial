@@ -16,6 +16,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
 | Backend — recuperación de contraseña y límite de intentos | Terminado (`v0.6.0`) |
+| Backend — cierre de sesión y envío del enlace por correo | Terminado (`v0.7.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -28,6 +29,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v0.4.0` | CRUD completo del módulo Usuarios y colección de Postman |
 | `v0.5.0` | Autenticación con JWT, autorización por roles y registro público |
 | `v0.6.0` | Recuperación de contraseña (RF-03) y límite de intentos de inicio de sesión (RN-03) |
+| `v0.7.0` | Cierre de sesión (RF-02) y envío del enlace de recuperación por correo (RF-03) |
 
 ## API disponible
 
@@ -38,6 +40,7 @@ Base: `http://localhost:3000/api`
 | GET | `/health` | Público | Comprobación del servidor |
 | POST | `/auth/registro` | Público | Registro de una empresa (rol forzado a `empresa`) |
 | POST | `/auth/login` | Público | Iniciar sesión y obtener el JWT |
+| POST | `/auth/logout` | Autenticado | Cerrar la sesión actual |
 | POST | `/auth/recuperar-contrasena` | Público | Solicitar el enlace de recuperación |
 | GET | `/auth/restablecer/:token` | Público | Comprobar que el enlace siga siendo válido |
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
@@ -51,7 +54,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 56 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 62 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Seguridad
 
@@ -85,7 +88,7 @@ Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.j
 |---|---|---|---|---|
 | 0 | 22/09 – 28/09 | Configuración: repositorio, Express base, conexión MySQL, migraciones | — | Terminado |
 | 1 | 29/09 – 05/10 | M1. Usuarios y cuentas | RF-01, RF-13 a RF-15 | Terminado |
-| 1 | 06/10 – 13/10 | M1. Autenticación con JWT, registro público y recuperación de contraseña | RF-01, RF-02, RF-03 | Terminado |
+| 1 | 06/10 – 13/10 | M1. Autenticación, registro público, cierre de sesión y recuperación de contraseña | RF-01, RF-02, RF-03 | Terminado |
 | 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Siguiente |
 | 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Pendiente |
 | 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Pendiente |
@@ -100,7 +103,7 @@ El orden sigue las dependencias entre módulos (usuario → perfil → contenido
 
 - **RN-01** El correo es único entre las cuentas activas.
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
-- **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP. La solicitud de recuperación lleva su propio contador (3 intentos), para que agotar uno no inhabilite el otro.
+- **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP; los inicios correctos no gastan cupo. La solicitud de recuperación lleva su propio contador (10 por 15 minutos, contando todas), para que agotar uno no inhabilite el otro.
 - **RN-04** El enlace de recuperación sirve una sola vez y expira en 30 minutos. En la base solo se guarda su hash SHA-256: aunque alguien leyera la tabla, no podría reconstruir el enlace.
 - **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403.
 - **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no puede iniciar sesión ni seguir usando tokens emitidos antes.
@@ -113,7 +116,7 @@ El orden sigue las dependencias entre módulos (usuario → perfil → contenido
 
 ## Base de datos
 
-Esquema `qr_empresarial` con 9 tablas: `usuario`, `perfil_empresarial`, `codigo_qr`, `enlace`, `elemento`, `categoria_enlace`, `categoria_elemento`, `evento` y `token_recuperacion`.
+Esquema `qr_empresarial` con 10 tablas: `usuario`, `perfil_empresarial`, `codigo_qr`, `enlace`, `elemento`, `categoria_enlace`, `categoria_elemento`, `evento`, `token_recuperacion` y `sesion_revocada`.
 
 | Migración | Cambio |
 |---|---|
@@ -121,6 +124,7 @@ Esquema `qr_empresarial` con 9 tablas: `usuario`, `perfil_empresarial`, `codigo_
 | `002-renombrar-columna-contrasena.sql` | `contraseña` → `contrasena`, para evitar caracteres no ASCII en el código |
 | `003-agregar-deleted-at-usuario.sql` | Columna `deleted_at` y valor por defecto para `fecha_registro` |
 | `004-crear-token-recuperacion.sql` | Tabla `token_recuperacion` para el enlace de recuperación (RF-03) |
+| `005-crear-sesion-revocada.sql` | Tabla `sesion_revocada`, que permite cerrar sesión en el servidor (RF-02) |
 
 ## Estructura de carpetas
 
@@ -146,6 +150,7 @@ qr-empresarial/
 │   │   │   ├── configuracion/       # pendiente
 │   │   │   └── admin/               # pendiente
 │   │   ├── utils/
+│   │   │   └── correo.js            # envio de correo con nodemailer
 │   │   ├── app.js                   # configuración de Express
 │   │   └── server.js                # arranque del servidor
 │   ├── .env                         # no se versiona

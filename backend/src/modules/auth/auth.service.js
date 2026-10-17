@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 
 const authRepository = require('./auth.repository');
 const usuarioService = require('../usuarios/usuario.service');
+const { enviarEnlaceRecuperacion } = require('../../utils/correo');
 
 const ROL_POR_DEFECTO = 'empresa';
 
@@ -56,8 +57,16 @@ async function iniciarSesion(correo, contrasena) {
   }
 
   // Caso 4: autenticacion correcta
+  //
+  // El jti (JWT ID) identifica a esta sesion concreta. Sin el no habria
+  // forma de cerrar sesion en el servidor: todos los tokens de un mismo
+  // usuario serian indistinguibles entre si.
   const token = jwt.sign(
-    { id: usuario.id_usuario, rol: usuario.rol },
+    {
+      id: usuario.id_usuario,
+      rol: usuario.rol,
+      jti: crypto.randomBytes(16).toString('hex')
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '2h' }
   );
@@ -167,13 +176,28 @@ async function solicitarRecuperacion(correo) {
 
   const enlace = `${process.env.APP_URL}/restablecer.html?token=${token}`;
 
-  // Mientras no haya servidor de correo, el enlace se imprime en la consola.
-  // Al conectar nodemailer, basta reemplazar este bloque por el envio real.
+  // El enlace tambien se imprime en la consola: si el envio falla, el
+  // desarrollador sigue teniendo con que probar.
   console.log('--------------------------------------------------');
   console.log('Enlace de recuperacion para', usuario.correo);
   console.log(enlace);
   console.log('Vence:', expiraEn.toLocaleString('es-CO'));
   console.log('--------------------------------------------------');
+
+  // El fallo del correo no se propaga: el token ya quedo guardado y la
+  // respuesta al cliente es siempre la misma, exista o no la cuenta.
+  // Interrumpir aqui con un 500 delataria que el correo si existe.
+  try {
+    const { urlPrevisualizacion } = await enviarEnlaceRecuperacion(usuario.correo, enlace, expiraEn);
+
+    if (urlPrevisualizacion) {
+      console.log('Ver el correo enviado:', urlPrevisualizacion);
+    } else {
+      console.log('Correo de recuperacion enviado a', usuario.correo);
+    }
+  } catch (error) {
+    console.error('No se pudo enviar el correo de recuperacion:', error.message);
+  }
 
   return { enlace };
 }
@@ -224,8 +248,41 @@ async function restablecerContrasena(token, contrasena) {
   console.warn('Contrasena restablecida para el usuario', registro.id_usuario);
 }
 
+/**
+ * RF-02: cierra la sesion en el servidor.
+ *
+ * Un JWT no se puede "borrar": una vez firmado es valido hasta que vence.
+ * Por eso el cierre se implementa anotando el jti del token en la tabla
+ * sesion_revocada, que el middleware de autenticacion consulta en cada
+ * peticion protegida.
+ *
+ * Solo se revoca el token con el que se hizo la peticion. Las demas
+ * sesiones de ese usuario (otro navegador, otro dispositivo) siguen
+ * abiertas, que es el comportamiento que espera cualquiera.
+ *
+ * @param {{jti: string, id: number, expiraEn: Date}} sesion - Datos que el
+ *   middleware extrajo del token verificado.
+ */
+async function cerrarSesion(sesion) {
+  const { jti, id, expiraEn } = sesion;
+
+  await authRepository.revocarSesion(jti, id, expiraEn);
+
+  // Las filas vencidas ya no sirven para nada: el token que representan
+  // seria rechazado por fecha. Se limpian aqui para que la tabla no crezca
+  // sin limite, sin necesidad de una tarea programada.
+  const borradas = await authRepository.limpiarSesionesVencidas();
+
+  if (borradas > 0) {
+    console.log('Sesiones revocadas ya vencidas que se eliminaron:', borradas);
+  }
+
+  console.log('Sesion cerrada para el usuario', id);
+}
+
 module.exports = {
   iniciarSesion,
+  cerrarSesion,
   obtenerPerfil,
   registrar,
   solicitarRecuperacion,

@@ -1,10 +1,12 @@
 // ============================================
 // AUTH.ROUTES.JS — endpoints del modulo Auth
-// Rutas publicas: no requieren token.
+// Casi todas son publicas. La excepcion es el cierre de sesion: para
+// revocar un token hay que presentarlo, asi que exige autenticacion.
 // ============================================
 
 const express = require('express');
 
+const autenticar = require('../../middlewares/auth.middleware');
 const { limitarLogin, limitarRecuperacion } = require('../../middlewares/limite.middleware');
 
 const authController = require('./auth.controller');
@@ -23,6 +25,10 @@ router.post('/registro', validarRegistro, authController.registrar);
 // POST /api/auth/login — inicia sesion y devuelve un JWT
 // RN-03: maximo 5 intentos fallidos; despues se bloquea 15 minutos
 router.post('/login', limitarLogin, validarLogin, authController.iniciarSesion);
+
+// POST /api/auth/logout — cierra la sesion actual (RF-02)
+// Revoca el jti del token recibido; las demas sesiones no se tocan
+router.post('/logout', autenticar, authController.cerrarSesion);
 
 // --- Recuperacion de contrasena (RF-03) ---
 

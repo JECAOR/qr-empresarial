@@ -24,6 +24,22 @@ async function iniciarSesion(req, res, next) {
 }
 
 /**
+ * POST /api/auth/logout — cierra la sesion actual (RF-02).
+ * Requiere token: lo que se revoca es precisamente el token enviado.
+ */
+async function cerrarSesion(req, res, next) {
+  try {
+    await authService.cerrarSesion(req.usuario);
+
+    return res.status(200).json({
+      message: 'Sesión cerrada correctamente'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * POST /api/auth/registro — registro publico de una empresa.
  */
 async function registrar(req, res, next) {
@@ -94,6 +110,7 @@ async function restablecerContrasena(req, res, next) {
 
 module.exports = {
   iniciarSesion,
+  cerrarSesion,
   registrar,
   solicitarRecuperacion,
   validarEnlaceRecuperacion,
