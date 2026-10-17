@@ -126,9 +126,42 @@ function validarEstado(req, res, next) {
   next();
 }
 
+/**
+ * Valida el cuerpo de PUT /api/usuarios/me/contrasena.
+ *
+ * De la contrasena actual solo se comprueba que venga: si esta mal escrita
+ * eso lo resuelve el Service con un 401, no un 400 de formato. La nueva si
+ * tiene que cumplir RN-02, igual que en el registro.
+ */
+function validarCambioContrasena(req, res, next) {
+  const { contrasenaActual, contrasenaNueva } = req.body;
+
+  if (typeof contrasenaActual !== 'string' || !contrasenaActual) {
+    return res.status(400).json({
+      message: 'La contraseña actual es obligatoria'
+    });
+  }
+
+  const esSegura =
+    typeof contrasenaNueva === 'string' &&
+    contrasenaNueva.length >= 8 &&
+    /[A-Z]/.test(contrasenaNueva) &&
+    /[0-9]/.test(contrasenaNueva) &&
+    /[^A-Za-z0-9]/.test(contrasenaNueva);
+
+  if (!esSegura) {
+    return res.status(400).json({
+      message: 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, un número y un símbolo'
+    });
+  }
+
+  next();
+}
+
 module.exports = {
   validarCrearUsuario,
   validarIdUsuario,
   validarActualizarUsuario,
-  validarEstado
+  validarEstado,
+  validarCambioContrasena
 };

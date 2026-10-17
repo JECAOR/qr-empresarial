@@ -35,7 +35,29 @@ async function buscarPorCorreo(correo) {
  */
 async function buscarPorId(idUsuario) {
   const [filas] = await pool.execute(
-    `SELECT id_usuario, nombre, correo, rol, estado
+    `SELECT id_usuario, nombre, correo, rol, estado, sesiones_validas_desde
+     FROM usuario
+     WHERE id_usuario = ? AND deleted_at IS NULL`,
+    [idUsuario]
+  );
+
+  return filas[0];
+}
+
+/**
+ * Busca un usuario por identificador incluyendo la contrasena cifrada.
+ *
+ * Es aparte de buscarPorId porque esa la usa el middleware en cada peticion
+ * protegida, y alli el hash no hace falta: no conviene sacarlo de la base
+ * mas veces de las necesarias. Aqui si, para comprobar la contrasena actual
+ * antes de cambiarla.
+ *
+ * @param {number} idUsuario
+ * @returns {Promise<object|undefined>}
+ */
+async function buscarPorIdConContrasena(idUsuario) {
+  const [filas] = await pool.execute(
+    `SELECT id_usuario, nombre, correo, contrasena, rol, estado
      FROM usuario
      WHERE id_usuario = ? AND deleted_at IS NULL`,
     [idUsuario]
@@ -176,9 +198,38 @@ async function limpiarSesionesVencidas() {
   return resultado.affectedRows;
 }
 
+/**
+ * Cierra todas las sesiones de un usuario (migracion 006).
+ *
+ * No borra tokens: marca el momento del corte. El middleware rechaza despues
+ * cualquier token firmado antes de esa fecha, sin importar cuantos haya ni
+ * desde que dispositivo se emitieron.
+ *
+ * Se llama al restablecer o cambiar la contrasena: si alguien recupero su
+ * cuenta porque se la habian tomado, las sesiones del intruso deben morir ahi.
+ *
+ * @param {number} idUsuario
+ */
+async function cerrarTodasLasSesiones(idUsuario) {
+  const [resultado] = await pool.execute(
+    `UPDATE usuario
+     SET sesiones_validas_desde = NOW()
+     WHERE id_usuario = ? AND deleted_at IS NULL`,
+    [idUsuario]
+  );
+
+  // Las revocaciones una por una de este usuario quedan de sobra: la fecha
+  // de corte ya cubre todos sus tokens anteriores.
+  await pool.execute('DELETE FROM sesion_revocada WHERE id_usuario = ?', [idUsuario]);
+
+  return resultado.affectedRows;
+}
+
 module.exports = {
   buscarPorCorreo,
   buscarPorId,
+  buscarPorIdConContrasena,
+  cerrarTodasLasSesiones,
   revocarSesion,
   sesionRevocada,
   limpiarSesionesVencidas,

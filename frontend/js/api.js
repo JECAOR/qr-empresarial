@@ -108,9 +108,19 @@ const Sesion = {
  * @param {string} [opciones.metodo] - GET por defecto.
  * @param {object} [opciones.cuerpo] - Se envía como JSON.
  * @param {boolean} [opciones.autenticada] - Si adjunta el token. true por defecto.
+ * @param {boolean} [opciones.salirSi401] - Si un 401 significa que la sesión
+ *   dejó de servir. true por defecto, que es lo normal. Se pasa false en los
+ *   endpoints donde un 401 habla de otra cosa: al cambiar la contraseña, el
+ *   401 es "la contraseña actual no es correcta", no "su sesión venció", y
+ *   echar a la persona de la pantalla por escribir mal un campo sería absurdo.
  * @throws {ErrorApi} Con el status de la respuesta, o 0 si no hubo respuesta.
  */
-async function peticion(camino, { metodo = "GET", cuerpo, autenticada = true } = {}) {
+async function peticion(camino, {
+  metodo = "GET",
+  cuerpo,
+  autenticada = true,
+  salirSi401 = true
+} = {}) {
   const cabeceras = {};
 
   if (cuerpo !== undefined) cabeceras["Content-Type"] = "application/json";
@@ -150,7 +160,7 @@ async function peticion(camino, { metodo = "GET", cuerpo, autenticada = true } =
   if (!respuesta.ok) {
     // El token dejó de servir: venció, la cuenta fue restringida o se cerró
     // la sesión. No tiene sentido seguir en una pantalla privada.
-    if (respuesta.status === 401 && autenticada && token) {
+    if (respuesta.status === 401 && autenticada && token && salirSi401) {
       Sesion.limpiar();
       redirigirALogin("sesion-expirada");
     }
@@ -205,7 +215,14 @@ const Api = {
     }),
 
   // Perfil propio
-  miPerfil: () => peticion("/usuarios/me")
+  miPerfil: () => peticion("/usuarios/me"),
+
+  cambiarContrasena: (contrasenaActual, contrasenaNueva) =>
+    peticion("/usuarios/me/contrasena", {
+      metodo: "PUT",
+      cuerpo: { contrasenaActual, contrasenaNueva },
+      salirSi401: false
+    })
 };
 
 // --- Ayudas para las pantallas ---
@@ -246,6 +263,22 @@ async function protegerPantalla() {
 
     return null;
   }
+}
+
+/**
+ * Reemplaza el token de la sesión conservando dónde estaba guardado.
+ *
+ * Lo usa el cambio de contraseña: la operación cierra todas las sesiones de la
+ * cuenta —incluida esta— y el servidor devuelve un token nuevo. Si no se
+ * guardara, la siguiente petición recibiría un 401 y echaría de la pantalla a
+ * quien acaba de cambiar su contraseña.
+ */
+function reemplazarToken(token) {
+  const sesion = Sesion.obtener();
+  if (!sesion) return;
+
+  const enLocal = Boolean(localStorage.getItem(CLAVE_SESION));
+  Sesion.guardar({ token, usuario: sesion.usuario, recordar: enLocal });
 }
 
 /**

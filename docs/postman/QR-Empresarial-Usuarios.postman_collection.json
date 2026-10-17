@@ -44,6 +44,22 @@
     {
       "key": "tokenDesechable",
       "value": ""
+    },
+    {
+      "key": "tokenPrevioAlRestablecer",
+      "value": ""
+    },
+    {
+      "key": "tokenCambio",
+      "value": ""
+    },
+    {
+      "key": "tokenAntesDelCambio",
+      "value": ""
+    },
+    {
+      "key": "tokenDesechable2",
+      "value": ""
     }
   ],
   "item": [
@@ -2296,7 +2312,7 @@
                 "login"
               ]
             },
-            "description": "Cierra el ciclo de RF-03.",
+            "description": "Cierra el ciclo de RF-03. Guarda el token en {{tokenPrevioAlRestablecer}} para comprobar en la peticion 52b que el siguiente restablecimiento lo invalida.",
             "auth": {
               "type": "noauth"
             },
@@ -2317,6 +2333,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenPrevioAlRestablecer', json.data.token);",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));"
                 ]
               }
@@ -2420,6 +2438,47 @@
               }
             }
           ]
+        },
+        {
+          "name": "52b La sesion abierta antes del restablecimiento ya no sirve (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Al restablecer la contrasena se cierran todas las sesiones de la cuenta (migracion 006). Quien recupera su cuenta lo hace muchas veces porque se la tomaron: las sesiones del intruso deben morir ahi.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPrevioAlRestablecer}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Explica el motivo', () => pm.expect(pm.response.json().message).to.include('contraseña'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -2446,7 +2505,7 @@
                 "login"
               ]
             },
-            "description": "Se abre una segunda sesion de la misma empresa. Es la que se cerrara, para no invalidar el token que usan las demas carpetas de la coleccion.",
+            "description": "Primera de dos sesiones propias de esta carpeta. Es la que se cerrara.",
             "auth": {
               "type": "noauth"
             },
@@ -2469,8 +2528,57 @@
                 "exec": [
                   "const json = pm.response.json();",
                   "pm.collectionVariables.set('tokenDesechable', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "53b Login de una segunda sesion (guarda {{tokenDesechable2}})",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Se abren dos sesiones de la misma empresa: se cerrara una y se comprobara que la otra sigue viva. No se reutiliza {{tokenEmpresa}} porque el restablecimiento de la carpeta anterior lo invalido al cerrar todas las sesiones de la cuenta.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenDesechable2', json.data.token);",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Es una sesion distinta', () => pm.expect(json.data.token).to.not.eql(pm.collectionVariables.get('tokenEmpresa')));"
+                  "pm.test('Es una sesion distinta', () => pm.expect(json.data.token).to.not.eql(pm.collectionVariables.get('tokenDesechable')));"
                 ]
               }
             }
@@ -2598,7 +2706,7 @@
           ]
         },
         {
-          "name": "57 La otra sesion sigue abierta (200)",
+          "name": "57 La segunda sesion sigue abierta (200)",
           "request": {
             "method": "GET",
             "header": [],
@@ -2618,7 +2726,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{tokenEmpresa}}",
+                  "value": "{{tokenDesechable2}}",
                   "type": "string"
                 }
               ]
@@ -2665,6 +2773,525 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia 4 - Cambio de contrasena",
+      "item": [
+        {
+          "name": "60 Login para el cambio (guarda el token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Se abre una sesion propia para esta carpeta. El cambio de contrasena cierra todas las sesiones de la cuenta, asi que esta carpeta va al final de la coleccion.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenCambio', json.data.token);",
+                  "// Se guarda aparte para comprobar luego que el cambio lo invalida",
+                  "pm.collectionVariables.set('tokenAntesDelCambio', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "61 Sin la contrasena actual (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "contrasena"
+              ]
+            },
+            "description": "Se exige la contrasena actual aunque el token sea valido: una sesion olvidada en un equipo ajeno no debe bastar para apropiarse de la cuenta.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCambio}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasenaNueva\": \"OtraClave1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "62 Contrasena actual equivocada (401)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "contrasena"
+              ]
+            },
+            "description": "El 401 de este endpoint significa que la contrasena actual esta mal, no que la sesion haya vencido.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCambio}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasenaActual\": \"la-que-no-es\",\n  \"contrasenaNueva\": \"OtraClave1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "63 Contrasena nueva debil (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "contrasena"
+              ]
+            },
+            "description": "RN-02 tambien aplica aqui.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCambio}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasenaActual\": \"Clave123*\",\n  \"contrasenaNueva\": \"12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "64 Contrasena nueva igual a la actual (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "contrasena"
+              ]
+            },
+            "description": "Cambiarla por la misma no cerraria ninguna sesion ni mejoraria nada.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCambio}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasenaActual\": \"Clave123*\",\n  \"contrasenaNueva\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "65 Cambiar la contrasena (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "contrasena"
+              ]
+            },
+            "description": "Guarda el token nuevo en {{tokenCambio}}.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCambio}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasenaActual\": \"Clave123*\",\n  \"contrasenaNueva\": \"OtraClave1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenCambio', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un token nuevo', () => pm.expect(json.data.token).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "66 El token anterior al cambio ya no sirve (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "El cambio cierra todas las sesiones, incluida la que hizo la peticion.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAntesDelCambio}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "67 El token nuevo si sirve (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Por eso el endpoint devuelve uno nuevo: quien cambia su contrasena sigue trabajando sin volver a entrar, y los demas dispositivos quedan fuera.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCambio}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "68 Devolver la contrasena a Clave123* (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/contrasena",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "contrasena"
+              ]
+            },
+            "description": "Deja la cuenta como estaba, para que la coleccion se pueda repetir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCambio}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasenaActual\": \"OtraClave1*\",\n  \"contrasenaNueva\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenCambio', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un token nuevo', () => pm.expect(json.data.token).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "69 Login con Clave123* (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Confirma que la contrasena quedo restaurada.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
                 ]
               }
             }
