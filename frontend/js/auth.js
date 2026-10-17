@@ -1,6 +1,11 @@
 // ============================================
 // AUTH.JS — lógica compartida de Login y Registro
 // (sin frameworks: DOM + eventos puros)
+//
+// La validación se hace aquí para avisar sin esperar al servidor, pero no
+// sustituye la del backend: es la del backend la que manda. Lo mismo vale
+// para la fuerza de la contraseña, que aquí es una guía visual y allá es la
+// regla RN-02.
 // ============================================
 
 // --- Mostrar / ocultar contraseña ---
@@ -12,6 +17,37 @@ document.querySelectorAll(".toggle-password").forEach((toggle) => {
     toggle.setAttribute("aria-label", isHidden ? "Ocultar contraseña" : "Mostrar contraseña");
   });
 });
+
+// --- Avisos generales del formulario ---
+// Para lo que no pertenece a un campo concreto: credenciales inválidas,
+// correo ya registrado, servidor apagado.
+function mostrarAviso(mensaje, tipo = "error") {
+  const aviso = document.getElementById("form-alert");
+  if (!aviso) return;
+
+  aviso.textContent = mensaje;
+  aviso.className = "form-alert form-alert--" + (tipo === "ok" ? "ok" : "error");
+  aviso.hidden = false;
+}
+
+function ocultarAviso() {
+  const aviso = document.getElementById("form-alert");
+  if (aviso) aviso.hidden = true;
+}
+
+// Mientras se espera al servidor: evita el doble envío y lo hace visible
+function ocupar(boton, textoEspera) {
+  const original = boton.innerHTML;
+  boton.disabled = true;
+  boton.setAttribute("aria-busy", "true");
+  boton.textContent = textoEspera;
+
+  return function liberar() {
+    boton.disabled = false;
+    boton.removeAttribute("aria-busy");
+    boton.innerHTML = original;
+  };
+}
 
 // --- Validación simple al enviar el formulario ---
 function validarFormulario(form) {
@@ -43,11 +79,41 @@ function validarFormulario(form) {
 // --- Formulario de Login ---
 const loginForm = document.getElementById("login-form");
 if (loginForm) {
-  loginForm.addEventListener("submit", (e) => {
+  // Si llegó aquí porque su sesión dejó de servir, conviene explicarlo:
+  // de lo contrario parecería que la aplicación lo expulsó sin motivo.
+  if (new URLSearchParams(window.location.search).get("motivo") === "sesion-expirada") {
+    mostrarAviso("Su sesión terminó. Inicie sesión de nuevo.", "error");
+  }
+
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (validarFormulario(loginForm)) {
-      // Aquí, más adelante, se conectará con el backend real (fase de base de datos).
+    ocultarAviso();
+
+    if (!validarFormulario(loginForm)) return;
+
+    const boton = loginForm.querySelector('button[type="submit"]');
+    const liberar = ocupar(boton, "Verificando...");
+
+    try {
+      const respuesta = await Api.iniciarSesion(
+        document.getElementById("email").value.trim(),
+        document.getElementById("password").value
+      );
+
+      Sesion.guardar({
+        token: respuesta.data.token,
+        usuario: respuesta.data.usuario,
+        recordar: document.getElementById("remember").checked
+      });
+
       window.location.href = "dashboard.html";
+    } catch (error) {
+      liberar();
+
+      // El backend responde lo mismo para correo inexistente, contraseña
+      // equivocada y cuenta restringida, a propósito: así nadie averigua
+      // qué correos están registrados probando uno por uno.
+      mostrarAviso(error.message);
     }
   });
 }
@@ -83,8 +149,9 @@ if (registerForm) {
     strengthLabel.style.color = color;
   });
 
-  registerForm.addEventListener("submit", (e) => {
+  registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    ocultarAviso();
 
     const pass = registerForm.querySelector("#password");
     const confirm = registerForm.querySelector("#confirm-password");
@@ -106,9 +173,75 @@ if (registerForm) {
       valido = false;
     }
 
-    if (valido) {
-      // Aquí, más adelante, se conectará con el backend real (fase de base de datos).
+    if (!valido) return;
+
+    const boton = registerForm.querySelector('button[type="submit"]');
+    const liberar = ocupar(boton, "Creando la cuenta...");
+
+    const nombre = document.getElementById("fullname").value.trim();
+    const correo = document.getElementById("reg-email").value.trim();
+
+    try {
+      // La cuenta se crea con el rol "empresa"; el backend ignora cualquier
+      // otro rol que llegue en la petición.
+      await Api.registrar(nombre, correo, pass.value);
+
+      // Se inicia sesión en seguida, para no pedir los mismos datos otra vez
+      const respuesta = await Api.iniciarSesion(correo, pass.value);
+
+      Sesion.guardar({
+        token: respuesta.data.token,
+        usuario: respuesta.data.usuario,
+        recordar: true
+      });
+
+      guardarDatosDelNegocio(correo);
+
       window.location.href = "dashboard.html";
+    } catch (error) {
+      liberar();
+
+      // El correo repetido es el único error que se puede señalar en su campo
+      if (error.status === 409) {
+        const campoCorreo = document.getElementById("reg-email").closest(".form-field");
+        campoCorreo.classList.add("has-error");
+        campoCorreo.querySelector(".form-error").textContent = error.message;
+      }
+
+      mostrarAviso(error.message);
     }
   });
+}
+
+/**
+ * Guarda los datos del paso 2 del registro.
+ *
+ * El perfil empresarial todavía no tiene endpoints: es el módulo 2 del
+ * proyecto (RF-04). Hasta entonces se conservan en el navegador, igual que
+ * hacen las demás pantallas, para que el panel muestre el negocio que la
+ * persona acaba de registrar en lugar del de ejemplo.
+ */
+function guardarDatosDelNegocio(correoDeLaCuenta) {
+  const campo = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  };
+
+  const nombre = campo("reg-biz-name");
+  if (!nombre) return;
+
+  try {
+    const actuales = getBusinessData();
+
+    saveBusinessData({
+      ...actuales,
+      name: nombre,
+      category: campo("reg-biz-category") || actuales.category,
+      address: campo("reg-biz-address") || actuales.address,
+      phone: campo("reg-biz-phone") || actuales.phone,
+      email: correoDeLaCuenta || actuales.email
+    });
+  } catch (error) {
+    console.warn("No se pudieron guardar los datos del negocio:", error.message);
+  }
 }

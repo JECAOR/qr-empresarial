@@ -159,3 +159,37 @@
   padding: 3px 10px;
   border-radius: 20px;
 }
+
+/* --- Aviso general de un formulario ---
+   Para los mensajes que no pertenecen a un campo concreto, como
+   "credenciales inválidas" o "el correo ya está registrado". */
+.form-alert {
+  font-size: 12.5px;
+  line-height: 1.45;
+  border-radius: 10px;
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  border: 1px solid transparent;
+}
+
+.form-alert[hidden] {
+  display: none;
+}
+
+.form-alert--error {
+  background: #FEF2F2;
+  border-color: #FECACA;
+  color: #991B1B;
+}
+
+.form-alert--ok {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #065F46;
+}
+
+/* Botón que espera la respuesta del servidor */
+.btn-primary[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}

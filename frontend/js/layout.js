@@ -70,13 +70,13 @@ function renderSidebar() {
         ).join("")}
         <span class="sidebar-theme-label">${THEMES_LIST.find((t) => t.id === getStoredTheme()).label}</span>
       </div>
-      <div class="sidebar-user">
+      <div class="sidebar-user" title="${escapeHtml(correoDeLaCuenta())}">
         <div class="sidebar-avatar">${escapeHtml(getBusinessInitials(getBusinessData().name))}</div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name">${escapeHtml(getBusinessData().name)}</div>
-          <div class="sidebar-user-plan">Plan Pro</div>
+          <div class="sidebar-user-plan">${escapeHtml(rolDeLaCuenta())}</div>
         </div>
-        <a href="login.html" class="sidebar-logout" title="Cerrar sesión" aria-label="Cerrar sesión">${icon("log-out", 13)}</a>
+        <button type="button" id="sidebar-logout" class="sidebar-logout" title="Cerrar sesión" aria-label="Cerrar sesión">${icon("log-out", 13)}</button>
       </div>
     </div>
   `;
@@ -84,6 +84,48 @@ function renderSidebar() {
   el.querySelectorAll(".sidebar-theme-dot").forEach((btn) => {
     btn.addEventListener("click", () => setTheme(btn.dataset.themeId));
   });
+
+  // Cierre de sesión real (RF-02): avisa al servidor y borra el token.
+  // Antes era un enlace a login.html, que no cerraba nada.
+  const botonSalir = el.querySelector("#sidebar-logout");
+
+  if (botonSalir) {
+    botonSalir.addEventListener("click", () => {
+      if (typeof cerrarSesionYSalir === "function") {
+        cerrarSesionYSalir();
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+  }
+}
+
+/**
+ * Datos de la cuenta con la que se inició sesión.
+ *
+ * El nombre grande de la barra es el del negocio, que se edita en
+ * Configuración y se comparte con el resto de las pantallas. Lo que aporta la
+ * sesión es con qué cuenta se entró: el rol debajo y el correo en el tooltip.
+ *
+ * Puede no haber sesión —al abrir la pantalla con file://, por ejemplo—, y
+ * entonces se deja un texto neutro en lugar de nada.
+ */
+function cuentaActual() {
+  return typeof Sesion !== "undefined" ? Sesion.usuario() : null;
+}
+
+function correoDeLaCuenta() {
+  const cuenta = cuentaActual();
+
+  return cuenta && cuenta.correo ? cuenta.correo : "Sin sesión activa";
+}
+
+function rolDeLaCuenta() {
+  const cuenta = cuentaActual();
+
+  if (!cuenta || !cuenta.rol) return "Cuenta";
+
+  return cuenta.rol.charAt(0).toUpperCase() + cuenta.rol.slice(1);
 }
 
 function renderTopBar(title, subtitle, actionHtml = "") {

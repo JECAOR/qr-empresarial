@@ -5,13 +5,21 @@
 // landmark semántico, esta prueba lo va a atrapar.
 // ============================================
 const { test, expect } = require("@playwright/test");
+const { prepararSesion } = require("./ayudas");
 const AxeBuilder = require("@axe-core/playwright").default;
 
 const PAGINAS = [
-  "login.html", "register.html", "forgot-password.html", "dashboard.html",
-  "contenido.html", "qr.html", "configuracion.html", "public.html",
-  "menu.html", "404.html",
+  "login.html", "register.html", "forgot-password.html", "restablecer.html",
+  "dashboard.html", "contenido.html", "qr.html", "configuracion.html",
+  "public.html", "menu.html", "404.html",
 ];
+
+// Las pantallas privadas necesitan sesión, y el frontend ya consulta la API:
+// se simula la respuesta para no depender del backend (ver ayudas.js).
+test.beforeEach(async ({ page }) => {
+  await prepararSesion(page);
+});
+
 
 for (const pagina of PAGINAS) {
   test(`${pagina} no tiene violaciones de accesibilidad (WCAG 2 A/AA)`, async ({ page }) => {

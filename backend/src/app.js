@@ -5,6 +5,9 @@
 // sin ocupar el puerto.
 // ============================================
 
+const path = require('path');
+
+const cors = require('cors');
 const express = require('express');
 
 const authRoutes = require('./modules/auth/auth.routes');
@@ -13,8 +16,38 @@ const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
 
+// --- CORS ---
+//
+// El navegador bloquea las peticiones entre origenes distintos salvo que el
+// servidor las autorice. Hace falta porque el frontend puede servirse desde
+// otro puerto: las pruebas de Playwright lo publican en el 4173, y Live
+// Server de VS Code suele usar el 5500.
+//
+// En desarrollo se acepta cualquier origen, para no tener que registrar cada
+// puerto que se use al probar. En produccion solo los de CORS_ORIGINS, que es
+// una lista separada por comas.
+const origenesPermitidos = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? origenesPermitidos : true
+}));
+
 // Permite recibir informacion en formato JSON desde el frontend o Postman
 app.use(express.json());
+
+// --- Frontend ---
+//
+// El backend publica tambien las pantallas, de modo que toda la aplicacion
+// queda en una sola direccion (http://localhost:3000) y no hace falta un
+// segundo servidor. Importa para el RF-03: el enlace del correo de
+// recuperacion apunta a este mismo origen.
+//
+// Va antes de las rutas de la API, pero no las tapa: estas viven bajo /api,
+// y ahi no hay archivos que servir.
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
 
 // Endpoint de comprobacion: verifica que la API esta en funcionamiento
 app.get('/api/health', (req, res) => {
@@ -25,8 +58,14 @@ app.get('/api/health', (req, res) => {
 });
 
 // Rutas de cada modulo
-app.use('/api/auth', authRoutes);          // publicas: login y registro
+app.use('/api/auth', authRoutes);          // publicas, salvo el cierre de sesion
 app.use('/api/usuarios', usuarioRoutes);
+
+// Cualquier otra ruta /api/... no existe: se responde en JSON, no con el
+// HTML que Express devuelve por defecto, porque quien llama espera JSON.
+app.use('/api', (req, res) => {
+  res.status(404).json({ message: 'Recurso no encontrado' });
+});
 
 // Middleware global de errores: siempre despues de las rutas
 app.use(errorHandler);

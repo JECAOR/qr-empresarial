@@ -11,12 +11,13 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 |---|---|
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
 | Base de datos MySQL `qr_empresarial` (9 tablas, 4 migraciones) | Implementada |
-| Frontend HTML/CSS/JS (11 pantallas, PWA, pruebas Playwright) | Implementado con datos en `localStorage` |
+| Frontend HTML/CSS/JS (12 pantallas, PWA, pruebas Playwright) | Implementado. Autenticación conectada a la API; el resto de las pantallas sigue con datos en `localStorage` |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
 | Backend — recuperación de contraseña y límite de intentos | Terminado (`v0.6.0`) |
 | Backend — cierre de sesión y envío del enlace por correo | Terminado (`v0.7.0`) |
+| Frontend conectado a la API (registro, inicio y cierre de sesión, recuperación) | Terminado (`v0.8.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -30,6 +31,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v0.5.0` | Autenticación con JWT, autorización por roles y registro público |
 | `v0.6.0` | Recuperación de contraseña (RF-03) y límite de intentos de inicio de sesión (RN-03) |
 | `v0.7.0` | Cierre de sesión (RF-02) y envío del enlace de recuperación por correo (RF-03) |
+| `v0.8.0` | Frontend conectado a la API: los RF-01 a RF-03 funcionan desde las pantallas |
 
 ## API disponible
 
@@ -157,6 +159,9 @@ qr-empresarial/
 │   ├── .env.example
 │   └── package.json
 ├── frontend/                        # HTML, css/, js/, js/vendor/, assets/, tests/ (Playwright)
+│   ├── js/api.js                    # cliente de la API y manejo de la sesion
+│   ├── js/guardia.js                # protege las pantallas privadas
+│   └── restablecer.html             # pantalla del enlace de recuperacion
 ├── database/
 │   ├── schema.sql
 │   └── migrations/
@@ -209,6 +214,7 @@ mysql -u root -p qr_empresarial < database/migrations/001-agregar-rol-slug-event
 mysql -u root -p qr_empresarial < database/migrations/002-renombrar-columna-contrasena.sql
 mysql -u root -p qr_empresarial < database/migrations/003-agregar-deleted-at-usuario.sql
 mysql -u root -p qr_empresarial < database/migrations/004-crear-token-recuperacion.sql
+mysql -u root -p qr_empresarial < database/migrations/005-crear-sesion-revocada.sql
 
 # 2. Backend
 cd backend
@@ -217,16 +223,32 @@ cp .env.example .env      # completar DB_PASSWORD y generar JWT_SECRET
 npm run dev               # servidor con nodemon en http://localhost:3000
 
 # 3. Comprobación
-# GET http://localhost:3000/api/health  →  {"status":"ok"}
+# GET  http://localhost:3000/api/health  →  {"status":"ok"}
+# Abra http://localhost:3000/login.html  →  la aplicación completa
 
-# 4. Frontend (pruebas E2E existentes)
+# 4. Pruebas del frontend
 cd ../frontend
 npm install
 npx playwright install chromium
-npm test
+npm test                  # no necesita el backend encendido: simula la API
 ```
 
-Variables de entorno (`backend/.env`): `PORT`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`, `JWT_SECRET` y `JWT_EXPIRES_IN`. El secreto se genera con el comando que aparece como comentario en `.env.example`. El archivo nunca se versiona; use `.env.example` como plantilla.
+El backend publica también las pantallas, así que **toda la aplicación vive en
+`http://localhost:3000`**: no hace falta un segundo servidor. Esto importa para
+el RF-03, porque el enlace del correo de recuperación apunta a ese mismo origen.
+
+Si prefiere servir el frontend aparte (Live Server, `http-server`), funciona
+igual: `js/api.js` detecta que no está en el puerto 3000 y apunta al backend, y
+el backend autoriza esas peticiones por CORS. Para fijar otra dirección de la
+API, defina `window.QR_API_URL` antes de cargar `js/api.js`.
+
+Variables de entorno (`backend/.env`): `PORT`, `DB_HOST`, `DB_USER`,
+`DB_PASSWORD`, `DB_NAME`, `DB_PORT`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `APP_URL`,
+`RECUPERACION_EXPIRA_MINUTOS`, `CORS_ORIGINS` y las `SMTP_*` del envío de
+correo. El secreto se genera con el comando que aparece como comentario en
+`.env.example`. Sin `SMTP_*`, y fuera de producción, el enlace de recuperación
+se envía a una cuenta de prueba de Ethereal y su URL queda en la consola. El
+archivo `.env` nunca se versiona; use `.env.example` como plantilla.
 
 ## Autor
 
