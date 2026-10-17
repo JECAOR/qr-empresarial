@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.0.0
+- **Versión:** v1.1.0
 
 ## Resumen
 
@@ -21,6 +21,8 @@ Documentación de los endpoints disponibles.
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
 | PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
+| GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
+| PUT | `/perfiles/me` | Autenticado | Crear o actualizar el perfil empresarial |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -487,9 +489,92 @@ Eliminación lógica. El registro permanece en la base para no romper las relaci
 
 ---
 
+## Perfil empresarial
+
+El perfil es lo que ve quien escanea el código QR. Hay **uno por cuenta**: la columna
+`id_usuario` es única desde la migración 007, y de eso depende el RF-07 («un QR único por
+perfil empresarial»).
+
+**Se crea al registrarse**, en la misma transacción que la cuenta. Así ninguna cuenta queda
+sin perfil, y la API se reduce a consultar y actualizar «mi perfil»: no hace falta un POST ni
+manejar el estado «todavía no existe» en cada pantalla.
+
+**El `slug` es la parte legible de la URL pública** (`/p/panaderia-dona-luz`). Se genera del
+nombre del negocio quitando tildes y espacios, y si ya está tomado se le agrega un sufijo:
+`panaderia-dona-luz-2`. **No cambia nunca**, ni cuando se renombra el negocio: si cambiara,
+los códigos QR ya impresos dejarían de funcionar, que es justo lo que el RF-09 debe evitar.
+
+### GET /api/perfiles/me
+
+**Respuesta 200**
+
+```json
+{
+  "data": {
+    "idPerfil": 7,
+    "nombreNegocio": "Panadería Doña Luz",
+    "categoria": "Panadería artesanal",
+    "descripcion": "Pan de masa madre horneado cada mañana.",
+    "direccion": "Calle 12 #3-45, Bogotá",
+    "telefono": "+57 300 111 2233",
+    "correoContacto": "hola@donaluz.co",
+    "instagram": "@panaderiadonaluz",
+    "horario": "Lun-Sáb 6:00–19:00",
+    "imagen": "https://ejemplo.co/logo.png",
+    "slug": "panaderia-dona-luz",
+    "urlPublica": "/p/panaderia-dona-luz",
+    "fechaCreacion": "2026-10-17T20:15:00.000Z",
+    "fechaActualizacion": "2026-10-17T21:02:11.000Z"
+  }
+}
+```
+
+**Errores:** 401 (sin token o inválido), 404 (la cuenta no tiene perfil). El 404 le ocurre a
+las cuentas que creó el administrador con `POST /api/usuarios` y a las registradas antes de
+que el registro creara el perfil; se resuelve con un PUT.
+
+---
+
+### PUT /api/perfiles/me
+
+**Cuerpo**
+
+```json
+{
+  "nombreNegocio": "Panadería Doña Luz",
+  "categoria": "Panadería artesanal",
+  "descripcion": "Pan de masa madre horneado cada mañana.",
+  "direccion": "Calle 12 #3-45, Bogotá",
+  "telefono": "+57 300 111 2233",
+  "correoContacto": "hola@donaluz.co",
+  "instagram": "@panaderiadonaluz",
+  "horario": "Lun-Sáb 6:00–19:00",
+  "imagen": "https://ejemplo.co/logo.png"
+}
+```
+
+Devuelve el perfil completo, igual que el GET, con la `fechaActualizacion` recién puesta.
+
+**Reemplaza el perfil completo**, como corresponde a un PUT: los campos que no se envíen
+quedan vacíos. El formulario de Configuración los manda todos siempre. Si la cuenta no tenía
+perfil, se crea; así la pantalla no tiene que distinguir entre crear y editar.
+
+**Validación (RF-10).** El nombre del negocio es obligatorio (mínimo 2 caracteres). Se valida
+el formato del correo de contacto, del usuario de Instagram —letras, números, puntos y
+guiones bajos, con o sin arroba— y de la URL de la imagen. De las URL **solo se aceptan
+`http` y `https`**: un `javascript:` llegaría a la vista pública y sería un agujero de
+seguridad. Los campos opcionales que lleguen vacíos se guardan como `NULL`, para que «sin
+teléfono» y «teléfono en blanco» no sean dos cosas distintas en la base.
+
+**El `slug` no se acepta en el cuerpo:** lo decide el servidor y no se puede cambiar.
+
+**Errores:** 400 (falta el nombre; algún formato o largo inválido), 401 (sin token).
+
+---
+
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 82 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 94 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 

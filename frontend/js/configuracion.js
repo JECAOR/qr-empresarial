@@ -34,32 +34,77 @@ function loadBusinessForm() {
   document.getElementById("biz-email").value = biz.email;
   document.getElementById("biz-instagram").value = biz.instagram;
   document.getElementById("biz-hours").value = biz.hours;
+  document.getElementById("biz-image").value = biz.image || "";
 }
 loadBusinessForm();
 
+// La guardia trae el perfil del servidor despues de que esta pantalla ya se
+// dibujo: cuando llega, se vuelve a llenar el formulario con lo que hay
+// guardado de verdad.
+window.addEventListener("perfil:sincronizado", loadBusinessForm);
+
 // --- Guardar información del negocio (localStorage — persiste de verdad) ---
-businessForm.addEventListener("submit", (e) => {
+businessForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  saveBusinessData({
-    name: document.getElementById("biz-name").value.trim(),
-    category: document.getElementById("biz-category").value.trim(),
-    description: document.getElementById("biz-desc").value.trim(),
-    address: document.getElementById("biz-address").value.trim(),
-    phone: document.getElementById("biz-phone").value.trim(),
-    email: document.getElementById("biz-email").value.trim(),
-    instagram: document.getElementById("biz-instagram").value.trim(),
-    hours: document.getElementById("biz-hours").value.trim(),
-    // La calificación y las reseñas no las edita el dueño directamente
-    // (vendrían de reseñas reales de clientes), se conservan tal cual.
-    rating: getBusinessData().rating,
-    reviews: getBusinessData().reviews,
-  });
+  const campo = (id) => document.getElementById(id).value.trim();
+  const marcar = (id, mal) => {
+    document.getElementById(id).closest(".form-field").classList.toggle("has-error", mal);
+  };
 
-  showSavedToast("business-saved-toast");
-  // El sidebar de esta misma página también refleja el cambio al instante.
-  renderSidebar();
-  // Aquí, más adelante, esto también se enviará a un backend real (fase de base de datos).
+  // RF-10: campos obligatorios y formato. El servidor valida lo mismo; esto
+  // solo adelanta el aviso para no esperar la respuesta.
+  const nombre = campo("biz-name");
+  marcar("biz-name", nombre.length < 2);
+
+  const imagen = campo("biz-image");
+  const imagenMal = Boolean(imagen) && !/^https?:\/\//i.test(imagen);
+  marcar("biz-image", imagenMal);
+
+  if (nombre.length < 2 || imagenMal) {
+    mostrarToast("business-saved-toast", "Revise los campos marcados", "error");
+    return;
+  }
+
+  const datosLocales = {
+    name: nombre,
+    category: campo("biz-category"),
+    description: campo("biz-desc"),
+    address: campo("biz-address"),
+    phone: campo("biz-phone"),
+    email: campo("biz-email"),
+    instagram: campo("biz-instagram"),
+    hours: campo("biz-hours"),
+    image: imagen
+  };
+
+  const boton = businessForm.querySelector('button[type="submit"]');
+  const textoOriginal = boton.textContent;
+  boton.disabled = true;
+  boton.setAttribute("aria-busy", "true");
+  boton.textContent = "Guardando...";
+
+  try {
+    const respuesta = await Api.guardarMiPerfilEmpresarial(datosLocalesAPerfilApi(datosLocales));
+
+    // Se guarda lo que devolvió el servidor, no lo que se envió: el slug y la
+    // fecha de actualización los decide él.
+    saveBusinessData({
+      ...getBusinessData(),
+      ...perfilApiADatosLocales(respuesta.data)
+    });
+
+    mostrarToast("business-saved-toast", "✓ Cambios guardados");
+
+    // El sidebar de esta misma página también refleja el cambio al instante.
+    renderSidebar();
+  } catch (error) {
+    mostrarToast("business-saved-toast", error.message, "error");
+  } finally {
+    boton.disabled = false;
+    boton.removeAttribute("aria-busy");
+    boton.textContent = textoOriginal;
+  }
 });
 
 // --- Sesión (RF-02) ---
@@ -87,12 +132,26 @@ function prepararCierreDeSesion() {
 
 prepararCierreDeSesion();
 
-function showSavedToast(id) {
+/**
+ * Muestra un aviso junto al botón de guardar de una tarjeta.
+ * @param {string} id - Elemento del aviso.
+ * @param {string} texto
+ * @param {"ok"|"error"} [tipo]
+ */
+function mostrarToast(id, texto, tipo = "ok") {
   const toast = document.getElementById(id);
-  toast.textContent = "✓ Cambios guardados";
+
+  toast.textContent = texto;
+  toast.style.color = tipo === "error" ? "#B91C1C" : "";
   toast.classList.add("show");
+
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove("show"), 2200);
+  // Los errores se dejan más tiempo: hay que leerlos, no solo verlos pasar
+  toast._t = setTimeout(() => toast.classList.remove("show"), tipo === "error" ? 4000 : 2200);
+}
+
+function showSavedToast(id) {
+  mostrarToast(id, "✓ Cambios guardados");
 }
 
 // --- Notificaciones (persistidas de verdad en localStorage) ---
@@ -237,20 +296,8 @@ passwordForm.addEventListener("submit", async (e) => {
   }
 });
 
-/**
- * Reutiliza el aviso que ya existe junto al boton de guardar.
- * showSavedToast siempre dice "Cambios guardados"; aqui hace falta mostrar
- * tambien los errores que devuelve el servidor.
- */
 function mostrarMensajeContrasena(texto, tipo = "ok") {
-  const toast = document.getElementById("password-saved-toast");
-
-  toast.textContent = texto;
-  toast.style.color = tipo === "error" ? "#B91C1C" : "";
-  toast.classList.add("show");
-
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove("show"), 4000);
+  mostrarToast("password-saved-toast", texto, tipo);
 }
 
 // --- Eliminar cuenta (con confirmación mediante <dialog> nativo) ---

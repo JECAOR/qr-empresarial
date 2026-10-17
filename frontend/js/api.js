@@ -187,10 +187,14 @@ const Api = {
 
   cerrarSesion: () => peticion("/auth/logout", { metodo: "POST" }),
 
-  registrar: (nombre, correo, contrasena) =>
+  // El negocio es opcional: son los datos del paso 2 del registro. Con ellos
+  // el backend crea la cuenta y su perfil empresarial en una sola operación.
+  registrar: (nombre, correo, contrasena, negocio) =>
     peticion("/auth/registro", {
       metodo: "POST",
-      cuerpo: { nombre, correo, contrasena },
+      cuerpo: negocio
+        ? { nombre, correo, contrasena, negocio }
+        : { nombre, correo, contrasena },
       autenticada: false
     }),
 
@@ -216,6 +220,14 @@ const Api = {
 
   // Perfil propio
   miPerfil: () => peticion("/usuarios/me"),
+
+  // Perfil empresarial (RF-04). Es el del negocio, no el de la cuenta.
+  miPerfilEmpresarial: () => peticion("/perfiles/me"),
+
+  // PUT reemplaza el perfil completo: hay que enviar todos los campos, no
+  // solo los que cambiaron, o los ausentes quedan vacíos.
+  guardarMiPerfilEmpresarial: (datos) =>
+    peticion("/perfiles/me", { metodo: "PUT", cuerpo: datos }),
 
   cambiarContrasena: (contrasenaActual, contrasenaNueva) =>
     peticion("/usuarios/me/contrasena", {

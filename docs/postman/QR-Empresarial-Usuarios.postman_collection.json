@@ -64,6 +64,14 @@
     {
       "key": "tokenEliminar",
       "value": ""
+    },
+    {
+      "key": "tokenPerfil",
+      "value": ""
+    },
+    {
+      "key": "slugPerfil",
+      "value": ""
     }
   ],
   "item": [
@@ -3695,6 +3703,628 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia 5 - Perfil empresarial (RF-04 y RF-10)",
+      "item": [
+        {
+          "name": "78 Registrar una cuenta con datos del negocio (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/registro",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ]
+            },
+            "description": "La cuenta y su perfil empresarial se crean en una misma transaccion: nunca queda una cuenta sin perfil. El slug sale del nombre del negocio, sin tildes ni enes.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos Mendoza\",\n  \"correo\": \"perfil.prueba@ejemplo.co\",\n  \"contrasena\": \"PerfilPrueba1*\",\n  \"negocio\": {\n    \"nombreNegocio\": \"Café Aromas del Quindío\",\n    \"categoria\": \"Cafetería\",\n    \"direccion\": \"Carrera 7 #18-20, Armenia\",\n    \"telefono\": \"+57 310 555 4433\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('slugPerfil', json.data.slug);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Devuelve el slug del perfil', () => pm.expect(json.data.slug).to.be.a('string').and.not.empty);",
+                  "pm.test('El slug no lleva tildes ni espacios', () => pm.expect(json.data.slug).to.match(/^[a-z0-9-]+$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "79 Login con esa cuenta (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Guarda el token en {{tokenPerfil}}.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"perfil.prueba@ejemplo.co\",\n  \"contrasena\": \"PerfilPrueba1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenPerfil', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "80 Consultar el perfil propio (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "Trae el perfil que se creo al registrarse, con los datos del paso 2 del formulario.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const p = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Conserva los datos del registro', () => {",
+                  "  pm.expect(p.telefono).to.eql('+57 310 555 4433');",
+                  "  pm.expect(p.direccion).to.include('Armenia');",
+                  "});",
+                  "pm.test('Trae la direccion publica', () => pm.expect(p.urlPublica).to.eql('/p/' + p.slug));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "81 Consultar sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "Cada cuenta solo ve su propio perfil.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "82 Guardar sin el nombre del negocio (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "RF-10: el nombre es obligatorio.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Un negocio sin nombre\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "83 Guardar con un correo de contacto invalido (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "RF-10: formato del correo.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Café Aromas del Quindío\",\n  \"categoria\": \"Cafetería\",\n  \"descripcion\": \"Café de origen tostado en casa.\",\n  \"direccion\": \"Carrera 7 #18-20, Armenia\",\n  \"telefono\": \"+57 310 555 4433\",\n  \"correoContacto\": \"no-es-un-correo\",\n  \"instagram\": \"@aromasdelquindio\",\n  \"horario\": \"Lun-Sáb 7:00–20:00\",\n  \"imagen\": \"https://ejemplo.co/logo.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "84 Guardar con una imagen que no es una URL (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "RF-10: formato de las URL.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Café Aromas del Quindío\",\n  \"categoria\": \"Cafetería\",\n  \"descripcion\": \"Café de origen tostado en casa.\",\n  \"direccion\": \"Carrera 7 #18-20, Armenia\",\n  \"telefono\": \"+57 310 555 4433\",\n  \"correoContacto\": \"hola@aromas.co\",\n  \"instagram\": \"@aromasdelquindio\",\n  \"horario\": \"Lun-Sáb 7:00–20:00\",\n  \"imagen\": \"asdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "85 Guardar una imagen con javascript: (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "Solo se aceptan http y https. Un 'javascript:' en la vista publica seria un agujero de seguridad.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Café Aromas del Quindío\",\n  \"categoria\": \"Cafetería\",\n  \"descripcion\": \"Café de origen tostado en casa.\",\n  \"direccion\": \"Carrera 7 #18-20, Armenia\",\n  \"telefono\": \"+57 310 555 4433\",\n  \"correoContacto\": \"hola@aromas.co\",\n  \"instagram\": \"@aromasdelquindio\",\n  \"horario\": \"Lun-Sáb 7:00–20:00\",\n  \"imagen\": \"javascript:alert(1)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "86 Guardar con un instagram invalido (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Café Aromas del Quindío\",\n  \"categoria\": \"Cafetería\",\n  \"descripcion\": \"Café de origen tostado en casa.\",\n  \"direccion\": \"Carrera 7 #18-20, Armenia\",\n  \"telefono\": \"+57 310 555 4433\",\n  \"correoContacto\": \"hola@aromas.co\",\n  \"instagram\": \"no vale esto!\",\n  \"horario\": \"Lun-Sáb 7:00–20:00\",\n  \"imagen\": \"https://ejemplo.co/logo.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "87 Guardar el perfil completo (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "PUT reemplaza el perfil completo: hay que enviar todos los campos, no solo los que cambiaron.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Café Aromas del Quindío\",\n  \"categoria\": \"Cafetería\",\n  \"descripcion\": \"Café de origen tostado en casa.\",\n  \"direccion\": \"Carrera 7 #18-20, Armenia\",\n  \"telefono\": \"+57 310 555 4433\",\n  \"correoContacto\": \"hola@aromas.co\",\n  \"instagram\": \"@aromasdelquindio\",\n  \"horario\": \"Lun-Sáb 7:00–20:00\",\n  \"imagen\": \"https://ejemplo.co/logo.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const p = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Guarda el horario con tildes', () => pm.expect(p.horario).to.include('Sáb'));",
+                  "pm.test('Registra la fecha de actualizacion', () => pm.expect(p.fechaActualizacion).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "88 Renombrar el negocio no cambia la direccion publica (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "RF-09: un codigo QR ya impreso debe seguir llevando al mismo perfil, asi que el slug se fija al crearlo y no sigue al nombre.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Aromas Café y Pastelería\",\n  \"categoria\": \"Cafetería\",\n  \"descripcion\": \"Café de origen tostado en casa.\",\n  \"direccion\": \"Carrera 7 #18-20, Armenia\",\n  \"telefono\": \"+57 310 555 4433\",\n  \"correoContacto\": \"hola@aromas.co\",\n  \"instagram\": \"@aromasdelquindio\",\n  \"horario\": \"Lun-Sáb 7:00–20:00\",\n  \"imagen\": \"https://ejemplo.co/logo.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const p = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El nombre si cambio', () => pm.expect(p.nombreNegocio).to.include('Pastelería'));",
+                  "pm.test('El slug no cambio', () => pm.expect(p.slug).to.eql(pm.collectionVariables.get('slugPerfil')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "89 Eliminar la cuenta de prueba (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Deja la base como estaba para que la coleccion se pueda repetir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPerfil}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasena\": \"PerfilPrueba1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
                 ]
               }
             }

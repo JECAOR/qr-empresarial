@@ -66,6 +66,34 @@ function validarRegistro(req, res, next) {
     });
   }
 
+  // Datos del negocio (paso 2 del formulario de registro). Son opcionales:
+  // si no llegan, el perfil nace con el nombre de la cuenta y se completa
+  // despues en Configuracion.
+  const { negocio } = req.body;
+
+  if (negocio !== undefined) {
+    if (typeof negocio !== 'object' || negocio === null || Array.isArray(negocio)) {
+      return res.status(400).json({
+        message: 'Los datos del negocio deben venir en un objeto'
+      });
+    }
+
+    const nombreNegocio =
+      typeof negocio.nombreNegocio === 'string' ? negocio.nombreNegocio.trim() : '';
+
+    if (nombreNegocio && nombreNegocio.length < 2) {
+      return res.status(400).json({
+        message: 'El nombre del negocio debe tener al menos 2 caracteres'
+      });
+    }
+
+    if (nombreNegocio.length > 150) {
+      return res.status(400).json({
+        message: 'El nombre del negocio no puede superar los 150 caracteres'
+      });
+    }
+  }
+
   next();
 }
 

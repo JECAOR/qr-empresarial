@@ -25,10 +25,15 @@ async function buscarPorCorreo(correo) {
  * @param {{nombre: string, correo: string, contrasena: string, rol: string}} usuario
  * @returns {Promise<number>} Identificador asignado por MySQL.
  */
-async function crear(usuario) {
+async function crear(usuario, conexion) {
   const { nombre, correo, contrasena, rol } = usuario;
 
-  const [resultado] = await pool.execute(
+  // Al registrarse, la cuenta y su perfil empresarial se crean en una misma
+  // transaccion: se recibe esa conexion para participar en ella. Sin ella se
+  // usa el pool, como el resto del proyecto.
+  const ejecutor = conexion || pool;
+
+  const [resultado] = await ejecutor.execute(
     `INSERT INTO usuario (nombre, correo, contrasena, rol)
      VALUES (?, ?, ?, ?)`,
     [nombre, correo, contrasena, rol]

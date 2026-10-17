@@ -16,7 +16,7 @@ const RONDAS_BCRYPT = 10;
  * @returns {Promise<object>} Usuario creado, sin la contrasena.
  * @throws {Error} 409 si el correo ya existe; 400 si el rol no es valido.
  */
-async function crearUsuario(datosUsuario) {
+async function crearUsuario(datosUsuario, conexion) {
   const { nombre, correo, contrasena, rol = 'empresa' } = datosUsuario;
 
   // RN-01: el correo debe ser unico
@@ -43,7 +43,7 @@ async function crearUsuario(datosUsuario) {
     correo,
     contrasena: contrasenaCifrada,
     rol
-  });
+  }, conexion);
 
   // La contrasena nunca se devuelve al cliente
   return { idUsuario, nombre, correo, rol };

@@ -20,6 +20,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Frontend conectado a la API (registro, inicio y cierre de sesión, recuperación) | Terminado (`v0.8.0`) |
 | Cambio de contraseña y cierre de todas las sesiones | Terminado (`v0.9.0`) |
 | Eliminación de la cuenta propia | Terminado (`v1.0.0`) |
+| M2. Perfil empresarial (RF-04 y RF-10) | Terminado (`v1.1.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -36,6 +37,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v0.8.0` | Frontend conectado a la API: los RF-01 a RF-03 funcionan desde las pantallas |
 | `v0.9.0` | Cambio de contraseña propio y cierre de todas las sesiones al cambiarla |
 | `v1.0.0` | Eliminación de la cuenta propia. Módulo 1 completo |
+| `v1.1.0` | Módulo 2: perfil empresarial, con validación de campos y URL |
 
 ## API disponible
 
@@ -53,6 +55,8 @@ Base: `http://localhost:3000/api`
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
 | PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
+| GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
+| PUT | `/perfiles/me` | Autenticado | Crear o actualizar el perfil empresarial |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -62,7 +66,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 82 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 94 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Cómo consume la API el frontend
 
@@ -97,10 +101,17 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `forgot-password.html` | `POST /auth/recuperar-contrasena` |
 | `restablecer.html` | `GET /auth/restablecer/:token` y `POST /auth/restablecer-contrasena` |
 | `dashboard`, `contenido`, `qr`, `configuracion` | `GET /usuarios/me` y `POST /auth/logout` |
-| `configuracion.html` | además `PUT /usuarios/me/contrasena` y `DELETE /usuarios/me` |
+| `configuracion.html` | además `PUT /usuarios/me/contrasena`, `DELETE /usuarios/me` y `PUT /perfiles/me` |
+| Toda pantalla privada | `GET /perfiles/me` al cargar, para traer los datos del negocio |
 
-Las pantallas de contenido, código QR y vista pública siguen trabajando con
-`localStorage`: sus endpoints son los módulos 2 a 8, que todavía no existen. Y
+Los datos del negocio ya vienen del servidor: `js/guardia.js` consulta
+`GET /perfiles/me` al abrir cualquier pantalla privada y los deja en el almacén
+local, que pasó de ser la fuente de verdad a ser una caché. Así el dashboard, el
+código QR y la barra lateral siguieron funcionando sin cambios.
+
+Las pantallas de contenido y código QR aún guardan lo suyo en `localStorage`:
+sus endpoints son los módulos 3 y 4. La vista pública lee la caché del navegador
+hasta que exista la ruta por slug del módulo 5. Y
 los seis endpoints de administración de usuarios no tienen pantalla: son el
 módulo 8 (RF-13 a RF-15).
 
@@ -140,8 +151,8 @@ módulo 8 (RF-13 a RF-15).
 | 0 | 22/09 – 28/09 | Configuración: repositorio, Express base, conexión MySQL, migraciones | — | Terminado |
 | 1 | 29/09 – 05/10 | M1. Usuarios y cuentas (CRUD que usará el módulo 8) | RF-01 | Terminado |
 | 1 | 06/10 – 13/10 | M1. Autenticación, registro público, cierre de sesión, recuperación y cambio de contraseña | RF-01, RF-02, RF-03 | Terminado |
-| 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Siguiente |
-| 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Pendiente |
+| 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Terminado |
+| 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Siguiente |
 | 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Pendiente |
 | 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Pendiente |
 | 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Pendiente |
@@ -163,6 +174,10 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no puede iniciar sesión ni seguir usando tokens emitidos antes.
 - **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas. La puede pedir el administrador o el propio dueño de la cuenta, confirmando su contraseña. Un administrador no puede eliminarse a sí mismo: si fuera el único, nadie podría volver a administrar el sistema.
 
+- **Un perfil por cuenta.** La columna `id_usuario` de `perfil_empresarial` es única, y de eso depende el RF-07: un código QR por perfil.
+- **La dirección pública no cambia.** El `slug` se fija al crear el perfil y no sigue al nombre del negocio. Si cambiara, los códigos QR ya impresos dejarían de funcionar, que es justo lo que el RF-09 debe evitar.
+- **RF-10** Antes de guardar se exige el nombre del negocio y se valida el formato del correo de contacto, del usuario de Instagram y de la URL de la imagen. De las URL solo se aceptan `http` y `https`: un enlace `javascript:` en la vista pública sería un agujero de seguridad.
+
 ### Reglas previstas
 
 - Un único QR por perfil activo, con URL fija `/p/{slug}`, generado solo si el perfil tiene contenido activo.
@@ -180,6 +195,7 @@ Esquema `qr_empresarial` con 10 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `004-crear-token-recuperacion.sql` | Tabla `token_recuperacion` para el enlace de recuperación (RF-03) |
 | `005-crear-sesion-revocada.sql` | Tabla `sesion_revocada`, que permite cerrar sesión en el servidor (RF-02) |
 | `006-agregar-sesiones-validas-desde.sql` | Columna `sesiones_validas_desde` en `usuario`, para cerrar todas las sesiones de una cuenta de una vez |
+| `007-ampliar-perfil-empresarial.sql` | Seis campos más en `perfil_empresarial`, fechas automáticas y un perfil único por cuenta |
 
 ## Estructura de carpetas
 
@@ -197,7 +213,7 @@ qr-empresarial/
 │   │   ├── modules/
 │   │   │   ├── usuarios/            # route, validator, controller, service, repository
 │   │   │   ├── auth/                # login, registro publico y recuperacion
-│   │   │   ├── perfiles/            # pendiente
+│   │   │   ├── perfiles/            # route, validator, controller, service, repository
 │   │   │   ├── contenido/           # pendiente
 │   │   │   ├── qr/                  # pendiente
 │   │   │   ├── publico/             # pendiente
@@ -269,6 +285,7 @@ mysql -u root -p qr_empresarial < database/migrations/003-agregar-deleted-at-usu
 mysql -u root -p qr_empresarial < database/migrations/004-crear-token-recuperacion.sql
 mysql -u root -p qr_empresarial < database/migrations/005-crear-sesion-revocada.sql
 mysql -u root -p qr_empresarial < database/migrations/006-agregar-sesiones-validas-desde.sql
+mysql -u root -p qr_empresarial < database/migrations/007-ampliar-perfil-empresarial.sql
 
 # 2. Backend
 cd backend

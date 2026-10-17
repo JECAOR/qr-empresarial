@@ -32,7 +32,7 @@
         <div class="settings-wrap">
 
           <!-- Información del negocio -->
-          <form id="business-form" class="settings-card">
+          <form id="business-form" class="settings-card" novalidate>
             <h2>Información del negocio</h2>
             <p class="settings-sub">Estos datos aparecen en tu perfil público</p>
 
@@ -91,6 +91,17 @@
                   <input type="text" id="biz-hours" placeholder="Lun-Vie 9:00–18:00">
                 </div>
               </div>
+            </div>
+
+            <!-- RF-04 pide también la imagen del perfil. Mientras no haya
+                 subida de archivos, se guarda la dirección de una imagen ya
+                 publicada; el RF-10 valida que sea una URL. -->
+            <div class="form-field">
+              <label for="biz-image">Logo o imagen (dirección web)</label>
+              <div class="form-input-wrap">
+                <input type="url" id="biz-image" placeholder="https://ejemplo.co/logo.png">
+              </div>
+              <span class="form-error">Debe empezar por http o https.</span>
             </div>
 
             <div class="settings-save-row">

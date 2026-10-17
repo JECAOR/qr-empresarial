@@ -46,6 +46,7 @@ npm run test:ui
 | `theme-and-business-sync.spec.js` | Los 3 temas de color, y que Configuración sincronice con el resto del sitio |
 | `accessibility.spec.js` | Auditoría automática con axe-core en las 11 páginas y los 3 temas |
 | `responsive.spec.js` | Que ninguna página se desborde horizontalmente en móvil |
+| `perfil.spec.js` | Perfil empresarial: sincronización con el servidor, guardado y validación del RF-10 |
 | `ayudas.js` | No es una prueba: es el apoyo compartido que simula la API |
 
 ## Por qué no hace falta el backend

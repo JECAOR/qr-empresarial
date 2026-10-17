@@ -2,7 +2,7 @@
 // tests/theme-and-business-sync.spec.js
 // ============================================
 const { test, expect } = require("@playwright/test");
-const { prepararSesion } = require("./ayudas");
+const { prepararSesion, PERFIL } = require("./ayudas");
 
 // El frontend ahora pide los datos a la API: se simula la respuesta y se deja
 // una sesión guardada, para que estas pruebas sigan sin necesitar el backend
@@ -53,7 +53,7 @@ test.describe("Temas de color", () => {
   });
 });
 
-test.describe("Sincronización de datos del negocio (sin backend)", () => {
+test.describe("Sincronización de datos del negocio entre pantallas", () => {
   test("guardar en Configuración actualiza el sidebar sin recargar", async ({ page }) => {
     await page.goto("/configuracion.html");
     await page.fill("#biz-name", "Sabores del Valle");
@@ -72,10 +72,14 @@ test.describe("Sincronización de datos del negocio (sin backend)", () => {
 
     await page.goto("/dashboard.html");
     await expect(page.locator("#dash-biz-name")).toHaveText("Sabores del Valle");
-    await expect(page.locator("#dash-qr-url")).toContainText("saboresdelvalle");
+
+    // La dirección del QR NO sigue al nombre: la decide el servidor cuando se
+    // crea el perfil y se mantiene al renombrar, porque un código ya impreso
+    // tiene que seguir llevando al mismo sitio (RF-09).
+    await expect(page.locator("#dash-qr-url")).toContainText(PERFIL.slug);
 
     await page.goto("/qr.html");
-    await expect(page.locator("#qr-chip-url")).toContainText("saboresdelvalle");
+    await expect(page.locator("#qr-chip-url")).toContainText(PERFIL.slug);
 
     await page.goto("/public.html");
     await expect(page.locator("#profile-name")).toHaveText("Sabores del Valle");

@@ -187,8 +187,10 @@ if (registerForm) {
 
     try {
       // La cuenta se crea con el rol "empresa"; el backend ignora cualquier
-      // otro rol que llegue en la petición.
-      await Api.registrar(nombre, correo, pass.value);
+      // otro rol que llegue en la petición. Los datos del negocio del paso 2
+      // viajan en la misma petición: el backend crea la cuenta y su perfil
+      // empresarial juntos (RF-04).
+      await Api.registrar(nombre, correo, pass.value, datosDelNegocio());
 
       // Se inicia sesión en seguida, para no pedir los mismos datos otra vez
       const respuesta = await Api.iniciarSesion(correo, pass.value);
@@ -218,12 +220,33 @@ if (registerForm) {
 }
 
 /**
- * Guarda los datos del paso 2 del registro.
+ * Datos del negocio del paso 2, con los nombres que espera la API.
+ * Si no se llenó el nombre, se devuelve null y el backend usa el de la
+ * cuenta para el perfil.
+ */
+function datosDelNegocio() {
+  const campo = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  };
+
+  const nombreNegocio = campo("reg-biz-name");
+  if (!nombreNegocio) return null;
+
+  return {
+    nombreNegocio,
+    categoria: campo("reg-biz-category"),
+    direccion: campo("reg-biz-address"),
+    telefono: campo("reg-biz-phone")
+  };
+}
+
+/**
+ * Deja los datos del negocio en el navegador además de enviarlos.
  *
- * El perfil empresarial todavía no tiene endpoints: es el módulo 2 del
- * proyecto (RF-04). Hasta entonces se conservan en el navegador, igual que
- * hacen las demás pantallas, para que el panel muestre el negocio que la
- * persona acaba de registrar en lugar del de ejemplo.
+ * La fuente de verdad es el servidor, y la guardia los sincroniza al abrir
+ * cualquier pantalla privada. Esto solo evita que el panel muestre el negocio
+ * de ejemplo durante el instante que tarda esa primera consulta.
  */
 function guardarDatosDelNegocio(correoDeLaCuenta) {
   const campo = (id) => {
