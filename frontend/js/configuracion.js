@@ -168,14 +168,24 @@ newPassInput.addEventListener("input", () => {
   strengthLabel.style.color = color;
 });
 
-passwordForm.addEventListener("submit", (e) => {
+passwordForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  const currentPass = document.getElementById("current-password");
   const newPass = document.getElementById("new-password");
   const confirmPass = document.getElementById("confirm-new-password");
+  const currentField = currentPass.closest(".form-field");
   const confirmField = confirmPass.closest(".form-field");
   const newPassField = newPass.closest(".form-field");
 
   let valido = true;
+
+  if (!currentPass.value) {
+    currentField.classList.add("has-error");
+    valido = false;
+  } else {
+    currentField.classList.remove("has-error");
+  }
 
   const fuerza = evaluarFuerza(newPass.value);
   if (fuerza.level < 2) {
@@ -192,13 +202,56 @@ passwordForm.addEventListener("submit", (e) => {
     confirmField.classList.remove("has-error");
   }
 
-  if (valido) {
-    showSavedToast("password-saved-toast");
+  if (!valido) return;
+
+  const boton = passwordForm.querySelector('button[type="submit"]');
+  const textoOriginal = boton.textContent;
+  boton.disabled = true;
+  boton.setAttribute("aria-busy", "true");
+  boton.textContent = "Actualizando...";
+
+  try {
+    const respuesta = await Api.cambiarContrasena(currentPass.value, newPass.value);
+
+    // El cambio cerro todas las sesiones de la cuenta, incluida esta: hay que
+    // guardar el token nuevo o la siguiente peticion recibiria un 401.
+    reemplazarToken(respuesta.data.token);
+
+    mostrarMensajeContrasena("✓ Contraseña actualizada. Se cerraron las demás sesiones");
+
     passwordForm.reset();
     strengthBar.style.width = "0%";
     strengthLabel.textContent = "";
+  } catch (error) {
+    // 401 aqui no es la sesion vencida, es la contrasena actual equivocada:
+    // se senala en su campo en lugar de echar a la persona de la pantalla.
+    if (error.status === 401) {
+      currentField.classList.add("has-error");
+    }
+
+    mostrarMensajeContrasena(error.message, "error");
+  } finally {
+    boton.disabled = false;
+    boton.removeAttribute("aria-busy");
+    boton.textContent = textoOriginal;
   }
 });
+
+/**
+ * Reutiliza el aviso que ya existe junto al boton de guardar.
+ * showSavedToast siempre dice "Cambios guardados"; aqui hace falta mostrar
+ * tambien los errores que devuelve el servidor.
+ */
+function mostrarMensajeContrasena(texto, tipo = "ok") {
+  const toast = document.getElementById("password-saved-toast");
+
+  toast.textContent = texto;
+  toast.style.color = tipo === "error" ? "#B91C1C" : "";
+  toast.classList.add("show");
+
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove("show"), 4000);
+}
 
 // --- Eliminar cuenta (con confirmación mediante <dialog> nativo) ---
 const deleteDialog = document.getElementById("delete-account-dialog");

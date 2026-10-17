@@ -18,6 +18,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Backend — recuperación de contraseña y límite de intentos | Terminado (`v0.6.0`) |
 | Backend — cierre de sesión y envío del enlace por correo | Terminado (`v0.7.0`) |
 | Frontend conectado a la API (registro, inicio y cierre de sesión, recuperación) | Terminado (`v0.8.0`) |
+| Cambio de contraseña y cierre de todas las sesiones | Terminado (`v0.9.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -32,6 +33,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v0.6.0` | Recuperación de contraseña (RF-03) y límite de intentos de inicio de sesión (RN-03) |
 | `v0.7.0` | Cierre de sesión (RF-02) y envío del enlace de recuperación por correo (RF-03) |
 | `v0.8.0` | Frontend conectado a la API: los RF-01 a RF-03 funcionan desde las pantallas |
+| `v0.9.0` | Cambio de contraseña propio y cierre de todas las sesiones al cambiarla |
 
 ## API disponible
 
@@ -47,6 +49,7 @@ Base: `http://localhost:3000/api`
 | GET | `/auth/restablecer/:token` | Público | Comprobar que el enlace siga siendo válido |
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
+| PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -56,7 +59,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 62 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 74 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Cómo consume la API el frontend
 
@@ -91,6 +94,7 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `forgot-password.html` | `POST /auth/recuperar-contrasena` |
 | `restablecer.html` | `GET /auth/restablecer/:token` y `POST /auth/restablecer-contrasena` |
 | `dashboard`, `contenido`, `qr`, `configuracion` | `GET /usuarios/me` y `POST /auth/logout` |
+| `configuracion.html` | además `PUT /usuarios/me/contrasena` |
 
 Las pantallas de contenido, código QR y vista pública siguen trabajando con
 `localStorage`: sus endpoints son los módulos 2 a 8, que todavía no existen. Y
@@ -149,6 +153,7 @@ El orden sigue las dependencias entre módulos (usuario → perfil → contenido
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
 - **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP; los inicios correctos no gastan cupo. La solicitud de recuperación lleva su propio contador (10 por 15 minutos, contando todas), para que agotar uno no inhabilite el otro.
 - **RN-04** El enlace de recuperación sirve una sola vez y expira en 30 minutos. En la base solo se guarda su hash SHA-256: aunque alguien leyera la tabla, no podría reconstruir el enlace.
+- **Cambio de contraseña:** al restablecerla o cambiarla se cierran todas las sesiones de la cuenta. Quien recupera su cuenta suele hacerlo porque perdió el control de ella, así que las sesiones abiertas antes del cambio dejan de servir. Al cambiarla desde Configuración se devuelve un token nuevo, para no echar de la pantalla a quien la cambió.
 - **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403.
 - **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no puede iniciar sesión ni seguir usando tokens emitidos antes.
 - **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas.
@@ -169,6 +174,7 @@ Esquema `qr_empresarial` con 10 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `003-agregar-deleted-at-usuario.sql` | Columna `deleted_at` y valor por defecto para `fecha_registro` |
 | `004-crear-token-recuperacion.sql` | Tabla `token_recuperacion` para el enlace de recuperación (RF-03) |
 | `005-crear-sesion-revocada.sql` | Tabla `sesion_revocada`, que permite cerrar sesión en el servidor (RF-02) |
+| `006-agregar-sesiones-validas-desde.sql` | Columna `sesiones_validas_desde` en `usuario`, para cerrar todas las sesiones de una cuenta de una vez |
 
 ## Estructura de carpetas
 
@@ -257,6 +263,7 @@ mysql -u root -p qr_empresarial < database/migrations/002-renombrar-columna-cont
 mysql -u root -p qr_empresarial < database/migrations/003-agregar-deleted-at-usuario.sql
 mysql -u root -p qr_empresarial < database/migrations/004-crear-token-recuperacion.sql
 mysql -u root -p qr_empresarial < database/migrations/005-crear-sesion-revocada.sql
+mysql -u root -p qr_empresarial < database/migrations/006-agregar-sesiones-validas-desde.sql
 
 # 2. Backend
 cd backend

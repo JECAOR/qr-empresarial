@@ -116,9 +116,39 @@ async function obtenerMiPerfil(req, res, next) {
   }
 }
 
+/**
+ * PUT /api/usuarios/me/contrasena — cambia la contrasena propia.
+ *
+ * El identificador sale del token, no de la URL ni del cuerpo: nadie puede
+ * cambiar la contrasena de otra persona por esta via.
+ *
+ * Devuelve un token nuevo porque el cambio cierra todas las sesiones de la
+ * cuenta, incluida la que hizo la peticion. El frontend reemplaza el que
+ * tenia guardado y la persona sigue trabajando sin volver a entrar.
+ */
+async function cambiarMiContrasena(req, res, next) {
+  try {
+    const { contrasenaActual, contrasenaNueva } = req.body;
+
+    const { token } = await authService.cambiarContrasena(
+      req.usuario.id,
+      contrasenaActual,
+      contrasenaNueva
+    );
+
+    return res.status(200).json({
+      message: 'Contraseña actualizada correctamente. Se cerraron las demás sesiones',
+      data: { token }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   crearUsuario,
   obtenerMiPerfil,
+  cambiarMiContrasena,
   listarUsuarios,
   obtenerUsuario,
   actualizarUsuario,

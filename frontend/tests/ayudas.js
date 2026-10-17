@@ -20,6 +20,7 @@ const USUARIO = {
 };
 
 const TOKEN = "token-de-prueba-sin-valor-real";
+const TOKEN_NUEVO = "token-de-prueba-emitido-tras-el-cambio";
 
 /**
  * Intercepta todas las peticiones a la API y las responde con datos fijos.
@@ -28,7 +29,7 @@ const TOKEN = "token-de-prueba-sin-valor-real";
  * se sirven desde otro sitio, y así se atrapa igual.
  */
 async function simularApi(page, opciones = {}) {
-  const { enlaceInvalido = false } = opciones;
+  const { enlaceInvalido = false, contrasenaActualIncorrecta = false } = opciones;
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
@@ -69,6 +70,20 @@ async function simularApi(page, opciones = {}) {
       return responder(200, { message: "El enlace es válido" });
     }
 
+    if (url.includes("/usuarios/me/contrasena")) {
+      if (contrasenaActualIncorrecta) {
+        // Un 401 aquí no significa que la sesión venció, sino que la
+        // contraseña actual está mal escrita
+        return responder(401, { message: "La contraseña actual no es correcta" });
+      }
+
+      // El cambio cierra todas las sesiones y devuelve un token nuevo
+      return responder(200, {
+        message: "Contraseña actualizada correctamente. Se cerraron las demás sesiones",
+        data: { token: TOKEN_NUEVO }
+      });
+    }
+
     if (url.includes("/usuarios/me")) {
       return responder(200, { data: USUARIO });
     }
@@ -104,4 +119,4 @@ async function prepararSesion(page) {
   await sembrarSesion(page);
 }
 
-module.exports = { USUARIO, TOKEN, simularApi, sembrarSesion, prepararSesion };
+module.exports = { USUARIO, TOKEN, TOKEN_NUEVO, simularApi, sembrarSesion, prepararSesion };

@@ -9,7 +9,7 @@
 // debe se comprueba aparte, con la colección de Postman.
 // ============================================
 const { test, expect } = require("@playwright/test");
-const { simularApi, sembrarSesion, prepararSesion, USUARIO } = require("./ayudas");
+const { simularApi, sembrarSesion, prepararSesion, USUARIO, TOKEN, TOKEN_NUEVO } = require("./ayudas");
 
 test.describe("Login", () => {
   test("bloquea el envío con campos vacíos y muestra los errores", async ({ page }) => {
@@ -290,5 +290,80 @@ test.describe("Recuperar contraseña", () => {
     await expect(page.locator("#done-step")).toBeHidden();
     await expect(page.locator("#confirm-password").locator("xpath=ancestor::div[contains(@class,'form-field')]"))
       .toHaveClass(/has-error/);
+  });
+});
+
+test.describe("Cambio de contraseña desde Configuración", () => {
+  const llenarFormulario = async (page, actual, nueva, confirmacion = nueva) => {
+    await page.fill("#current-password", actual);
+    await page.fill("#new-password", nueva);
+    await page.fill("#confirm-new-password", confirmacion);
+    await page.click('#password-form button[type="submit"]');
+  };
+
+  test("cambia la contraseña y guarda el token nuevo", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/configuracion.html");
+
+    await llenarFormulario(page, "Clave123*", "ClaveNueva1*");
+
+    await expect(page.locator("#password-saved-toast")).toContainText("Contraseña actualizada");
+
+    // El cambio cierra todas las sesiones de la cuenta, incluida esta: si no
+    // se guardara el token nuevo, la siguiente petición daría 401
+    const token = await page.evaluate(() => JSON.parse(localStorage.getItem("qr.sesion")).token);
+    expect(token).toBe(TOKEN_NUEVO);
+
+    // Y no se va de la pantalla
+    await expect(page).toHaveURL(/configuracion\.html/);
+  });
+
+  test("con la contraseña actual equivocada lo señala sin cerrar la sesión", async ({ page }) => {
+    // Prueba de regresión: el 401 de este endpoint significa "la contraseña
+    // actual no es correcta", no "su sesión venció". El cliente de la API
+    // cerraba la sesión con cualquier 401 y echaba al login a quien
+    // simplemente se equivocó al escribir.
+    await simularApi(page, { contrasenaActualIncorrecta: true });
+    await sembrarSesion(page);
+    await page.goto("/configuracion.html");
+
+    await llenarFormulario(page, "la-que-no-es", "ClaveNueva1*");
+
+    await expect(page.locator("#password-saved-toast")).toContainText("actual no es correcta");
+    await expect(page).toHaveURL(/configuracion\.html/);
+
+    const sigueLaSesion = await page.evaluate(() => Boolean(localStorage.getItem("qr.sesion")));
+    expect(sigueLaSesion).toBe(true);
+  });
+
+  test("no envía nada si la confirmación no coincide", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/configuracion.html");
+
+    await llenarFormulario(page, "Clave123*", "ClaveNueva1*", "OtraDistinta1*");
+
+    const campoConfirmacion = page.locator("#confirm-new-password")
+      .locator("xpath=ancestor::div[contains(@class,'form-field')]");
+    await expect(campoConfirmacion).toHaveClass(/has-error/);
+
+    // El token sigue siendo el de antes: no hubo petición
+    const token = await page.evaluate(() => JSON.parse(localStorage.getItem("qr.sesion")).token);
+    expect(token).toBe(TOKEN);
+  });
+
+  test("no envía nada si falta la contraseña actual", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/configuracion.html");
+
+    await page.fill("#new-password", "ClaveNueva1*");
+    await page.fill("#confirm-new-password", "ClaveNueva1*");
+    await page.click('#password-form button[type="submit"]');
+
+    const campoActual = page.locator("#current-password")
+      .locator("xpath=ancestor::div[contains(@class,'form-field')]");
+    await expect(campoActual).toHaveClass(/has-error/);
+
+    const token = await page.evaluate(() => JSON.parse(localStorage.getItem("qr.sesion")).token);
+    expect(token).toBe(TOKEN);
   });
 });

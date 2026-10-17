@@ -14,7 +14,8 @@ const {
   validarCrearUsuario,
   validarIdUsuario,
   validarActualizarUsuario,
-  validarEstado
+  validarEstado,
+  validarCambioContrasena
 } = require('./usuario.validator');
 
 const router = express.Router();
@@ -26,6 +27,14 @@ router.use(autenticar);
 // Debe declararse ANTES de /:idUsuario, o Express interpretaria "me"
 // como un identificador y el validador responderia 400.
 router.get('/me', usuarioController.obtenerMiPerfil);
+
+// PUT /api/usuarios/me/contrasena — cambia la contrasena propia.
+// Tambien antes de /:idUsuario, por la misma razon.
+router.put(
+  '/me/contrasena',
+  validarCambioContrasena,
+  usuarioController.cambiarMiContrasena
+);
 
 // --- Operaciones administrativas: solo el rol administrador ---
 

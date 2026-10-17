@@ -27,6 +27,29 @@ function credencialesInvalidas() {
 }
 
 /**
+ * Firma un token de sesion.
+ *
+ * El jti (JWT ID) identifica a esta sesion concreta. Sin el no habria forma
+ * de cerrar sesion en el servidor: todos los tokens de un mismo usuario
+ * serian indistinguibles entre si.
+ *
+ * @param {number} idUsuario
+ * @param {string} rol
+ * @returns {string}
+ */
+function firmarToken(idUsuario, rol) {
+  return jwt.sign(
+    {
+      id: idUsuario,
+      rol,
+      jti: crypto.randomBytes(16).toString('hex')
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '2h' }
+  );
+}
+
+/**
  * Verifica las credenciales y entrega un token de sesion.
  * @param {string} correo
  * @param {string} contrasena - En texto plano, tal como llega del formulario.
@@ -57,19 +80,7 @@ async function iniciarSesion(correo, contrasena) {
   }
 
   // Caso 4: autenticacion correcta
-  //
-  // El jti (JWT ID) identifica a esta sesion concreta. Sin el no habria
-  // forma de cerrar sesion en el servidor: todos los tokens de un mismo
-  // usuario serian indistinguibles entre si.
-  const token = jwt.sign(
-    {
-      id: usuario.id_usuario,
-      rol: usuario.rol,
-      jti: crypto.randomBytes(16).toString('hex')
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '2h' }
-  );
+  const token = firmarToken(usuario.id_usuario, usuario.rol);
 
   return {
     token,
@@ -245,6 +256,10 @@ async function restablecerContrasena(token, contrasena) {
   // RN-04: el enlace sirve una sola vez
   await authRepository.marcarTokenUsado(registro.id_token);
 
+  // Quien recupera su contrasena suele hacerlo porque perdio el control de la
+  // cuenta: las sesiones abiertas antes del cambio dejan de servir.
+  await authRepository.cerrarTodasLasSesiones(registro.id_usuario);
+
   console.warn('Contrasena restablecida para el usuario', registro.id_usuario);
 }
 
@@ -280,9 +295,67 @@ async function cerrarSesion(sesion) {
   console.log('Sesion cerrada para el usuario', id);
 }
 
+/**
+ * Cambia la contrasena del usuario que ya inicio sesion.
+ *
+ * Se exige la contrasena actual aunque el token sea valido: si alguien deja la
+ * sesion abierta en un equipo ajeno, no deberia poder apropiarse de la cuenta
+ * con solo abrir la pantalla de configuracion.
+ *
+ * Al terminar se cierran todas las sesiones y se devuelve un token nuevo, para
+ * que la persona siga trabajando aqui mientras los demas dispositivos quedan
+ * fuera. El token nuevo se firma despues del corte, asi que lo sobrevive.
+ *
+ * @param {number} idUsuario - De req.usuario.id, no del cuerpo de la peticion.
+ * @param {string} contrasenaActual
+ * @param {string} contrasenaNueva
+ * @returns {Promise<{token: string}>}
+ * @throws {Error} 401 si la contrasena actual no coincide, 400 si la nueva
+ *   repite la anterior, 404 si la cuenta ya no existe.
+ */
+async function cambiarContrasena(idUsuario, contrasenaActual, contrasenaNueva) {
+  // Hace falta el hash, que buscarPorId no devuelve a proposito
+  const usuario = await authRepository.buscarPorIdConContrasena(idUsuario);
+
+  if (!usuario || usuario.estado !== 'activo') {
+    const error = new Error('Usuario no encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const actualCoincide = await bcrypt.compare(contrasenaActual, usuario.contrasena);
+
+  if (!actualCoincide) {
+    console.warn('Cambio de contrasena rechazado: la actual no coincide');
+
+    const error = new Error('La contraseña actual no es correcta');
+    error.status = 401;
+    throw error;
+  }
+
+  // Cambiarla por la misma no cerraria nada ni mejoraria nada
+  const esLaMisma = await bcrypt.compare(contrasenaNueva, usuario.contrasena);
+
+  if (esLaMisma) {
+    const error = new Error('La contraseña nueva debe ser distinta de la actual');
+    error.status = 400;
+    throw error;
+  }
+
+  const contrasenaCifrada = await bcrypt.hash(contrasenaNueva, RONDAS_BCRYPT);
+
+  await authRepository.actualizarContrasena(idUsuario, contrasenaCifrada);
+  await authRepository.cerrarTodasLasSesiones(idUsuario);
+
+  console.warn('Contrasena cambiada por el propio usuario', idUsuario);
+
+  return { token: firmarToken(usuario.id_usuario, usuario.rol) };
+}
+
 module.exports = {
   iniciarSesion,
   cerrarSesion,
+  cambiarContrasena,
   obtenerPerfil,
   registrar,
   solicitarRecuperacion,

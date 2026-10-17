@@ -12,7 +12,8 @@ const authRepository = require('../modules/auth/auth.repository');
 /**
  * Comprueba la cabecera Authorization: Bearer <token>.
  * Responde 401 si falta el token, es invalido, vencido, si la sesion fue
- * cerrada, o si el usuario ya no existe o fue restringido.
+ * cerrada, si la contrasena cambio despues de emitirlo, o si el usuario ya no
+ * existe o fue restringido.
  */
 async function autenticar(req, res, next) {
   try {
@@ -46,6 +47,23 @@ async function autenticar(req, res, next) {
 
     if (!usuario || usuario.estado !== 'activo') {
       return res.status(401).json({ message: 'Usuario inválido o restringido' });
+    }
+
+    // Si la contrasena cambio despues de emitirse este token, no sirve.
+    //
+    // El "iat" del JWT viene en segundos; la columna guarda segundos enteros.
+    // La comparacion es estricta para que el token emitido en el mismo segundo
+    // del cambio -el que recibe quien acaba de cambiar su contrasena- siga
+    // valiendo.
+    if (usuario.sesiones_validas_desde) {
+      const firmadoEn = datos.iat * 1000;
+      const corte = new Date(usuario.sesiones_validas_desde).getTime();
+
+      if (firmadoEn < corte) {
+        return res.status(401).json({
+          message: 'La contraseña cambió. Inicie sesión de nuevo'
+        });
+      }
     }
 
     req.usuario = {

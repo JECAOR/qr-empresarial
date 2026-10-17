@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v0.8.0
+- **Versión:** v0.9.0
 
 ## Resumen
 
@@ -19,6 +19,7 @@ Documentación de los endpoints disponibles.
 | GET | `/auth/restablecer/:token` | Público | Comprobar el enlace |
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
+| PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -273,6 +274,13 @@ El frontend lo consulta al abrir el enlace, antes de mostrar el formulario.
 
 La contraseña nueva se cifra con bcrypt y debe cumplir RN-02, igual que en el registro. El enlace queda consumido: reutilizarlo devuelve 400 (RN-04).
 
+**Se cierran todas las sesiones de la cuenta.** Quien recupera su contraseña muchas veces
+lo hace porque perdió el control de la cuenta, así que las sesiones abiertas antes del
+cambio dejan de servir. No hace falta conocer los tokens: la columna
+`usuario.sesiones_validas_desde` guarda el momento del corte y el middleware rechaza
+cualquier token firmado antes. Un solo `UPDATE` invalida cuantas sesiones haya, en cuantos
+dispositivos sea.
+
 **Errores:** 400 (enlace inválido, expirado o ya usado; contraseña que no cumple RN-02).
 
 ---
@@ -298,6 +306,50 @@ Devuelve el perfil del usuario autenticado. El identificador sale del token, no 
   }
 }
 ```
+
+### PUT /api/usuarios/me/contrasena
+
+Cambia la contraseña del usuario autenticado. El identificador sale del token, así que
+nadie puede cambiar la contraseña de otra persona por esta vía.
+
+**Cuerpo**
+
+```json
+{
+  "contrasenaActual": "Clave123*",
+  "contrasenaNueva": "OtraClave1*"
+}
+```
+
+**Respuesta 200**
+
+```json
+{
+  "message": "Contraseña actualizada correctamente. Se cerraron las demás sesiones",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+Se exige la contraseña actual aunque el token sea válido: si alguien deja la sesión abierta
+en un equipo ajeno, no debería poder apropiarse de la cuenta con solo abrir la pantalla de
+configuración.
+
+**Por qué devuelve un token.** El cambio cierra todas las sesiones de la cuenta, incluida
+la que hizo la petición. El token nuevo se firma después del corte, así que lo sobrevive:
+quien cambia su contraseña sigue trabajando sin volver a entrar, mientras los demás
+dispositivos quedan fuera. El frontend reemplaza el que tenía guardado.
+
+**Ojo con el 401.** Aquí significa que la contraseña actual está mal escrita, no que la
+sesión haya vencido. Un cliente que cierre la sesión ante cualquier 401 echaría al login a
+quien simplemente se equivocó en un campo.
+
+**Errores:** 400 (falta la contraseña actual; la nueva no cumple RN-02; la nueva repite la
+actual), 401 (la contraseña actual no es correcta), 404 (la cuenta ya no existe o fue
+restringida).
+
+---
 
 ### POST /api/usuarios
 
@@ -396,13 +448,11 @@ Eliminación lógica. El registro permanece en la base para no romper las relaci
 
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 62 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 74 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
 | Endpoint | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Cambio de contraseña desde Configuración | — | La pantalla existe, pero no hay endpoint: hoy el formulario no envía nada |
-| Cierre de las sesiones abiertas al restablecer la contraseña | RF-03 | Tras un restablecimiento, los tokens emitidos antes siguen sirviendo hasta que vencen |
 | Módulos Perfil, Contenido, QR, Público, Estadísticas, Configuración y Administración | RF-04 a RF-15 | Pendientes |
