@@ -92,6 +92,18 @@
     {
       "key": "idBoton",
       "value": ""
+    },
+    {
+      "key": "tokenQr",
+      "value": ""
+    },
+    {
+      "key": "urlQr",
+      "value": ""
+    },
+    {
+      "key": "idContenidoQr",
+      "value": ""
     }
   ],
   "item": [
@@ -5600,6 +5612,825 @@
                 {
                   "key": "token",
                   "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia 6 - Codigo QR (RF-07 y RF-08)",
+      "item": [
+        {
+          "name": "116 Login de la empresa (guarda el token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Sesion propia para esta carpeta.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenQr', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "117 Agregar contenido para poder generar el codigo (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "El RF-07 no genera un codigo que lleve a un perfil vacio: quien lo escanea no encontraria nada. Se agrega un bloque para que la generacion sea posible.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"Menu del dia\",\n  \"detalle\": \"https://laespiga.co/menu\",\n  \"idCategoria\": 4,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idContenidoQr', json.data.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "118 Generar el codigo QR (201 o 200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr"
+              ]
+            },
+            "description": "Es idempotente: la primera vez responde 201 y las siguientes 200 con el mismo codigo, sin cambiar su direccion. Volver a generarlo invalidaria los codigos ya impresos, y la base tampoco lo permitiria porque id_perfil es UNIQUE.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set('urlQr', d.url);",
+                  "pm.test('Status 201 o 200', () => pm.expect([200, 201]).to.include(pm.response.code));",
+                  "pm.test('La direccion apunta al perfil', () => pm.expect(d.url).to.include('/p/' + d.slug));",
+                  "pm.test('Nace activo', () => pm.expect(d.activo).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "119 Generarlo otra vez devuelve el mismo (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Misma direccion que antes', () => pm.expect(d.url).to.eql(pm.collectionVariables.get('urlQr')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "120 Consultar el codigo propio (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae el slug del perfil', () => pm.expect(d.slug).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "121 Consultar sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr"
+              ]
+            },
+            "description": "Cada cuenta solo ve el codigo de su propio perfil.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "122 Descargar el PNG (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr/imagen?formato=png&tamano=400",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "imagen"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "png"
+                },
+                {
+                  "key": "tamano",
+                  "value": "400"
+                }
+              ]
+            },
+            "description": "Las tres imagenes las genera el servidor: asi el archivo sale igual en cualquier equipo. La vista previa de la pantalla se sigue dibujando en el navegador, que es instantanea.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde un PNG', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png'));",
+                  "pm.test('Se descarga con nombre propio', () => pm.expect(pm.response.headers.get('Content-Disposition')).to.include('.png'));",
+                  "pm.test('No llega vacio', () => pm.expect(pm.response.stream.length).to.be.above(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "123 Descargar el SVG (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr/imagen?formato=svg",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "imagen"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "svg"
+                }
+              ]
+            },
+            "description": "Util para imprimir a cualquier tamano sin perder nitidez.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde un SVG', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('image/svg+xml'));",
+                  "pm.test('Se descarga con nombre propio', () => pm.expect(pm.response.headers.get('Content-Disposition')).to.include('.svg'));",
+                  "pm.test('No llega vacio', () => pm.expect(pm.response.stream.length).to.be.above(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "124 Descargar el PDF (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr/imagen?formato=pdf",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "imagen"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "pdf"
+                }
+              ]
+            },
+            "description": "Una pagina A4 con el codigo centrado y su direccion debajo, lista para llevar a una imprenta.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde un PDF', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));",
+                  "pm.test('Se descarga con nombre propio', () => pm.expect(pm.response.headers.get('Content-Disposition')).to.include('.pdf'));",
+                  "pm.test('No llega vacio', () => pm.expect(pm.response.stream.length).to.be.above(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "125 Descargar con un color propio (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr/imagen?formato=png&color=059669",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "imagen"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "png"
+                },
+                {
+                  "key": "color",
+                  "value": "059669"
+                }
+              ]
+            },
+            "description": "El color va en hexadecimal sin la almohadilla.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "126 Formato que no existe (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr/imagen?formato=gif",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "imagen"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "gif"
+                }
+              ]
+            },
+            "description": "Solo png, svg y pdf.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "127 Color que no es hexadecimal (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr/imagen?formato=png&color=rojo",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "imagen"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "png"
+                },
+                {
+                  "key": "color",
+                  "value": "rojo"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "128 Tamano absurdo se ajusta al limite (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr/imagen?formato=png&tamano=99999",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "imagen"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "png"
+                },
+                {
+                  "key": "tamano",
+                  "value": "99999"
+                }
+              ]
+            },
+            "description": "Un tamano fuera de rango no es motivo para fallar: se recorta al maximo permitido, para que el servidor no se quede generando una imagen enorme.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "129 Desactivar el codigo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "Desactivarlo no lo borra: el codigo impreso sigue existiendo en el mundo, y esta bandera es la que decidira si la vista publica responde (RF-09).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda inactivo', () => pm.expect(d.activo).to.eql(false));",
+                  "pm.test('Registra la fecha del cambio', () => pm.expect(d.fechaActualizacion).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "130 Reactivarlo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda activo', () => pm.expect(pm.response.json().data.activo).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "131 Estado con un valor que no es booleano (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": \"si\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "132 Limpiar el contenido de prueba (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idContenidoQr}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idContenidoQr}}"
+              ]
+            },
+            "description": "El codigo QR se queda: pertenece al perfil y no hay motivo para borrarlo.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
                   "type": "string"
                 }
               ]

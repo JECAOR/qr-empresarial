@@ -14,6 +14,7 @@ const authRoutes = require('./modules/auth/auth.routes');
 const usuarioRoutes = require('./modules/usuarios/usuario.routes');
 const perfilRoutes = require('./modules/perfiles/perfil.routes');
 const contenidoRoutes = require('./modules/contenido/contenido.routes');
+const qrRoutes = require('./modules/qr/qr.routes');
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
@@ -34,7 +35,13 @@ const origenesPermitidos = (process.env.CORS_ORIGINS || '')
   .filter(Boolean);
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? origenesPermitidos : true
+  origin: process.env.NODE_ENV === 'production' ? origenesPermitidos : true,
+
+  // De una respuesta de otro origen, el navegador solo deja leer unas pocas
+  // cabeceras. Content-Disposition no es una de ellas, y ahi viaja el nombre
+  // del archivo de la descarga del codigo QR (RF-08): sin esto, el frontend
+  // servido desde otro puerto guardaria los archivos con un nombre generico.
+  exposedHeaders: ['Content-Disposition']
 }));
 
 // Permite recibir informacion en formato JSON desde el frontend o Postman
@@ -64,6 +71,7 @@ app.use('/api/auth', authRoutes);          // publicas, salvo el cierre de sesio
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/perfiles', perfilRoutes);   // RF-04: perfil empresarial
 app.use('/api/contenido', contenidoRoutes); // RF-05 y RF-06: contenido
+app.use('/api/qr', qrRoutes);              // RF-07 y RF-08: codigo QR
 
 // Cualquier otra ruta /api/... no existe: se responde en JSON, no con el
 // HTML que Express devuelve por defecto, porque quien llama espera JSON.

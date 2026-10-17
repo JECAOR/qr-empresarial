@@ -1,10 +1,22 @@
 // ============================================
-// QR.JS — generación real de QR (PNG/SVG/PDF),
-// color, tamaño y acciones de compartir
+// QR.JS — código QR del perfil (RF-07 y RF-08)
+//
+// El código lo registra el servidor: hay uno por perfil y su dirección no
+// cambia aunque el negocio se renombre, porque un código ya impreso tiene que
+// seguir llevando al mismo sitio.
+//
+// La vista previa se dibuja aquí con qrcode.min.js, que es instantáneo y
+// permite ver el color y el tamaño al momento. La descarga, en cambio, la
+// genera el servidor: así el archivo sale igual en cualquier equipo y el PDF
+// es un PDF de verdad, no una vista de impresión.
 // ============================================
 
 const BIZ = getBusinessData();
-const QR_URL = getQrUrl(BIZ);
+
+// Se rellena con lo que responda el servidor. Mientras llega se usa la
+// dirección que se puede deducir del perfil en caché, para no dibujar vacío.
+let QR_URL = getQrUrl(BIZ);
+let qrRegistrado = null;
 
 const QR_COLORS = [
   { hex: getCssVar("--color-sidebar-bg"), name: "Oscuro" },
@@ -138,66 +150,99 @@ document.getElementById("copy-link-btn").addEventListener("click", async () => {
   }
 });
 
-// --- Descargar (real, según formato elegido) ---
+// --- Descargar (RF-08) ---
+//
+// Los tres formatos los genera el servidor. Antes el PDF era un apaño: se
+// abría una vista de impresión y se dejaba que la persona eligiera "Guardar
+// como PDF" en el diálogo del navegador. Eso no es descargar un PDF, y en
+// algunos navegadores no hay esa opción.
 document.getElementById("download-btn").addEventListener("click", async () => {
-  const color = QR_COLORS[state.color].hex;
-  const format = FORMATS[state.format];
+  const boton = document.getElementById("download-btn");
+  const etiqueta = document.getElementById("download-label");
+  const formato = FORMATS[state.format].toLowerCase();
 
-  if (format === "PNG") {
-    const dataUrl = await QRCode.toDataURL(QR_URL, {
-      width: state.size,
-      margin: 2,
-      color: { dark: color, light: "#FFFFFF" },
-    });
-    triggerDownload(dataUrl, `qr-${slugify(BIZ.name)}.png`);
+  if (!qrRegistrado) {
+    showToast("Todavía no hay un código QR generado");
+    return;
   }
 
-  if (format === "SVG") {
-    const svgString = await QRCode.toString(QR_URL, {
-      type: "svg",
-      width: state.size,
-      margin: 2,
-      color: { dark: color, light: "#FFFFFF" },
-    });
-    const blob = new Blob([svgString], { type: "image/svg+xml" });
-    triggerDownload(URL.createObjectURL(blob), `qr-${slugify(BIZ.name)}.svg`);
-  }
+  const textoOriginal = etiqueta.textContent;
+  boton.disabled = true;
+  etiqueta.textContent = "Generando...";
 
-  if (format === "PDF") {
-    // Sin librería de PDF: se abre una vista de impresión con el QR
-    // a tamaño completo, y el usuario elige "Guardar como PDF" desde
-    // el diálogo de impresión del propio navegador.
-    const dataUrl = await QRCode.toDataURL(QR_URL, {
-      width: state.size,
-      margin: 2,
-      color: { dark: color, light: "#FFFFFF" },
+  try {
+    const { blob, nombre } = await descargarImagenQr({
+      formato,
+      tamano: state.size,
+      color: QR_COLORS[state.color].hex
     });
-    const win = window.open("", "_blank");
-    win.document.write(`
-      <html>
-        <head><title>QR — Fonda La Cosecha</title></head>
-        <body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
-          <img src="${dataUrl}" style="width:60vw;max-width:500px;" onload="window.print()">
-        </body>
-      </html>
-    `);
-  }
 
-  showToast(`Descargando ${format}…`);
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, nombre);
+
+    // El objeto queda en memoria hasta que se suelta
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+    showToast(`Descargando ${FORMATS[state.format]}...`);
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    boton.disabled = false;
+    etiqueta.textContent = textoOriginal;
+  }
 });
 
 // --- Compartir por WhatsApp / correo (enlaces reales, igual que public.html) ---
-document.getElementById("share-whatsapp").href = `https://wa.me/?text=${encodeURIComponent(QR_URL)}`;
-document.getElementById("share-email").href = `mailto:?subject=${encodeURIComponent("Nuestro perfil QR")}&body=${encodeURIComponent(QR_URL)}`;
+function renderShareLinks() {
+  document.getElementById("share-whatsapp").href =
+    `https://wa.me/?text=${encodeURIComponent(QR_URL)}`;
+  document.getElementById("share-email").href =
+    `mailto:?subject=${encodeURIComponent("Nuestro perfil QR")}&body=${encodeURIComponent(QR_URL)}`;
+}
 
 function renderUrlChips() {
-  const displayUrl = QR_URL.replace("https://", "");
+  const displayUrl = QR_URL.replace(/^https?:\/\//, "");
   document.getElementById("qr-chip-url").textContent = displayUrl;
   document.getElementById("qr-link-row-url").textContent = displayUrl;
 }
 
+/**
+ * Pide el código al servidor y, si el perfil no lo tiene, lo genera (RF-07).
+ *
+ * Generarlo es idempotente: si ya existía, el servidor devuelve el mismo sin
+ * cambiar su dirección. Por eso se puede llamar sin preguntar antes.
+ */
+async function cargarQr() {
+  try {
+    qrRegistrado = (await Api.miQr()).data;
+  } catch (error) {
+    if (error.status !== 404) {
+      showToast(error.message);
+      return;
+    }
+
+    // Todavía no existe: se genera
+    try {
+      qrRegistrado = (await Api.generarMiQr()).data;
+    } catch (fallo) {
+      // 409: el perfil no tiene contenido activo. 404: no hay perfil.
+      showToast(fallo.message);
+      return;
+    }
+  }
+
+  QR_URL = qrRegistrado.url;
+
+  renderUrlChips();
+  renderShareLinks();
+  drawQR();
+}
+
 renderUrlChips();
+renderShareLinks();
 renderFormatButtons();
+
+cargarQr();
 renderColorButtons();
 drawQR();
 

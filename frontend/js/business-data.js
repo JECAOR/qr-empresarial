@@ -58,11 +58,21 @@ function slugify(name) {
  * no cambia aunque el negocio se renombre, y de eso depende el RF-09 —un QR
  * ya impreso tiene que seguir llevando al mismo perfil—. Solo se recurre al
  * nombre mientras no haya slug, como en la vista pública de demostración.
+ *
+ * Antes se devolvía `https://qr.<slug>.co/menu`, un dominio que no existe.
+ * Ahora apunta a donde está publicada la aplicación de verdad, que es lo que
+ * responderá la vista pública del módulo 5.
  */
 function getQrUrl(biz) {
   const identificador = biz.slug || slugify(biz.name);
 
-  return `https://qr.${identificador}.co/menu`;
+  // origenDelBackend lo define api.js, que no está cargado en las pantallas
+  // públicas (la vista pública y el menú): ahí se cae al origen de la página.
+  const origen = typeof origenDelBackend === "function"
+    ? origenDelBackend()
+    : window.location.origin;
+
+  return `${origen}/p/${identificador}`;
 }
 
 // Deja solo dígitos y el "+" inicial, para enlaces tel:/wa.me
