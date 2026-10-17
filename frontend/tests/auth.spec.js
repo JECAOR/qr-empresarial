@@ -367,3 +367,66 @@ test.describe("Cambio de contraseña desde Configuración", () => {
     expect(token).toBe(TOKEN);
   });
 });
+
+test.describe("Eliminar la cuenta propia", () => {
+  const abrirDialogo = async (page) => {
+    await page.goto("/configuracion.html");
+    await page.click("#open-delete-dialog");
+    await expect(page.locator("#delete-account-dialog")).toBeVisible();
+  };
+
+  test("el aviso nombra el negocio de quien lo lee", async ({ page }) => {
+    await prepararSesion(page);
+    await abrirDialogo(page);
+
+    // Antes el nombre estaba fijo en el HTML
+    await expect(page.locator("#delete-biz-name")).not.toHaveText("tu negocio");
+  });
+
+  test("no borra nada si no se confirma la contraseña", async ({ page }) => {
+    await prepararSesion(page);
+    await abrirDialogo(page);
+
+    await page.click("#confirm-delete");
+
+    const campo = page.locator("#delete-password")
+      .locator("xpath=ancestor::div[contains(@class,'form-field')]");
+    await expect(campo).toHaveClass(/has-error/);
+
+    // Sigue en la pantalla y con la sesión puesta
+    await expect(page).toHaveURL(/configuracion\.html/);
+    const sigueLaSesion = await page.evaluate(() => Boolean(localStorage.getItem("qr.sesion")));
+    expect(sigueLaSesion).toBe(true);
+  });
+
+  test("con la contraseña equivocada lo dice y no cierra la sesión", async ({ page }) => {
+    await simularApi(page, { contrasenaIncorrectaAlBorrar: true });
+    await sembrarSesion(page);
+    await abrirDialogo(page);
+
+    await page.fill("#delete-password", "la-que-no-es");
+    await page.click("#confirm-delete");
+
+    await expect(page.locator("#delete-alert")).toContainText("no es correcta");
+    await expect(page).toHaveURL(/configuracion\.html/);
+
+    const sigueLaSesion = await page.evaluate(() => Boolean(localStorage.getItem("qr.sesion")));
+    expect(sigueLaSesion).toBe(true);
+  });
+
+  test("al eliminarla borra la sesión y lo explica en el login", async ({ page }) => {
+    await prepararSesion(page);
+    await abrirDialogo(page);
+
+    await page.fill("#delete-password", "Clave123*");
+    await page.click("#confirm-delete");
+
+    await expect(page).toHaveURL(/login\.html\?motivo=cuenta-eliminada/);
+    await expect(page.locator("#form-alert")).toContainText("Su cuenta fue eliminada");
+
+    const quedaAlgo = await page.evaluate(() =>
+      Boolean(localStorage.getItem("qr.sesion") || sessionStorage.getItem("qr.sesion"))
+    );
+    expect(quedaAlgo).toBe(false);
+  });
+});

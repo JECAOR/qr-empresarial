@@ -254,10 +254,59 @@ function mostrarMensajeContrasena(texto, tipo = "ok") {
 }
 
 // --- Eliminar cuenta (con confirmación mediante <dialog> nativo) ---
+//
+// El borrado es logico: la fila no desaparece, se marca deleted_at y se libera
+// el correo. Aun asi, desde la aplicacion no hay vuelta atras, asi que se pide
+// la contrasena antes de llamar al servidor.
 const deleteDialog = document.getElementById("delete-account-dialog");
-document.getElementById("open-delete-dialog").addEventListener("click", () => deleteDialog.showModal());
+const deletePassword = document.getElementById("delete-password");
+const deleteAlert = document.getElementById("delete-alert");
+const confirmDeleteBtn = document.getElementById("confirm-delete");
+
+document.getElementById("open-delete-dialog").addEventListener("click", () => {
+  // El nombre se toma de los datos guardados en lugar de dejarlo fijo en el
+  // HTML, para que el aviso hable del negocio de quien lo está leyendo.
+  document.getElementById("delete-biz-name").textContent = getBusinessData().name;
+
+  deletePassword.value = "";
+  deleteAlert.hidden = true;
+  deletePassword.closest(".form-field").classList.remove("has-error");
+
+  deleteDialog.showModal();
+});
+
 document.getElementById("cancel-delete").addEventListener("click", () => deleteDialog.close());
-document.getElementById("confirm-delete").addEventListener("click", () => {
-  deleteDialog.close();
-  window.location.href = "login.html";
+
+confirmDeleteBtn.addEventListener("click", async () => {
+  deleteAlert.hidden = true;
+
+  if (!deletePassword.value) {
+    deletePassword.closest(".form-field").classList.add("has-error");
+    return;
+  }
+  deletePassword.closest(".form-field").classList.remove("has-error");
+
+  const textoOriginal = confirmDeleteBtn.textContent;
+  confirmDeleteBtn.disabled = true;
+  confirmDeleteBtn.setAttribute("aria-busy", "true");
+  confirmDeleteBtn.textContent = "Eliminando...";
+
+  try {
+    await Api.eliminarMiCuenta(deletePassword.value);
+
+    // La cuenta ya no existe: el token guardado no sirve para nada
+    Sesion.limpiar();
+    window.location.href = "login.html?motivo=cuenta-eliminada";
+  } catch (error) {
+    deleteAlert.textContent = error.message;
+    deleteAlert.hidden = false;
+
+    if (error.status === 401) {
+      deletePassword.closest(".form-field").classList.add("has-error");
+    }
+  } finally {
+    confirmDeleteBtn.disabled = false;
+    confirmDeleteBtn.removeAttribute("aria-busy");
+    confirmDeleteBtn.textContent = textoOriginal;
+  }
 });

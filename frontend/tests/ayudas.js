@@ -29,10 +29,15 @@ const TOKEN_NUEVO = "token-de-prueba-emitido-tras-el-cambio";
  * se sirven desde otro sitio, y así se atrapa igual.
  */
 async function simularApi(page, opciones = {}) {
-  const { enlaceInvalido = false, contrasenaActualIncorrecta = false } = opciones;
+  const {
+    enlaceInvalido = false,
+    contrasenaActualIncorrecta = false,
+    contrasenaIncorrectaAlBorrar = false
+  } = opciones;
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
+    const metodo = route.request().method();
 
     const responder = (status, cuerpo) =>
       route.fulfill({
@@ -68,6 +73,14 @@ async function simularApi(page, opciones = {}) {
       }
 
       return responder(200, { message: "El enlace es válido" });
+    }
+
+    if (url.includes("/usuarios/me") && metodo === "DELETE") {
+      if (contrasenaIncorrectaAlBorrar) {
+        return responder(401, { message: "La contraseña no es correcta" });
+      }
+
+      return responder(200, { message: "Cuenta eliminada correctamente" });
     }
 
     if (url.includes("/usuarios/me/contrasena")) {

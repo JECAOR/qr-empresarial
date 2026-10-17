@@ -19,6 +19,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Backend — cierre de sesión y envío del enlace por correo | Terminado (`v0.7.0`) |
 | Frontend conectado a la API (registro, inicio y cierre de sesión, recuperación) | Terminado (`v0.8.0`) |
 | Cambio de contraseña y cierre de todas las sesiones | Terminado (`v0.9.0`) |
+| Eliminación de la cuenta propia | Terminado (`v1.0.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -34,6 +35,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v0.7.0` | Cierre de sesión (RF-02) y envío del enlace de recuperación por correo (RF-03) |
 | `v0.8.0` | Frontend conectado a la API: los RF-01 a RF-03 funcionan desde las pantallas |
 | `v0.9.0` | Cambio de contraseña propio y cierre de todas las sesiones al cambiarla |
+| `v1.0.0` | Eliminación de la cuenta propia. Módulo 1 completo |
 
 ## API disponible
 
@@ -50,6 +52,7 @@ Base: `http://localhost:3000/api`
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
 | PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
+| DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -59,7 +62,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 74 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 82 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Cómo consume la API el frontend
 
@@ -94,7 +97,7 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `forgot-password.html` | `POST /auth/recuperar-contrasena` |
 | `restablecer.html` | `GET /auth/restablecer/:token` y `POST /auth/restablecer-contrasena` |
 | `dashboard`, `contenido`, `qr`, `configuracion` | `GET /usuarios/me` y `POST /auth/logout` |
-| `configuracion.html` | además `PUT /usuarios/me/contrasena` |
+| `configuracion.html` | además `PUT /usuarios/me/contrasena` y `DELETE /usuarios/me` |
 
 Las pantallas de contenido, código QR y vista pública siguen trabajando con
 `localStorage`: sus endpoints son los módulos 2 a 8, que todavía no existen. Y
@@ -135,8 +138,8 @@ módulo 8 (RF-13 a RF-15).
 | Sprint | Fechas (2026) | Módulo | Requisitos | Estado |
 |---|---|---|---|---|
 | 0 | 22/09 – 28/09 | Configuración: repositorio, Express base, conexión MySQL, migraciones | — | Terminado |
-| 1 | 29/09 – 05/10 | M1. Usuarios y cuentas | RF-01, RF-13 a RF-15 | Terminado |
-| 1 | 06/10 – 13/10 | M1. Autenticación, registro público, cierre de sesión y recuperación de contraseña | RF-01, RF-02, RF-03 | Terminado |
+| 1 | 29/09 – 05/10 | M1. Usuarios y cuentas (CRUD que usará el módulo 8) | RF-01 | Terminado |
+| 1 | 06/10 – 13/10 | M1. Autenticación, registro público, cierre de sesión, recuperación y cambio de contraseña | RF-01, RF-02, RF-03 | Terminado |
 | 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Siguiente |
 | 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Pendiente |
 | 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Pendiente |
@@ -147,6 +150,8 @@ módulo 8 (RF-13 a RF-15).
 
 El orden sigue las dependencias entre módulos (usuario → perfil → contenido → QR). Así, el flujo principal queda completo al final del sprint 4.
 
+El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13 a RF-15, pero esos requisitos pertenecen al **módulo 8** y se abordan en el sprint 6: todavía falta la actividad de los usuarios (RF-13), las pantallas de administración (RF-13 y RF-14) y los reportes descargables (RF-15).
+
 ### Reglas de negocio aplicadas
 
 - **RN-01** El correo es único entre las cuentas activas.
@@ -156,7 +161,7 @@ El orden sigue las dependencias entre módulos (usuario → perfil → contenido
 - **Cambio de contraseña:** al restablecerla o cambiarla se cierran todas las sesiones de la cuenta. Quien recupera su cuenta suele hacerlo porque perdió el control de ella, así que las sesiones abiertas antes del cambio dejan de servir. Al cambiarla desde Configuración se devuelve un token nuevo, para no echar de la pantalla a quien la cambió.
 - **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403.
 - **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no puede iniciar sesión ni seguir usando tokens emitidos antes.
-- **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas.
+- **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas. La puede pedir el administrador o el propio dueño de la cuenta, confirmando su contraseña. Un administrador no puede eliminarse a sí mismo: si fuera el único, nadie podría volver a administrar el sistema.
 
 ### Reglas previstas
 
