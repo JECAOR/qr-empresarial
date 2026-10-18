@@ -25,6 +25,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M4. Código QR (RF-07 y RF-08) | Terminado (`v1.4.0`) |
 | M5. Vista pública (RF-09) | Terminado (`v1.5.2`) |
 | M6. Estadísticas (RF-11) | Terminado (`v1.6.1`) |
+| M7. Configuración (RF-12) | Terminado (`v1.7.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -50,6 +51,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v1.5.2` | Se muestra el logo del negocio, y el service worker deja de guardar la API |
 | `v1.6.0` | Módulo 6: escaneos, visitas y clics reales en el panel |
 | `v1.6.1` | El panel muestra los enlaces más pulsados |
+| `v1.7.0` | Módulo 7: datos personales, avisos de la cuenta y tema del negocio |
 
 ## API disponible
 
@@ -67,6 +69,9 @@ Base: `http://localhost:3000/api`
 | GET | `/auth/restablecer/:token` | Público | Comprobar que el enlace siga siendo válido |
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
+| PUT | `/usuarios/me` | Autenticado | Actualizar los datos personales |
+| GET | `/usuarios/me/preferencias` | Autenticado | Consultar los avisos de la cuenta |
+| PUT | `/usuarios/me/preferencias` | Autenticado | Guardar los avisos de la cuenta |
 | PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
@@ -92,7 +97,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 170 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 193 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Cómo consume la API el frontend
 
@@ -128,7 +133,7 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `restablecer.html` | `GET /auth/restablecer/:token` y `POST /auth/restablecer-contrasena` |
 | `dashboard`, `contenido`, `qr`, `configuracion` | `GET /usuarios/me` y `POST /auth/logout` |
 | `dashboard.html` | además `GET /estadisticas` |
-| `configuracion.html` | además `PUT /usuarios/me/contrasena`, `DELETE /usuarios/me` y `PUT /perfiles/me` |
+| `configuracion.html` | además `PUT /usuarios/me`, `GET/PUT /usuarios/me/preferencias`, `PUT /usuarios/me/contrasena`, `DELETE /usuarios/me` y `PUT /perfiles/me` |
 | Toda pantalla privada | `GET /perfiles/me` al cargar, para traer los datos del negocio |
 | `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido`, `GET /contenido/categorias` y `PUT /contenido/orden` |
 | `qr.html` | `GET/POST /qr` y `GET /qr/imagen` |
@@ -188,8 +193,8 @@ módulo 8 (RF-13 a RF-15).
 | 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Terminado |
 | 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Terminado |
 | 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Terminado |
-| 5 | 03/11 – 09/11 | M6. Estadísticas (terminado) + M7. Configuración | RF-11, RF-12 | En curso |
-| 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Pendiente |
+| 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Terminado |
+| 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Siguiente |
 | 7 | 17/11 – 23/11 | Pruebas de integración, aceptación y seguridad | Todos | Pendiente |
 | 8 | 24/11 – 18/12 | Despliegue, manuales y cierre | — | Pendiente |
 
@@ -205,6 +210,8 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **El logo del negocio se muestra** en la vista pública y en la barra lateral del panel. Si no hay logo, o si la dirección deja de servir, se usa el dibujo genérico o las iniciales: la imagen la escribe una persona y puede caducar.
 - **El service worker no guarda las respuestas de la API.** Solo las pantallas. Son datos de una cuenta concreta, y en un equipo compartido sin conexión la caché habría devuelto los de quien usó el navegador antes.
 - **Ninguna pantalla pública muestra datos de ejemplo.** La del menú mostraba los platos y precios de un negocio de muestra a cualquier visitante; ahora enseña los bloques que el negocio publicó en la sección «menu» de su panel, y su botón se oculta si esa sección está vacía.
+- **El tema de color es del negocio, no de quien lo mira.** Vive en el perfil empresarial y la vista pública lo aplica, así que quien escanea el código ve los colores que eligió el negocio. Antes se guardaba solo en el navegador, de modo que ese color no llegaba nunca a un visitante.
+- **Para cambiar el correo hay que confirmar la contraseña**, y para cambiar el nombre no. El correo es el identificador con el que se inicia sesión y al que llega el enlace de recuperación: quien se hiciera con una sesión abierta podría cambiarlo y después apropiarse de la cuenta.
 - **Un escaneo se distingue de una visita directa.** La imagen del código lleva `?qr=1` y el enlace que se comparte no, así que la vista pública sabe por dónde llegó la persona. Son dos de las tres medidas del RF-11; la tercera son los clics en enlaces.
 - **Las estadísticas no identifican a quien visita.** No se guarda ni la IP ni nada parecido, así que se cuentan visitas, no visitantes únicos. El RF-11 pide «visitas al perfil».
 - **La vista pública se apaga, no se borra.** Deja de responder si el código QR fue desactivado o si la cuenta dueña está restringida, y en los tres casos —incluido el perfil inexistente— devuelve lo mismo: decir «existe pero está suspendido» no es asunto de quien escanea.
@@ -230,7 +237,7 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 
 ## Base de datos
 
-Esquema `qr_empresarial` con 10 tablas: `usuario`, `perfil_empresarial`, `codigo_qr`, `enlace`, `elemento`, `categoria_enlace`, `categoria_elemento`, `evento`, `token_recuperacion` y `sesion_revocada`.
+Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo_qr`, `enlace`, `elemento`, `categoria_enlace`, `categoria_elemento`, `evento`, `token_recuperacion`, `sesion_revocada` y `preferencia_usuario`.
 
 | Migración | Cambio |
 |---|---|
@@ -244,6 +251,7 @@ Esquema `qr_empresarial` con 10 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `008-ampliar-contenido.sql` | Secciones y título en el contenido, y las tres categorías de enlace que faltaban del RF-05 |
 | `009-corregir-fechas-codigo-qr.sql` | Fechas automáticas y estado por defecto en `codigo_qr` |
 | `010-preparar-eventos.sql` | Fecha automática e índices en `evento`, para las estadísticas |
+| `011-tema-y-preferencias.sql` | Columna `tema` en `perfil_empresarial` y tabla `preferencia_usuario` |
 
 ## Estructura de carpetas
 
@@ -337,6 +345,7 @@ mysql -u root -p qr_empresarial < database/migrations/007-ampliar-perfil-empresa
 mysql -u root -p qr_empresarial < database/migrations/008-ampliar-contenido.sql
 mysql -u root -p qr_empresarial < database/migrations/009-corregir-fechas-codigo-qr.sql
 mysql -u root -p qr_empresarial < database/migrations/010-preparar-eventos.sql
+mysql -u root -p qr_empresarial < database/migrations/011-tema-y-preferencias.sql
 
 # 2. Backend
 cd backend

@@ -142,7 +142,9 @@ async function simularApi(page, opciones = {}) {
     errorAlGenerarQr = null,
     perfilPublicoNoDisponible = false,
     sinEstadisticas = false,
-    sinClics = false
+    sinClics = false,
+    errorAlGuardarDatos = null,
+    errorAlGuardarPreferencias = null
   } = opciones;
 
   // El simulador recuerda el perfil y el contenido, como haría el servidor:
@@ -155,6 +157,10 @@ async function simularApi(page, opciones = {}) {
   // Los eventos que informó la pantalla, para poder comprobarlos (RF-11)
   const eventosInformados = [];
   page.eventosInformados = eventosInformados;
+
+  // Datos de la cuenta y preferencias de avisos (RF-12), con memoria
+  let cuentaActual = { ...USUARIO };
+  let preferenciasActuales = { resumen: true, resenas: true, novedades: false, guardadas: false };
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
@@ -453,6 +459,24 @@ async function simularApi(page, opciones = {}) {
       return responder(200, { message: "Cuenta eliminada correctamente" });
     }
 
+    if (url.includes("/usuarios/me/preferencias")) {
+      if (metodo === "PUT") {
+        if (errorAlGuardarPreferencias) {
+          return responder(400, { message: errorAlGuardarPreferencias });
+        }
+
+        const cuerpo = JSON.parse(route.request().postData() || "{}");
+        preferenciasActuales = { ...cuerpo, guardadas: true };
+
+        return responder(200, {
+          message: "Preferencias guardadas correctamente",
+          data: preferenciasActuales
+        });
+      }
+
+      return responder(200, { data: preferenciasActuales });
+    }
+
     if (url.includes("/usuarios/me/contrasena")) {
       if (contrasenaActualIncorrecta) {
         // Un 401 aquí no significa que la sesión venció, sino que la
@@ -467,8 +491,30 @@ async function simularApi(page, opciones = {}) {
       });
     }
 
+    if (url.includes("/usuarios/me") && metodo === "PUT") {
+      if (errorAlGuardarDatos) {
+        return responder(errorAlGuardarDatos.status || 400, {
+          message: errorAlGuardarDatos.message || "No se pudo guardar"
+        });
+      }
+
+      const cuerpo = JSON.parse(route.request().postData() || "{}");
+
+      // El servidor exige la contraseña solo si el correo cambia
+      if (cuerpo.correo !== cuentaActual.correo && !cuerpo.contrasena) {
+        return responder(401, { message: "Confirme su contraseña para cambiar el correo" });
+      }
+
+      cuentaActual = { ...cuentaActual, nombre: cuerpo.nombre, correo: cuerpo.correo };
+
+      return responder(200, {
+        message: "Datos actualizados correctamente",
+        data: cuentaActual
+      });
+    }
+
     if (url.includes("/usuarios/me")) {
-      return responder(200, { data: USUARIO });
+      return responder(200, { data: cuentaActual });
     }
 
     return responder(404, { message: "Recurso no encontrado" });

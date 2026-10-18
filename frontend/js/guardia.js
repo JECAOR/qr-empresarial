@@ -38,6 +38,12 @@ async function sincronizarPerfilEmpresarial() {
       ...perfilApiADatosLocales(respuesta.data)
     });
 
+    // El tema es del negocio y puede haberse cambiado desde otro equipo
+    if (respuesta.data.tema && respuesta.data.tema !== getStoredTheme()) {
+      localStorage.setItem("qre-theme", respuesta.data.tema);
+      applyStoredTheme();
+    }
+
     window.dispatchEvent(new CustomEvent("perfil:sincronizado"));
   } catch (error) {
     // 404: la cuenta no tiene perfil todavía. Les pasa a las que creó el

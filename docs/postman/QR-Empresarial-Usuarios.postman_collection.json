@@ -148,6 +148,14 @@
     {
       "key": "clicsAntes",
       "value": ""
+    },
+    {
+      "key": "tokenConfig",
+      "value": ""
+    },
+    {
+      "key": "slugConfig",
+      "value": ""
     }
   ],
   "item": [
@@ -7965,6 +7973,1193 @@
                   "type": "string"
                 }
               ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia 7 - Configuracion de la cuenta (RF-12)",
+      "item": [
+        {
+          "name": "166 Registrar una cuenta desechable (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/registro",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ]
+            },
+            "description": "Esta carpeta cambia el correo y la contrasena de una cuenta, asi que usa la suya.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta de Configuracion\",\n  \"correo\": \"config.prueba@ejemplo.co\",\n  \"contrasena\": \"ConfigPrueba1*\",\n  \"negocio\": {\n    \"nombreNegocio\": \"Negocio de Configuracion\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "167 Login (guarda el token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"config.prueba@ejemplo.co\",\n  \"contrasena\": \"ConfigPrueba1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenConfig', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "168 Cambiar solo el nombre, sin contrasena (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Para corregir el nombre no hace falta la contrasena: no cambia nada con lo que se pueda entrar a la cuenta.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Renombrada\",\n  \"correo\": \"config.prueba@ejemplo.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Guardo el nombre nuevo', () => pm.expect(d.nombre).to.eql('Cuenta Renombrada'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "169 Nombre de una letra (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"A\",\n  \"correo\": \"config.prueba@ejemplo.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "170 Correo con formato invalido (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Renombrada\",\n  \"correo\": \"no-es-un-correo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "171 Cambiar el correo sin contrasena (401)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "El correo es el identificador con el que se inicia sesion y al que llega el enlace de recuperacion. Quien se hiciera con una sesion abierta podria cambiarlo y despues apropiarse de la cuenta con 'olvide mi contrasena'.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Renombrada\",\n  \"correo\": \"otro.config@ejemplo.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "172 Cambiar el correo con la contrasena equivocada (401)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Renombrada\",\n  \"correo\": \"otro.config@ejemplo.co\",\n  \"contrasena\": \"la-que-no-es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "173 Correo que ya es de otra cuenta (409)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "RN-01: el correo es unico entre las cuentas activas.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Renombrada\",\n  \"correo\": \"admin@caferaices.co\",\n  \"contrasena\": \"ConfigPrueba1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "174 El rol no se puede cambiar por aqui (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "La actualizacion administrativa si puede cambiar el rol; esta no, o cualquiera se ascenderia a administrador cambiando sus 'datos personales'.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Renombrada\",\n  \"correo\": \"config.prueba@ejemplo.co\",\n  \"rol\": \"administrador\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Sigue siendo empresa', () => pm.expect(d.rol).to.eql('empresa'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "175 Cambiar el correo con la contrasena (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Renombrada\",\n  \"correo\": \"otro.config@ejemplo.co\",\n  \"contrasena\": \"ConfigPrueba1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Guardo el correo nuevo', () => pm.expect(d.correo).to.eql('otro.config@ejemplo.co'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "176 Login con el correo nuevo (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Confirma que el cambio es real: es con ese correo con el que se entra ahora.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"otro.config@ejemplo.co\",\n  \"contrasena\": \"ConfigPrueba1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenConfig', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "177 Login con el correo anterior (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"config.prueba@ejemplo.co\",\n  \"contrasena\": \"ConfigPrueba1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "178 Preferencias sin haber guardado nada (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/preferencias",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "preferencias"
+              ]
+            },
+            "description": "No es un error no haber cambiado nada: se devuelven los valores por defecto para que la pantalla tenga algo que mostrar en los interruptores.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Avisa que son los de fabrica', () => pm.expect(d.guardadas).to.eql(false));",
+                  "pm.test('Resumen y resenas si, novedades no', () => {",
+                  "  pm.expect(d.resumen).to.eql(true);",
+                  "  pm.expect(d.resenas).to.eql(true);",
+                  "  pm.expect(d.novedades).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "179 Guardar las preferencias (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/preferencias",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "preferencias"
+              ]
+            },
+            "description": "La fila se crea la primera vez que se guarda, con un INSERT ... ON DUPLICATE KEY UPDATE: la base decide si toca crear o actualizar.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumen\": false,\n  \"resenas\": true,\n  \"novedades\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Quedaron como se enviaron', () => {",
+                  "  pm.expect(d.resumen).to.eql(false);",
+                  "  pm.expect(d.novedades).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "180 Vuelven a leerse igual (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/preferencias",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "preferencias"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ya estan guardadas', () => pm.expect(d.guardadas).to.eql(true));",
+                  "pm.test('Persistio el resumen apagado', () => pm.expect(d.resumen).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "181 Cuerpo a medias (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/preferencias",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "preferencias"
+              ]
+            },
+            "description": "Se exigen los tres: la pantalla manda siempre los tres interruptores, y aceptar un cuerpo incompleto dejaria los que faltan en su valor por defecto sin que nadie lo pida.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumen\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "182 Valor que no es booleano (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/preferencias",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "preferencias"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumen\": \"si\",\n  \"resenas\": true,\n  \"novedades\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "183 Preferencias sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me/preferencias",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "preferencias"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "184 Guardar el tema en el perfil (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "El tema es el color de marca del negocio, no una preferencia de quien lo mira: por eso vive en el perfil y no en la tabla de preferencias.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Negocio de Configuracion\",\n  \"tema\": \"teal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Guardo el tema', () => pm.expect(d.tema).to.eql('teal'));",
+                  "pm.collectionVariables.set('slugConfig', d.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "185 Tema inventado (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "Solo los tres que existen en el CSS: un valor inventado dejaria la pantalla sin colores.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Negocio de Configuracion\",\n  \"tema\": \"fucsia\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "186 Guardar otros datos no borra el tema (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "El formulario de los datos del negocio no envia el tema -se cambia con su propio selector-, asi que el UPDATE lo conserva con COALESCE. Sin eso, guardar el telefono devolveria el color a indigo sin que nadie lo pidiera.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreNegocio\": \"Negocio de Configuracion\",\n  \"telefono\": \"+57 300 000 0000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El tema sigue siendo teal', () => pm.expect(d.tema).to.eql('teal'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "187 La vista publica devuelve el tema (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugConfig}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugConfig}}"
+              ]
+            },
+            "description": "Asi quien escanea el codigo ve los colores que eligio el negocio. Antes la pantalla publica aplicaba el tema guardado en el navegador del visitante.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const p = pm.response.json().data.perfil;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae el tema del negocio', () => pm.expect(p.tema).to.eql('teal'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "188 Eliminar la cuenta de prueba (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Deja la base como estaba para que la coleccion se pueda repetir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasena\": \"ConfigPrueba1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [],

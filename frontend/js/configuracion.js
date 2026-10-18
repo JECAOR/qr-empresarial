@@ -107,6 +107,104 @@ businessForm.addEventListener("submit", async (e) => {
   }
 });
 
+// --- Datos personales (RF-12) ---
+//
+// La contraseña solo se pide cuando el correo cambia. Es el identificador con
+// el que se inicia sesión y al que llega el enlace de recuperación: quien se
+// hiciera con una sesión abierta podría cambiarlo y después apropiarse de la
+// cuenta con "olvidé mi contraseña".
+const accountForm = document.getElementById("account-form");
+const accEmail = document.getElementById("acc-email");
+const accPasswordField = document.getElementById("acc-password-field");
+
+let correoOriginal = "";
+
+function cargarDatosPersonales() {
+  const cuenta = typeof Sesion !== "undefined" ? Sesion.usuario() : null;
+
+  if (!cuenta) return;
+
+  document.getElementById("acc-name").value = cuenta.nombre || "";
+  accEmail.value = cuenta.correo || "";
+  correoOriginal = cuenta.correo || "";
+
+  accPasswordField.hidden = true;
+}
+
+const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (accountForm) {
+  cargarDatosPersonales();
+
+  // La guardia confirma la cuenta contra el servidor después de que esta
+  // pantalla se dibujó: cuando llega, se rellena con lo confirmado
+  window.addEventListener("perfil:sincronizado", cargarDatosPersonales);
+
+  // El campo de la contraseña aparece en cuanto el correo deja de ser el
+  // mismo, para que no sorprenda al enviar
+  accEmail.addEventListener("input", () => {
+    const cambio = accEmail.value.trim().toLowerCase() !== correoOriginal.toLowerCase();
+
+    accPasswordField.hidden = !cambio;
+  });
+
+  accountForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const nombreEl = document.getElementById("acc-name");
+    const passEl = document.getElementById("acc-password");
+
+    const nombre = nombreEl.value.trim();
+    const correo = accEmail.value.trim();
+    const correoCambia = correo.toLowerCase() !== correoOriginal.toLowerCase();
+
+    const marcar = (el, mal) => el.closest(".form-field").classList.toggle("has-error", mal);
+
+    const nombreMal = nombre.length < 2;
+    const correoMal = !FORMATO_CORREO.test(correo);
+    const faltaClave = correoCambia && !passEl.value;
+
+    marcar(nombreEl, nombreMal);
+    marcar(accEmail, correoMal);
+    marcar(passEl, faltaClave);
+
+    if (nombreMal || correoMal || faltaClave) {
+      mostrarToast("account-saved-toast", "Revise los campos marcados", "error");
+      return;
+    }
+
+    const boton = accountForm.querySelector('button[type="submit"]');
+    const textoOriginal = boton.textContent;
+    boton.disabled = true;
+    boton.textContent = "Guardando...";
+
+    try {
+      const respuesta = await Api.actualizarMisDatos(
+        nombre, correo, correoCambia ? passEl.value : null
+      );
+
+      // La sesión guarda el nombre y el correo: hay que refrescarla o la
+      // barra lateral seguiría mostrando los de antes
+      Sesion.actualizarUsuario(respuesta.data);
+
+      correoOriginal = respuesta.data.correo;
+      passEl.value = "";
+      accPasswordField.hidden = true;
+
+      mostrarToast("account-saved-toast", "✓ Datos actualizados");
+      renderSidebar();
+      prepararCierreDeSesion();
+    } catch (error) {
+      if (error.status === 401) marcar(passEl, true);
+
+      mostrarToast("account-saved-toast", error.message, "error");
+    } finally {
+      boton.disabled = false;
+      boton.textContent = textoOriginal;
+    }
+  });
+}
+
 // --- Sesión (RF-02) ---
 //
 // La barra lateral tiene su propio botón de salida, pero desaparece en
@@ -154,9 +252,20 @@ function showSavedToast(id) {
   mostrarToast(id, "✓ Cambios guardados");
 }
 
-// --- Notificaciones (persistidas de verdad en localStorage) ---
+// --- Notificaciones (RF-12) ---
+//
+// Vivían solo en el navegador: quien entraba desde otro equipo las perdía.
+// Ahora las guarda el servidor, y localStorage queda como caché para que los
+// interruptores no empiecen en su valor de fábrica mientras llega la
+// respuesta.
+//
+// Las claves de la pantalla y las de la API no se llaman igual: la pantalla
+// ya existía en inglés y la API sigue el español del esquema. Esta es la
+// única traducción.
 const NOTIF_KEY = "qre-notifications";
 const NOTIF_DEFAULTS = { weekly: true, reviews: true, updates: false };
+
+const NOMBRE_EN_LA_API = { weekly: "resumen", reviews: "resenas", updates: "novedades" };
 
 function getNotifPrefs() {
   try {
@@ -168,7 +277,44 @@ function getNotifPrefs() {
 }
 
 function saveNotifPrefs(prefs) {
-  localStorage.setItem(NOTIF_KEY, JSON.stringify(prefs));
+  try {
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(prefs));
+  } catch (error) {
+    console.warn("No se pudieron guardar las preferencias en el navegador:", error.message);
+  }
+}
+
+/** Traduce las claves de la pantalla a las de la API. */
+function prefsParaLaApi(prefs) {
+  return {
+    resumen: Boolean(prefs.weekly),
+    resenas: Boolean(prefs.reviews),
+    novedades: Boolean(prefs.updates)
+  };
+}
+
+/**
+ * Trae las preferencias del servidor y pone los interruptores como están.
+ *
+ * Si nunca se guardaron, el servidor devuelve los valores por defecto, así
+ * que no hay nada que distinguir aquí.
+ */
+async function sincronizarNotificaciones() {
+  try {
+    const { data } = await Api.misPreferencias();
+
+    saveNotifPrefs({
+      weekly: data.resumen,
+      reviews: data.resenas,
+      updates: data.novedades
+    });
+
+    loadNotifToggles();
+  } catch (error) {
+    // Sin conexión se queda con lo que haya en caché: es mejor que dejar los
+    // interruptores en una posición que no es la de nadie
+    console.warn("No se pudieron traer las preferencias:", error.message);
+  }
 }
 
 // Al cargar la página, cada interruptor refleja lo que ya estaba guardado
@@ -196,8 +342,21 @@ document.querySelectorAll(".settings-notif-toggle").forEach((toggle) => {
     const prefs = getNotifPrefs();
     prefs[toggle.dataset.notifKey] = isOn;
     saveNotifPrefs(prefs);
+
+    // Se manda al servidor sin esperarlo para que el interruptor responda al
+    // momento. Si falla, se vuelve a poner como estaba y se avisa: dejarlo
+    // encendido en la pantalla y apagado en el servidor sería peor.
+    Api.guardarMisPreferencias(prefsParaLaApi(prefs)).catch((error) => {
+      prefs[toggle.dataset.notifKey] = !isOn;
+      saveNotifPrefs(prefs);
+      loadNotifToggles();
+
+      mostrarToast("notif-saved-toast", error.message, "error");
+    });
   });
 });
+
+sincronizarNotificaciones();
 
 // --- Cambiar contraseña (con el mismo medidor de fuerza del registro) ---
 const passwordForm = document.getElementById("password-form");

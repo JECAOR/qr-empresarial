@@ -56,6 +56,15 @@ function pintarPerfil(perfil) {
 
   document.title = `${perfil.nombreNegocio} · QR Empresarial`;
 
+  // El color de marca del negocio (RF-12). Antes esta pantalla aplicaba el
+  // tema guardado en el navegador del visitante, de modo que el color que
+  // elegia el negocio no llegaba nunca a quien escaneaba el codigo.
+  if (perfil.tema && perfil.tema !== "indigo") {
+    document.documentElement.setAttribute("data-theme", perfil.tema);
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+
   texto("profile-name", perfil.nombreNegocio);
   texto("profile-description", perfil.descripcion || perfil.categoria || "");
   texto("profile-address", perfil.direccion || "");

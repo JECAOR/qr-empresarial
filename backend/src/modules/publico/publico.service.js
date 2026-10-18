@@ -37,6 +37,9 @@ function perfilPublico(fila) {
     instagram: fila.instagram,
     horario: fila.horario,
     imagen: fila.imagen,
+    // El color de marca: la pantalla publica lo aplica, de modo que quien
+    // escanea el codigo ve los colores que eligio el negocio
+    tema: fila.tema,
     slug: fila.slug,
     actualizadoEn: fila.fecha_actualizacion
   };

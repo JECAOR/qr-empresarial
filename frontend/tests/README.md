@@ -50,6 +50,7 @@ npm run test:ui
 | `publico.spec.js` | Vista pública: perfil y contenido sin sesión, contacto incompleto y escape de HTML |
 | `menu.spec.js` | Pantalla del menú: bloques de la sección, volver al perfil, estados vacíos y escape de HTML |
 | `estadisticas.spec.js` | Tarjetas y gráfica del panel con datos del servidor, y el registro de escaneos, visitas y clics |
+| `configuracion.spec.js` | Datos personales, avisos de la cuenta y el tema del negocio en la vista pública |
 | `ayudas.js` | No es una prueba: es el apoyo compartido que simula la API |
 
 ## Por qué no hace falta el backend

@@ -11,7 +11,7 @@ const pool = require('../../config/database');
 // sin que nadie lo decida.
 const CAMPOS = `
   id_perfil, nombre_negocio, categoria, descripcion, direccion, telefono,
-  correo_contacto, instagram, horario, imagen, slug,
+  correo_contacto, instagram, horario, imagen, tema, slug,
   fecha_creacion, fecha_actualizacion, id_usuario
 `;
 
@@ -81,16 +81,16 @@ async function crear(datos, conexion) {
     idUsuario, nombreNegocio, slug,
     categoria = null, descripcion = null, direccion = null,
     telefono = null, correoContacto = null, instagram = null,
-    horario = null, imagen = null
+    horario = null, imagen = null, tema = null
   } = datos;
 
   const [resultado] = await ejecutor.execute(
     `INSERT INTO perfil_empresarial
        (id_usuario, nombre_negocio, slug, categoria, descripcion, direccion,
-        telefono, correo_contacto, instagram, horario, imagen)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        telefono, correo_contacto, instagram, horario, imagen, tema)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [idUsuario, nombreNegocio, slug, categoria, descripcion, direccion,
-      telefono, correoContacto, instagram, horario, imagen]
+      telefono, correoContacto, instagram, horario, imagen, tema || 'indigo']
   );
 
   return resultado.insertId;
@@ -112,17 +112,21 @@ async function crear(datos, conexion) {
 async function actualizarPorUsuario(idUsuario, datos) {
   const {
     nombreNegocio, categoria, descripcion, direccion,
-    telefono, correoContacto, instagram, horario, imagen
+    telefono, correoContacto, instagram, horario, imagen, tema
   } = datos;
 
+  // El tema se conserva si no llega en la peticion. El formulario de los
+  // datos del negocio no lo envia -se cambia con su propio selector-, y sin
+  // este COALESCE guardar la direccion o el telefono devolveria el color a
+  // indigo sin que nadie lo pidiera.
   const [resultado] = await pool.execute(
     `UPDATE perfil_empresarial
      SET nombre_negocio = ?, categoria = ?, descripcion = ?, direccion = ?,
          telefono = ?, correo_contacto = ?, instagram = ?, horario = ?,
-         imagen = ?
+         imagen = ?, tema = COALESCE(?, tema)
      WHERE id_usuario = ?`,
     [nombreNegocio, categoria, descripcion, direccion, telefono,
-      correoContacto, instagram, horario, imagen, idUsuario]
+      correoContacto, instagram, horario, imagen, tema || null, idUsuario]
   );
 
   return resultado.affectedRows;
