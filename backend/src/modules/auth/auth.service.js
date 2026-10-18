@@ -86,6 +86,11 @@ async function iniciarSesion(correo, contrasena) {
   // Caso 4: autenticacion correcta
   const token = firmarToken(usuario.id_usuario, usuario.rol);
 
+  // Se anota cuando entro (RF-13). Va despues de comprobar la contrasena a
+  // proposito: un intento fallido no es un acceso, y contarlo como tal haria
+  // parecer activa una cuenta que alguien esta intentando forzar.
+  await authRepository.registrarAcceso(usuario.id_usuario);
+
   return {
     token,
     usuario: {

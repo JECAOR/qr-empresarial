@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.9.1
+- **Versión:** v2.0.0
 
 ## Resumen
 
@@ -41,6 +41,10 @@ Documentación de los endpoints disponibles.
 | GET | `/qr/imagen` | Autenticado | Descargar en PNG, SVG o PDF |
 | PATCH | `/qr/estado` | Autenticado | Activar o desactivar |
 | GET | `/estadisticas` | Autenticado | Escaneos, visitas, clics y serie diaria |
+| GET | `/admin/resumen` | Administrador | Cuántas cuentas hay y en qué estado |
+| GET | `/admin/usuarios` | Administrador | Lista de cuentas con su actividad |
+| GET | `/admin/usuarios/{id}` | Administrador | Detalle de una cuenta |
+| GET | `/admin/reportes/usuarios` | Administrador | Reporte de actividad en CSV |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -1108,13 +1112,145 @@ sus eventos.
 
 ---
 
+## Administración
+
+Exclusiva del rol `administrador` (RN-22). El guardia se monta sobre el router entero, no
+ruta por ruta: así una ruta nueva nace protegida en vez de quedar abierta si alguien olvida
+añadirle el middleware. Quien no sea administrador recibe **403**; sin token, **401**.
+
+**El RF-14 no tiene endpoints aquí.** «Restringir accesos y eliminar usuarios» ya lo
+resuelven `PATCH /api/usuarios/:id/estado` y `DELETE /api/usuarios/:id`, que existen desde el
+módulo 1 con sus reglas y sus pruebas. Duplicarlos para que la pantalla nueva tuviera «sus»
+endpoints habría dejado dos caminos para lo mismo, y tarde o temprano uno se queda sin una
+regla.
+
+### GET /api/admin/resumen
+
+RF-13: «consultar la cantidad de usuarios registrados».
+
+```json
+{
+  "data": {
+    "total": 42,
+    "activos": 39,
+    "restringidos": 3,
+    "administradores": 1,
+    "nuncaEntraron": 7,
+    "inactivos30Dias": 12,
+    "nuevos30Dias": 5
+  }
+}
+```
+
+Las dos cifras del medio son las que el RF-14 necesita para decidir: «eliminar usuarios
+**inactivos**» no se puede juzgar sin saber quién lleva meses sin entrar.
+
+Las cuentas eliminadas no se cuentan. El borrado es lógico y la fila sigue ahí, pero para la
+administración esa cuenta ya no existe.
+
+**Errores:** 401, 403.
+
+---
+
+### GET /api/admin/usuarios
+
+RF-13: «y su actividad».
+
+**Parámetros:** `busqueda`, `estado` (`activo` / `restringido`), `rol`, `orden`
+(`registro`, `acceso`, `nombre`, `actividad`), `pagina`, `porPagina` (máximo 100).
+
+```json
+{
+  "data": [
+    {
+      "id": 12,
+      "nombre": "Camila Restrepo",
+      "correo": "camila@fondalacosecha.co",
+      "rol": "empresa",
+      "estado": "activo",
+      "fechaRegistro": "2026-09-02",
+      "ultimoAcceso": "2026-10-17T14:20:00.000Z",
+      "perfil": {
+        "nombreNegocio": "Fonda La Cosecha",
+        "slug": "fonda-la-cosecha",
+        "bloquesActivos": 7,
+        "qr": true
+      },
+      "actividad": { "escaneos": 248, "visitas": 96, "clics": 73 }
+    }
+  ],
+  "paginacion": { "pagina": 1, "porPagina": 20, "total": 42, "paginas": 3 }
+}
+```
+
+**Casi toda esta actividad ya estaba en el esquema** y solo había que juntarla: si la cuenta
+tiene perfil, cuánto contenido publicó, si su código está encendido y cuántos eventos
+acumula. Lo único que hubo que agregar fue `ultimo_acceso` (migración 014), porque ninguna de
+las columnas que había servía para saber cuándo entró alguien por última vez.
+
+**`perfil: null`** no es un error: las cuentas que crea el administrador desde
+`POST /api/usuarios` no tienen perfil, y son justo las que quiere ver. **`qr: null`** tampoco:
+significa que nunca generó el código, que no es lo mismo que haberlo apagado (`false`).
+
+**Los conteos no se inflan entre sí.** Los bloques y los eventos se cuentan en subconsultas
+correlacionadas y no con `JOIN` + `GROUP BY`: con los JOIN, una cuenta con 3 bloques y 50
+eventos multiplicaría las filas y los dos conteos saldrían mal. Hay una prueba que lo fija.
+
+**Un filtro inválido se ignora**, no da 400: responder con un error porque alguien editó la
+URL dejaría la pantalla en blanco por algo que no importa. Lo único que sí corta es una
+búsqueda de más de 100 caracteres, porque acaba en tres `LIKE '%…%'` sobre la tabla de
+usuarios.
+
+**Errores:** 400 (búsqueda demasiado larga), 401, 403.
+
+---
+
+### GET /api/admin/usuarios/:id
+
+Lo mismo que una fila de la lista, más `ultimosEventos`: los diez últimos escaneos, visitas y
+clics de ese perfil, con el título del enlace cuando lo hay.
+
+**Errores:** 401, 403, 404.
+
+---
+
+### GET /api/admin/reportes/usuarios
+
+RF-15: «descargar reportes de actividad de los usuarios». Acepta los mismos parámetros de
+filtro que la lista.
+
+Devuelve un **CSV de catorce columnas** como `attachment`, no como texto que el navegador abra
+en una pestaña: lo que pide el requisito es *descargar*. El nombre lo decide el servidor
+(`usuarios-AAAA-MM-DD.csv`) y viaja en `Content-Disposition`, que el backend expone en CORS
+para que el navegador pueda leerlo.
+
+```text
+id,nombre,correo,rol,estado,fecha_registro,ultimo_acceso,negocio,slug,
+bloques_activos,codigo_qr,escaneos,visitas,clics
+```
+
+**Empieza con BOM.** Sin él, Excel abre el CSV con la codificación del sistema y los nombres
+con tilde o eñe salen rotos.
+
+**Cada celda va entrecomillada.** El nombre de un negocio puede llevar una coma, y con eso
+sola la fila se parte y todas las columnas siguientes quedan corridas.
+
+**No se pagina.** Quien abre el reporte en una hoja de cálculo espera el conjunto completo,
+no la página que estaba viendo.
+
+**Errores:** 400, 401, 403.
+
+---
+
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 193 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 232 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
-| Endpoint | Requisito | Estado |
+Los quince requisitos funcionales están implementados. Queda lo que no es código:
+
+| Asunto | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Módulo Administración | RF-13 a RF-15 | Pendiente |
+| Envío de los avisos de la cuenta | RF-12 | Las dos preferencias se guardan y ningún proceso las consulta para mandar correos. Es una preferencia guardada, no un envío programado, y la pantalla lo advierte |

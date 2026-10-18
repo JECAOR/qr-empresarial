@@ -10,8 +10,8 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Parte | Estado |
 |---|---|
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
-| Base de datos MySQL `qr_empresarial` (11 tablas, 14 migraciones) | Implementada |
-| Frontend HTML/CSS/JS (11 pantallas, PWA, pruebas Playwright) | Implementado y conectado a la API. `localStorage` queda como caché: el servidor es la fuente de verdad |
+| Base de datos MySQL `qr_empresarial` (11 tablas, 15 migraciones) | Implementada |
+| Frontend HTML/CSS/JS (12 pantallas, PWA, pruebas Playwright) | Implementado y conectado a la API. `localStorage` queda como caché: el servidor es la fuente de verdad |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
@@ -26,7 +26,8 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M5. Vista pública (RF-09) | Terminado (`v1.5.2`) |
 | M6. Estadísticas (RF-11) | Terminado (`v1.6.1`) |
 | M7. Configuración (RF-12) | Terminado (`v1.7.2`) |
-| M8. Administración (RF-13 a RF-15) | Pendiente |
+| M8. Administración (RF-13 a RF-15) | Terminado (`v2.0.0`) |
+| **Los 15 requisitos funcionales** | **Implementados** |
 
 ### Limitaciones conocidas
 
@@ -67,6 +68,7 @@ sistema no tiene reseñas en ninguna parte.
 | `v1.8.0` | RN del último bloque activo: no se vacía un perfil que ya tiene código QR |
 | `v1.9.0` | Pruebas automaticas del backend con Jest y Supertest, y los cuatro defectos que encontraron |
 | `v1.9.1` | Se cierra la puerta trasera del código QR: no se enciende sobre un perfil vacío |
+| `v2.0.0` | Módulo 8: administración de usuarios, su actividad y el reporte en CSV. Los 15 RF |
 
 ## API disponible
 
@@ -104,6 +106,10 @@ Base: `http://localhost:3000/api`
 | GET | `/qr/imagen` | Autenticado | Descargar el código en PNG, SVG o PDF |
 | PATCH | `/qr/estado` | Autenticado | Activar o desactivar el código |
 | GET | `/estadisticas` | Autenticado | Escaneos, visitas, clics y serie diaria |
+| GET | `/admin/resumen` | Administrador | Cuántas cuentas hay y en qué estado |
+| GET | `/admin/usuarios` | Administrador | Lista de cuentas con su actividad |
+| GET | `/admin/usuarios/{id}` | Administrador | Detalle de una cuenta |
+| GET | `/admin/reportes/usuarios` | Administrador | Reporte de actividad en CSV |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -151,6 +157,7 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `dashboard.html` | además `GET /estadisticas` |
 | `configuracion.html` | además `PUT /usuarios/me`, `GET/PUT /usuarios/me/preferencias`, `PUT /usuarios/me/contrasena`, `DELETE /usuarios/me` y `PUT /perfiles/me` |
 | Selector de color (barra lateral) | `PATCH /perfiles/me/tema` |
+| `admin.html` | `GET /admin/resumen`, `GET /admin/usuarios`, `GET /admin/reportes/usuarios`, y `PATCH /usuarios/{id}/estado` y `DELETE /usuarios/{id}` para el RF-14 |
 | Toda pantalla privada | `GET /perfiles/me` al cargar, para traer los datos del negocio |
 | `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido`, `GET /contenido/categorias` y `PUT /contenido/orden` |
 | `qr.html` | `GET/POST /qr` y `GET /qr/imagen` |
@@ -193,7 +200,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (204 peticiones), Jest + Supertest (99) y Playwright + axe-core (308) | En uso |
+| Pruebas | Postman (232 peticiones), Jest + Supertest (123) y Playwright + axe-core (352) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -211,13 +218,13 @@ módulo 8 (RF-13 a RF-15).
 | 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Terminado |
 | 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Terminado |
 | 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Terminado |
-| 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Siguiente |
-| 7 | 17/11 – 23/11 | Pruebas de integración, aceptación y seguridad | Todos | Pendiente |
+| 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Terminado |
+| 7 | 17/11 – 23/11 | Pruebas de integración, aceptación y seguridad | Todos | Adelantado: 123 pruebas de API con Jest + Supertest desde `v1.9.0` |
 | 8 | 24/11 – 18/12 | Despliegue, manuales y cierre | — | Pendiente |
 
 El orden sigue las dependencias entre módulos (usuario → perfil → contenido → QR). Así, el flujo principal queda completo al final del sprint 4.
 
-El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13 a RF-15, pero esos requisitos pertenecen al **módulo 8** y se abordan en el sprint 6: todavía falta la actividad de los usuarios (RF-13), las pantallas de administración (RF-13 y RF-14) y los reportes descargables (RF-15).
+El CRUD de usuarios del sprint 1 resultó ser la mitad del módulo 8: el RF-14 —restringir y eliminar— ya estaba resuelto por `PATCH /api/usuarios/:id/estado` y `DELETE /api/usuarios/:id`, con sus reglas y sus pruebas. El módulo 8 agregó lo que faltaba: la actividad de cada cuenta (RF-13), la pantalla que lo muestra y el reporte descargable (RF-15).
 
 ### Reglas de negocio aplicadas
 
@@ -241,7 +248,8 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **Los enlaces solo admiten `http` y `https`.** Un `javascript:` guardado como enlace acabaría ejecutándose en la vista pública. El WhatsApp es la excepción: acepta un teléfono y se guarda convertido en `https://wa.me/<dígitos>`.
 - **RN-04** El enlace de recuperación sirve una sola vez y expira en 30 minutos. En la base solo se guarda su hash SHA-256: aunque alguien leyera la tabla, no podría reconstruir el enlace.
 - **Cambio de contraseña:** al restablecerla o cambiarla se cierran todas las sesiones de la cuenta. Quien recupera su cuenta suele hacerlo porque perdió el control de ella, así que las sesiones abiertas antes del cambio dejan de servir. Al cambiarla desde Configuración se devuelve un token nuevo, para no echar de la pantalla a quien la cambió.
-- **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403.
+- **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403. El guardia se monta sobre el router entero y no ruta por ruta, para que una ruta nueva nazca protegida en lugar de quedar abierta si alguien olvida añadirle el middleware. La pantalla comprueba el rol por su cuenta y el enlace del menú solo aparece para quien puede usarlo: esconderlo no protege nada, pero enseñarle a una empresa un enlace que le va a responder 403 no tiene sentido.
+- **El último acceso se anota al iniciar sesión**, no al intentarlo. Contar un intento fallido haría parecer activa una cuenta que alguien está intentando forzar. Es `NULL` mientras la cuenta no haya entrado nunca, y eso ya es información: una cuenta registrada que jamás volvió.
 - **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no puede iniciar sesión ni seguir usando tokens emitidos antes.
 - **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas. La puede pedir el administrador o el propio dueño de la cuenta, confirmando su contraseña. Un administrador no puede eliminarse a sí mismo **ni restringirse**: si fuera el único, nadie podría volver a administrar el sistema. Tiene que pedírselo a otro administrador. Esta regla figuraba aquí y **no estaba en el código**; la encontraron las pruebas automáticas del backend en `v1.9.0`.
 
@@ -275,6 +283,7 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `011-tema-y-preferencias.sql` | Columna `tema` en `perfil_empresarial` y tabla `preferencia_usuario` |
 | `012-quitar-aviso-resenas.sql` | Se quita `aviso_resenas`: el sistema no tiene reseñas |
 | `013-sembrar-categorias.sql` | Las ocho categorías de enlace y las cinco de elemento, que no estaban versionadas |
+| `014-ultimo-acceso.sql` | Columna `ultimo_acceso` en `usuario`, para la actividad del RF-13 |
 
 ## Estructura de carpetas
 

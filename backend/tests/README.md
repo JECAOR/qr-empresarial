@@ -1,6 +1,6 @@
 # Pruebas automáticas del backend
 
-99 pruebas de integración sobre la API, con **Jest** y **Supertest**.
+123 pruebas de integración sobre la API, con **Jest** y **Supertest**.
 
 ```bash
 npm test
@@ -50,8 +50,9 @@ quedaron es la forma más rápida de entender por qué.
 | `perfiles.test.js` | RF-04, RF-10, tema | 14 |
 | `contenido.test.js` | RF-05, RF-06 | 19 |
 | `qr-y-publico.test.js` | RF-07, RF-08, RF-09, RF-11 | 26 |
+| `admin.test.js` | RF-13, RF-14, RF-15 | 24 |
 
-Cobertura: **83,8 % de las sentencias** y 90,8 % de las funciones de `src/`.
+Cobertura: **85,6 % de las sentencias** y 92,6 % de las funciones de `src/`. El módulo de administración va al 95,2 %.
 
 El acento está en lo que, si se rompe, **no da un error visible**. Un 401 que pasa a 200 no
 hace fallar ninguna pantalla: simplemente deja entrar a quien no debía. Por eso hay pruebas
@@ -114,8 +115,8 @@ cambia esos datos.
 
 Las tres se complementan y ninguna sobra:
 
-- **Postman** (204 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
+- **Postman** (232 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
   para explorar la API.
-- **Jest + Supertest** (99) es la red de seguridad automática del backend: corre entera en
+- **Jest + Supertest** (123) es la red de seguridad automática del backend: corre entera en
   medio minuto y avisa si un módulo nuevo rompe uno viejo.
-- **Playwright** (308) prueba las pantallas, con la API simulada.
+- **Playwright** (352) prueba las pantallas, con la API simulada.

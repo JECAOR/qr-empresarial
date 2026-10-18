@@ -256,6 +256,35 @@ const Api = {
   reordenarContenido: (ids) =>
     peticion("/contenido/orden", { metodo: "PUT", cuerpo: { ids } }),
 
+  // Administración (RF-13). Restringir y eliminar (RF-14) no tienen
+  // endpoints propios: usan los de /usuarios, que existen desde el módulo 1.
+  resumenAdmin: () => peticion("/admin/resumen"),
+
+  listarUsuariosAdmin: (filtros = {}) => {
+    const parametros = new URLSearchParams();
+
+    for (const [clave, valor] of Object.entries(filtros)) {
+      if (valor !== null && valor !== undefined && valor !== "") {
+        parametros.set(clave, String(valor));
+      }
+    }
+
+    const consulta = parametros.toString();
+
+    return peticion("/admin/usuarios" + (consulta ? "?" + consulta : ""));
+  },
+
+  detalleUsuarioAdmin: (id) => peticion("/admin/usuarios/" + encodeURIComponent(id)),
+
+  cambiarEstadoUsuario: (id, estado) =>
+    peticion("/usuarios/" + encodeURIComponent(id) + "/estado", {
+      metodo: "PATCH",
+      cuerpo: { estado }
+    }),
+
+  eliminarUsuario: (id) =>
+    peticion("/usuarios/" + encodeURIComponent(id), { metodo: "DELETE" }),
+
   // Vista pública (RF-09). Es el único endpoint que no lleva token: quien
   // escanea el código QR no tiene cuenta.
   perfilPublico: (slug) =>
@@ -413,6 +442,65 @@ async function descargarImagenQr({ formato, tamano, color }) {
   return {
     blob: await respuesta.blob(),
     nombre: coincidencia ? coincidencia[1] : `codigo-qr.${formato}`
+  };
+}
+
+/**
+ * Descarga el reporte de actividad en CSV (RF-15).
+ *
+ * Va aparte de `peticion()` por lo mismo que la imagen del código: la
+ * respuesta no es JSON, y el nombre del archivo lo decide el servidor y
+ * viaja en `Content-Disposition`. Esa cabecera no se puede leer entre
+ * orígenes distintos si el servidor no la expone, y por eso el backend la
+ * declara en `exposedHeaders`.
+ *
+ * @param {object} filtros - Los mismos de la lista: lo que se ve es lo que
+ *   se descarga.
+ * @returns {Promise<{blob: Blob, nombre: string}>}
+ */
+async function descargarReporteUsuarios(filtros = {}) {
+  const parametros = new URLSearchParams();
+
+  for (const [clave, valor] of Object.entries(filtros)) {
+    if (valor !== null && valor !== undefined && valor !== "") {
+      parametros.set(clave, String(valor));
+    }
+  }
+
+  const cabeceras = {};
+  const token = Sesion.token();
+  if (token) cabeceras.Authorization = "Bearer " + token;
+
+  let respuesta;
+
+  try {
+    respuesta = await fetch(
+      `${direccionApi()}/admin/reportes/usuarios?${parametros}`,
+      { headers: cabeceras }
+    );
+  } catch (error) {
+    throw new ErrorApi("No se pudo conectar con el servidor.", 0);
+  }
+
+  if (!respuesta.ok) {
+    let mensaje = "No se pudo generar el reporte.";
+
+    try {
+      const datos = await respuesta.json();
+      if (datos && datos.message) mensaje = datos.message;
+    } catch (error) {
+      // Se queda el mensaje genérico
+    }
+
+    throw new ErrorApi(mensaje, respuesta.status);
+  }
+
+  const cabecera = respuesta.headers.get("Content-Disposition") || "";
+  const coincidencia = cabecera.match(/filename="?([^"]+)"?/);
+
+  return {
+    blob: await respuesta.blob(),
+    nombre: coincidencia ? coincidencia[1] : "usuarios.csv"
   };
 }
 

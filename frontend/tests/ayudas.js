@@ -19,7 +19,56 @@ const USUARIO = {
   estado: "activo"
 };
 
+const ADMINISTRADOR = {
+  idUsuario: 1,
+  nombre: "Cafe Raices S.A.",
+  correo: "admin@caferaices.co",
+  rol: "administrador",
+  estado: "activo"
+};
+
 const TOKEN = "token-de-prueba-sin-valor-real";
+
+// Cuentas que devuelve la administracion simulada (RF-13).
+//
+// Se eligen a proposito para cubrir los casos que la pantalla trata distinto:
+// una cuenta sin perfil, una que nunca entro, una restringida y el propio
+// administrador, que no puede actuar sobre si mismo.
+const USUARIOS_ADMIN = [
+  {
+    id: 5, nombre: "Fonda La Cosecha", correo: "camila@fondalacosecha.co",
+    rol: "empresa", estado: "activo",
+    fechaRegistro: "2026-09-02", ultimoAcceso: "2026-10-17T14:20:00.000Z",
+    perfil: { nombreNegocio: "Fonda La Cosecha", slug: "fonda-la-cosecha", bloquesActivos: 7, qr: true },
+    actividad: { escaneos: 248, visitas: 96, clics: 73 }
+  },
+  {
+    id: 8, nombre: "Panaderia La Espiga", correo: "contacto@laespiga.co",
+    rol: "empresa", estado: "restringido",
+    fechaRegistro: "2026-08-14", ultimoAcceso: "2026-06-01T09:00:00.000Z",
+    perfil: { nombreNegocio: "Panaderia La Espiga", slug: "panaderia-la-espiga", bloquesActivos: 2, qr: false },
+    actividad: { escaneos: 12, visitas: 4, clics: 1 }
+  },
+  {
+    id: 11, nombre: "Cuenta Sin Estrenar", correo: "nueva@ejemplo.co",
+    rol: "empresa", estado: "activo",
+    fechaRegistro: "2026-10-16", ultimoAcceso: null,
+    perfil: null,
+    actividad: { escaneos: 0, visitas: 0, clics: 0 }
+  },
+  {
+    id: 1, nombre: "Cafe Raices S.A.", correo: "admin@caferaices.co",
+    rol: "administrador", estado: "activo",
+    fechaRegistro: "2026-07-01", ultimoAcceso: "2026-10-18T08:00:00.000Z",
+    perfil: { nombreNegocio: "QR Empresarial", slug: "qr-empresarial", bloquesActivos: 0, qr: null },
+    actividad: { escaneos: 0, visitas: 0, clics: 0 }
+  }
+];
+
+const RESUMEN_ADMIN = {
+  total: 4, activos: 3, restringidos: 1, administradores: 1,
+  nuncaEntraron: 1, inactivos30Dias: 1, nuevos30Dias: 1
+};
 
 // Estadisticas que devuelve la API simulada (RF-11)
 const ESTADISTICAS = {
@@ -144,7 +193,9 @@ async function simularApi(page, opciones = {}) {
     sinEstadisticas = false,
     sinClics = false,
     errorAlGuardarDatos = null,
-    errorAlGuardarPreferencias = null
+    errorAlGuardarPreferencias = null,
+    errorAlAdministrar = null,
+    comoAdministrador = false
   } = opciones;
 
   // El simulador recuerda el perfil y el contenido, como haría el servidor:
@@ -164,8 +215,19 @@ async function simularApi(page, opciones = {}) {
   page.peticionesPerfil = peticionesPerfil;
 
   // Datos de la cuenta y preferencias de avisos (RF-12), con memoria
-  let cuentaActual = { ...USUARIO };
+  // GET /usuarios/me tiene que devolver la MISMA cuenta que se sembro en la
+  // sesion. Si devolviera siempre la de empresa, la guardia sobrescribiria la
+  // sesion de administrador en cuanto confirmara contra el servidor, y la
+  // pantalla de administracion se quedaria sin su enlace en el menu y
+  // tratando al administrador como si fuera otra cuenta.
+  let cuentaActual = { ...(comoAdministrador ? ADMINISTRADOR : USUARIO) };
   let preferenciasActuales = { resumen: true, novedades: false, guardadas: false };
+
+  // La administracion tambien recuerda: restringir una cuenta y volver a
+  // listar tiene que devolverla restringida, como haria el servidor
+  const usuariosAdmin = USUARIOS_ADMIN.map((u) => ({ ...u }));
+  const resumenAdmin = { ...RESUMEN_ADMIN };
+  const eliminadosAdmin = [];
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
@@ -501,6 +563,89 @@ async function simularApi(page, opciones = {}) {
       return responder(200, { data: perfilActual });
     }
 
+    // --- Administracion (RF-13, RF-14 y RF-15) ---
+    // Va antes que /usuarios porque "/admin/usuarios" tambien lo contiene
+
+    if (url.includes("/admin/resumen")) {
+      return responder(200, { data: resumenAdmin });
+    }
+
+    if (url.includes("/admin/reportes/usuarios")) {
+      const lineas = ["id,nombre,correo,rol,estado"];
+
+      for (const u of usuariosAdmin) {
+        lineas.push([u.id, u.nombre, u.correo, u.rol, u.estado].map((v) => JSON.stringify(String(v))).join(","));
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": 'attachment; filename="usuarios-2026-10-18.csv"',
+          "Access-Control-Expose-Headers": "Content-Disposition"
+        },
+        body: "\uFEFF" + lineas.join("\r\n")
+      });
+    }
+
+    if (url.includes("/admin/usuarios")) {
+      const parametros = new URL(url).searchParams;
+
+      let visibles = usuariosAdmin.filter((u) => !eliminadosAdmin.includes(u.id));
+
+      const busqueda = (parametros.get("busqueda") || "").toLowerCase();
+
+      if (busqueda) {
+        visibles = visibles.filter((u) =>
+          [u.nombre, u.correo, u.perfil ? u.perfil.nombreNegocio : ""]
+            .join(" ").toLowerCase().includes(busqueda)
+        );
+      }
+
+      const estado = parametros.get("estado");
+
+      if (estado) visibles = visibles.filter((u) => u.estado === estado);
+
+      if (parametros.get("orden") === "nombre") {
+        visibles = [...visibles].sort((a, b) => a.nombre.localeCompare(b.nombre));
+      }
+
+      return responder(200, {
+        data: visibles,
+        paginacion: { pagina: 1, porPagina: 20, total: visibles.length, paginas: 1 }
+      });
+    }
+
+    // RF-14 no tiene endpoints propios: usa los del modulo de usuarios
+    if (/\/usuarios\/\d+\/estado$/.test(url) && metodo === "PATCH") {
+      if (errorAlAdministrar) {
+        return responder(errorAlAdministrar.status || 400, { message: errorAlAdministrar.message });
+      }
+
+      const id = Number(url.match(/\/usuarios\/(\d+)\/estado/)[1]);
+      const cuerpo = JSON.parse(route.request().postData() || "{}");
+      const usuario = usuariosAdmin.find((u) => u.id === id);
+
+      if (!usuario) return responder(404, { message: "El usuario no existe" });
+
+      usuario.estado = cuerpo.estado;
+      resumenAdmin.activos = usuariosAdmin.filter((u) => u.estado === "activo").length;
+      resumenAdmin.restringidos = usuariosAdmin.filter((u) => u.estado === "restringido").length;
+
+      return responder(200, { message: "Estado del usuario actualizado correctamente", data: usuario });
+    }
+
+    if (/\/usuarios\/\d+$/.test(url) && metodo === "DELETE") {
+      if (errorAlAdministrar) {
+        return responder(errorAlAdministrar.status || 400, { message: errorAlAdministrar.message });
+      }
+
+      eliminadosAdmin.push(Number(url.match(/\/usuarios\/(\d+)$/)[1]));
+      resumenAdmin.total -= 1;
+
+      return responder(200, { message: "Usuario eliminado correctamente" });
+    }
+
     if (url.includes("/usuarios/me") && metodo === "DELETE") {
       if (contrasenaIncorrectaAlBorrar) {
         return responder(401, { message: "La contraseña no es correcta" });
@@ -576,7 +721,7 @@ async function simularApi(page, opciones = {}) {
  * Hace falta en las pantallas privadas: sin token, la guardia redirige al
  * login antes de que haya algo que comprobar.
  */
-async function sembrarSesion(page) {
+async function sembrarSesion(page, usuario = USUARIO) {
   await page.addInitScript((datos) => {
     // addInitScript corre en cada navegación, no solo en la primera. Sin esta
     // marca, una prueba que cierre sesión se encontraría con la sesión puesta
@@ -588,8 +733,20 @@ async function sembrarSesion(page) {
   }, {
     clave: "qr.sesion",
     marca: "qr.sesion.sembrada",
-    valor: JSON.stringify({ token: TOKEN, usuario: USUARIO })
+    valor: JSON.stringify({ token: TOKEN, usuario })
   });
+}
+
+/**
+ * Como prepararSesion, pero con una cuenta de administrador.
+ *
+ * La pantalla de administracion se mira a si misma antes de dibujar nada: si
+ * la sesion no es de administrador, redirige al dashboard (RN-22). Sin esto,
+ * una prueba de esa pantalla no llegaria a ver la tabla.
+ */
+async function prepararSesionAdmin(page, opciones = {}) {
+  await simularApi(page, { ...opciones, comoAdministrador: true });
+  await sembrarSesion(page, ADMINISTRADOR);
 }
 
 /**
@@ -618,6 +775,7 @@ async function prepararSesion(page) {
 }
 
 module.exports = {
-  USUARIO, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS, QR, ESTADISTICAS,
-  simularApi, sembrarSesion, prepararSesion, simularImagenes
+  USUARIO, ADMINISTRADOR, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS, QR,
+  ESTADISTICAS, USUARIOS_ADMIN, RESUMEN_ADMIN,
+  simularApi, sembrarSesion, prepararSesion, prepararSesionAdmin, simularImagenes
 };
