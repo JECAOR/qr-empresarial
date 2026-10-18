@@ -71,7 +71,7 @@ function renderSidebar() {
         <span class="sidebar-theme-label">${THEMES_LIST.find((t) => t.id === getStoredTheme()).label}</span>
       </div>
       <div class="sidebar-user" title="${escapeHtml(correoDeLaCuenta())}">
-        <div class="sidebar-avatar">${escapeHtml(getBusinessInitials(getBusinessData().name))}</div>
+        <div class="sidebar-avatar">${avatarDelNegocio()}</div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name">${escapeHtml(getBusinessData().name)}</div>
           <div class="sidebar-user-plan">${escapeHtml(rolDeLaCuenta())}</div>
@@ -98,6 +98,24 @@ function renderSidebar() {
       }
     });
   }
+}
+
+/**
+ * Avatar del negocio: su logo si lo tiene, o sus iniciales (RF-04).
+ *
+ * El logo es una dirección que escribió la persona, así que puede estar mal
+ * o haber dejado de existir. Con onerror se vuelve a las iniciales en lugar
+ * de dejar el icono de imagen rota: el avatar es decoración, y una decoración
+ * no debería verse estropeada por una URL que caducó.
+ */
+function avatarDelNegocio() {
+  const negocio = getBusinessData();
+  const iniciales = escapeHtml(getBusinessInitials(negocio.name));
+
+  if (!negocio.image) return iniciales;
+
+  return `<img class="sidebar-avatar-img" src="${escapeHtml(negocio.image)}"
+               alt="" onerror="this.closest('.sidebar-avatar').textContent = '${iniciales}'">`;
 }
 
 /**

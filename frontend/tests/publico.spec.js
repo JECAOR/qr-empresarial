@@ -11,6 +11,7 @@
 // archivo—, de modo que no demostraría nada.
 // ============================================
 const { test, expect } = require("@playwright/test");
+const { simularImagenes } = require("./ayudas");
 
 const PERFIL_PUBLICO = {
   nombreNegocio: "Panadería de Prueba",
@@ -209,5 +210,49 @@ test.describe("Vista pública", () => {
 
     const html = await page.locator("#public-content").innerHTML();
     expect(html).not.toContain("<script>alert(2)</script>");
+  });
+});
+
+// El logo se pedía en Configuración, se validaba y se guardaba, y no se
+// mostraba en ninguna parte: el campo no servía de nada.
+test.describe("Logo del negocio", () => {
+  test("se muestra cuando el negocio lo publicó", async ({ page }) => {
+    await simularImagenes(page);
+    await simularPerfilPublico(page, {
+      perfil: { ...PERFIL_PUBLICO, imagen: "https://ejemplo.co/logo.png" }
+    });
+    await page.goto(DIRECCION);
+
+    const logo = page.locator(".profile-avatar-img");
+    await expect(logo).toHaveAttribute("src", "https://ejemplo.co/logo.png");
+
+    // El nombre del negocio ya está escrito al lado: repetirlo aquí haría
+    // que un lector de pantalla lo dijera dos veces
+    await expect(logo).toHaveAttribute("alt", "");
+
+    // Y el dibujo genérico se aparta
+    await expect(page.locator(".profile-avatar-logo")).toBeHidden();
+  });
+
+  test("sin logo se queda el dibujo genérico", async ({ page }) => {
+    await simularPerfilPublico(page, { perfil: { ...PERFIL_PUBLICO, imagen: null } });
+    await page.goto(DIRECCION);
+
+    await expect(page.locator(".profile-avatar-img")).toHaveCount(0);
+    await expect(page.locator(".profile-avatar-logo")).toBeVisible();
+  });
+
+  test("si la dirección del logo ya no sirve, no deja una imagen rota", async ({ page }) => {
+    // Aquí no se simula la imagen a propósito: la petición falla, que es
+    // justo el caso que se quiere comprobar
+    await simularPerfilPublico(page, {
+      perfil: { ...PERFIL_PUBLICO, imagen: "https://ejemplo.co/no-existe.png" }
+    });
+    await page.goto(DIRECCION);
+
+    // La dirección la escribió una persona y puede caducar: el avatar es
+    // decoración y no debería verse estropeada por eso
+    await expect(page.locator(".profile-avatar-img")).toHaveCount(0);
+    await expect(page.locator(".profile-avatar-logo")).toBeVisible();
   });
 });

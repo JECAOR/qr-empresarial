@@ -70,10 +70,47 @@ function pintarPerfil(perfil) {
   const horario = document.getElementById("profile-hours");
   if (horario) horario.textContent = perfil.horario || "";
 
-  const avatar = document.querySelector(".profile-avatar-logo");
-  if (avatar) avatar.setAttribute("aria-label", `Logo de ${perfil.nombreNegocio}`);
+  pintarLogo(perfil);
 
   pintarEnlacesDeContacto(perfil);
+}
+
+/**
+ * El logo del negocio, si lo publicó (RF-04).
+ *
+ * Hasta ahora la imagen se pedía en Configuración, se validaba y se guardaba,
+ * y no se mostraba en ninguna parte. Aquí es donde más falta hacía: es lo
+ * primero que ve quien escanea el código.
+ *
+ * Si no hay logo, o si la dirección falla, se queda el dibujo genérico que
+ * ya estaba en la pantalla.
+ */
+function pintarLogo(perfil) {
+  const hueco = document.querySelector(".profile-avatar");
+  const dibujo = document.querySelector(".profile-avatar-logo");
+
+  if (!hueco) return;
+
+  if (dibujo) {
+    dibujo.setAttribute("aria-label", `Logo de ${perfil.nombreNegocio}`);
+  }
+
+  if (!perfil.imagen) return;
+
+  const img = document.createElement("img");
+  img.className = "profile-avatar-img";
+  img.src = perfil.imagen;
+  // El nombre del negocio ya está escrito al lado, así que repetirlo aquí
+  // solo haría que un lector de pantalla lo dijera dos veces
+  img.alt = "";
+
+  // Si la dirección ya no sirve, se deja el dibujo en su lugar
+  img.addEventListener("error", () => img.remove());
+  img.addEventListener("load", () => {
+    if (dibujo) dibujo.hidden = true;
+  });
+
+  hueco.appendChild(img);
 }
 
 /**

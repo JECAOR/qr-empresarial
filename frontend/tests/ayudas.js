@@ -446,6 +446,25 @@ async function sembrarSesion(page) {
   });
 }
 
+/**
+ * Responde las imágenes externas con un SVG mínimo.
+ *
+ * Hace falta para probar el logo del negocio: la dirección del perfil tiene
+ * que ser absoluta y con https para pasar la validación del RF-10, así que no
+ * puede apuntar a un archivo del proyecto. Y si el navegador no la carga, el
+ * código la retira a propósito —para no dejar una imagen rota—, de modo que
+ * sin esto no habría nada que comprobar.
+ */
+async function simularImagenes(page) {
+  await page.route("https://ejemplo.co/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>'
+    })
+  );
+}
+
 /** Lo habitual en una pantalla privada: sesión guardada y API simulada. */
 async function prepararSesion(page) {
   await simularApi(page);
@@ -454,5 +473,5 @@ async function prepararSesion(page) {
 
 module.exports = {
   USUARIO, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS, QR,
-  simularApi, sembrarSesion, prepararSesion
+  simularApi, sembrarSesion, prepararSesion, simularImagenes
 };
