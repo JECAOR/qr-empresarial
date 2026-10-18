@@ -197,6 +197,9 @@
   margin-top: 10px;
 }
 
+/* Cuatro iniciales en un circulo de 24px quedan justas: baja un punto el
+   tamano de letra y se junta un poco el espaciado para que no rocen el
+   borde. */
 .auth-testimonial-avatar {
   width: 24px;
   height: 24px;
@@ -206,8 +209,9 @@
   align-items: center;
   justify-content: center;
   color: var(--white);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
+  letter-spacing: -0.02em;
   flex-shrink: 0;
 }
 

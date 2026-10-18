@@ -456,6 +456,10 @@ test.describe("La portada no afirma cosas inventadas [regresión]", () => {
 
     expect(texto).not.toContain("Camila Restrepo");
     expect(texto).not.toContain("subieron un 35%");
+
+    // En su lugar, la atribucion real del proyecto
+    await expect(page.locator(".auth-testimonial")).toContainText("JCOH");
+    await expect(page.locator(".auth-testimonial")).toContainText("Ficha 3336250");
   });
 
   test("en su lugar dice lo que el sistema sí hace", async ({ page }) => {
