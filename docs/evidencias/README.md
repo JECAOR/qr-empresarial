@@ -84,6 +84,14 @@ etiquetas de versión. Se ve el orden en que se construyó el proyecto, que cada
 módulo se desarrolló en su propia rama y que se integró con `merge --no-ff`
 para que la rama quede en el historial en lugar de aplanarse.
 
+El archivo se genera justo antes del commit que lo incorpora, así que sus
+últimas líneas son los dos o tres commits anteriores a este. El historial
+vivo y completo está en GitHub, y se regenera aquí con:
+
+```bash
+git log --graph --date=short --pretty=format:"%h %ad %d %s"
+```
+
 ## Una nota sobre estas evidencias
 
 Preparar esta carpeta encontró cuatro defectos, y los cuatro eran de lo mismo:
