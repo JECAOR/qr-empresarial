@@ -10,7 +10,19 @@ const NAV_ITEMS = [
   { page: "qr.html", icon: "qr-code", label: "Código QR" },
   { page: "public.html", icon: "globe", label: "Vista Pública" },
   { page: "configuracion.html", icon: "settings", label: "Configuración" },
+  // Solo para el rol administrador (RN-22). Esconderlo no protege nada -la
+  // pantalla y la API comprueban el rol por su cuenta-, pero ensenarle a una
+  // empresa un enlace que le va a responder 403 no tiene sentido.
+  { page: "admin.html", icon: "users", label: "Administración", soloAdmin: true },
 ];
+
+/** Los elementos del menu que corresponden a esta cuenta. */
+function itemsVisibles(items) {
+  const cuenta = typeof Sesion !== "undefined" ? Sesion.usuario() : null;
+  const esAdmin = Boolean(cuenta && cuenta.rol === "administrador");
+
+  return items.filter((item) => !item.soloAdmin || esAdmin);
+}
 
 const MOBILE_NAV_ITEMS = [
   { page: "dashboard.html", icon: "layout-dashboard", label: "Inicio" },
@@ -29,6 +41,7 @@ const ICONS = {
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   "log-out": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
   bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
 };
 
 function icon(name, size = 16) {
@@ -55,7 +68,7 @@ function renderSidebar() {
       </div>
     </div>
     <nav class="sidebar-nav">
-      ${NAV_ITEMS.map(
+      ${itemsVisibles(NAV_ITEMS).map(
         (item) => `
         <a href="${item.page}" class="sidebar-item ${item.page === active ? "active" : ""}">
           ${icon(item.icon)}

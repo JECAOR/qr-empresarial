@@ -193,3 +193,20 @@
   opacity: 0.7;
   cursor: progress;
 }
+
+/* Texto solo para lectores de pantalla.
+   Se usa en encabezados de tabla y etiquetas que la pantalla no necesita
+   mostrar pero que sin ellas dejarían una columna o un campo sin nombrar.
+   No vale `display:none` ni `visibility:hidden`: eso lo esconde también de
+   los lectores, que es justo lo contrario de lo que se busca. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

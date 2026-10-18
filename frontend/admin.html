@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administración · QR Empresarial</title>
+  <meta name="description" content="Consulta de usuarios registrados y su actividad en QR Empresarial." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/theme.css" />
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <nav id="sidebar" aria-label="Navegación principal"></nav>
+    <div class="app-main">
+      <header id="topbar"></header>
+
+      <main class="app-content">
+        <!-- RF-13: "consultar la cantidad de usuarios registrados" -->
+        <section class="admin-resumen" id="admin-resumen" aria-label="Resumen de cuentas"></section>
+
+        <section class="admin-card">
+          <div class="admin-filtros">
+            <div class="admin-buscador">
+              <label class="sr-only" for="admin-busqueda">Buscar</label>
+              <input type="search" id="admin-busqueda" placeholder="Buscar por nombre, correo o negocio"
+                     autocomplete="off" maxlength="100">
+            </div>
+
+            <div class="admin-filtro">
+              <label for="admin-estado">Estado</label>
+              <select id="admin-estado">
+                <option value="">Todos</option>
+                <option value="activo">Activos</option>
+                <option value="restringido">Restringidos</option>
+              </select>
+            </div>
+
+            <div class="admin-filtro">
+              <label for="admin-orden">Ordenar por</label>
+              <select id="admin-orden">
+                <option value="registro">Más recientes</option>
+                <option value="acceso">Sin entrar hace más tiempo</option>
+                <option value="actividad">Más actividad</option>
+                <option value="nombre">Nombre</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="admin-alert" class="form-alert form-alert--error" role="alert" hidden></div>
+          <div id="admin-toast" class="settings-saved-toast" role="status"></div>
+
+          <div class="admin-tabla-wrap">
+            <table class="admin-tabla">
+              <caption class="sr-only">Usuarios registrados y su actividad</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Cuenta</th>
+                  <th scope="col">Negocio</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Último acceso</th>
+                  <th scope="col">Actividad</th>
+                  <th scope="col"><span class="sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody id="admin-filas"></tbody>
+            </table>
+          </div>
+
+          <p id="admin-vacio" class="admin-vacio" hidden>Ninguna cuenta coincide con la búsqueda.</p>
+
+          <nav class="admin-paginacion" id="admin-paginacion" aria-label="Paginación"></nav>
+        </section>
+      </main>
+
+      <nav id="mobile-nav" aria-label="Navegación móvil"></nav>
+    </div>
+  </div>
+
+  <!-- Confirmación antes de restringir o eliminar (RF-14) -->
+  <dialog id="admin-confirmar">
+    <form class="dialog-inner" method="dialog">
+      <h3 id="admin-confirmar-titulo">¿Confirmar?</h3>
+      <p id="admin-confirmar-texto" class="admin-confirmar-texto"></p>
+
+      <div class="dialog-actions">
+        <button type="button" id="admin-cancelar" class="btn-secondary">Cancelar</button>
+        <button type="button" id="admin-aceptar" class="btn-danger">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/business-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/guardia.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    initLayout({
+      title: "Administración",
+      subtitle: "Usuarios registrados y su actividad",
+      actionHtml: `
+        <button id="admin-descargar" class="btn-add">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar<span class="admin-solo-ancho">&nbsp;reporte</span>
+        </button>`,
+    });
+  </script>
+  <script src="js/admin.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

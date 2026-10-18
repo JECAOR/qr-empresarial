@@ -67,6 +67,18 @@ async function buscarPorIdConContrasena(idUsuario) {
 }
 
 /**
+ * Anota que la cuenta acaba de iniciar sesion (RF-13).
+ *
+ * Es el dato que no se podia calcular con nada de lo que ya habia, y el que
+ * hace falta para "eliminar usuarios inactivos" del RF-14.
+ *
+ * @param {number} idUsuario
+ */
+async function registrarAcceso(idUsuario) {
+  await pool.execute('UPDATE usuario SET ultimo_acceso = NOW() WHERE id_usuario = ?', [idUsuario]);
+}
+
+/**
  * Guarda el hash de un token de recuperacion (RF-03).
  * Nunca se almacena el token en claro: si alguien leyera la tabla,
  * no podria construir el enlace.
@@ -226,6 +238,7 @@ async function cerrarTodasLasSesiones(idUsuario) {
 }
 
 module.exports = {
+  registrarAcceso,
   buscarPorCorreo,
   buscarPorId,
   buscarPorIdConContrasena,

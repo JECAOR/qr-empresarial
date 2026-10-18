@@ -8,7 +8,7 @@
 // internet, y la app sigue abriendo si se queda sin señal.
 // ============================================
 
-const CACHE_NAME = "qr-empresarial-v14";
+const CACHE_NAME = "qr-empresarial-v15";
 
 // El "app shell": lo mínimo para que el sitio abra sin conexión.
 const APP_SHELL = [
@@ -20,6 +20,10 @@ const APP_SHELL = [
   "contenido.html",
   "qr.html",
   "configuracion.html",
+  // Solo la abre el rol administrador, pero el service worker no sabe de
+  // roles: guarda la pantalla y es la API la que responde 403 a quien no
+  // deba verla
+  "admin.html",
   "public.html",
   "menu.html",
   "404.html",
@@ -33,6 +37,7 @@ const APP_SHELL = [
   "css/qr.css",
   "css/dashboard.css",
   "css/configuracion.css",
+  "css/admin.css",
   "css/menu.css",
   "css/404.css",
   "js/theme.js",
@@ -40,6 +45,7 @@ const APP_SHELL = [
   "js/api.js",
   "js/guardia.js",
   "js/layout.js",
+  "js/admin.js",
   "js/auth.js",
   "js/register-steps.js",
   "js/forgot-password.js",
