@@ -75,7 +75,8 @@ async function cambiarEstadoUsuario(req, res, next) {
   try {
     const usuario = await usuarioService.cambiarEstadoUsuario(
       req.params.idUsuario,
-      req.body.estado
+      req.body.estado,
+      req.usuario.id
     );
 
     return res.status(200).json({
@@ -92,7 +93,7 @@ async function cambiarEstadoUsuario(req, res, next) {
  */
 async function eliminarUsuario(req, res, next) {
   try {
-    await usuarioService.eliminarUsuario(req.params.idUsuario);
+    await usuarioService.eliminarUsuario(req.params.idUsuario, req.usuario.id);
 
     return res.status(200).json({
       message: 'Usuario eliminado correctamente'

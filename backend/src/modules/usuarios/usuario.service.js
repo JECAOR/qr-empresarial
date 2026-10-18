@@ -111,8 +111,14 @@ async function actualizarUsuario(idUsuario, datosUsuario) {
  * @param {string} estado - activo o restringido.
  * @returns {Promise<object>} Usuario actualizado.
  */
-async function cambiarEstadoUsuario(idUsuario, estado) {
+async function cambiarEstadoUsuario(idUsuario, estado, idSolicitante) {
   await obtenerUsuarioPorId(idUsuario);
+
+  // Restringirse a uno mismo cierra el acceso en la misma peticion que lo
+  // pide. Reactivarse no hace dano, asi que solo se corta ese caso.
+  if (estado === 'restringido') {
+    noContraUnoMismo(idUsuario, idSolicitante, 'restringir');
+  }
 
   await usuarioRepository.actualizarEstado(idUsuario, estado);
 
@@ -120,12 +126,40 @@ async function cambiarEstadoUsuario(idUsuario, estado) {
 }
 
 /**
+ * Impide que un administrador se aplique a si mismo una accion que lo
+ * dejaria fuera.
+ *
+ * El README daba esta regla por aplicada y no lo estaba: lo encontraron las
+ * pruebas automaticas. Un administrador podia eliminar su propia cuenta
+ * desde la administracion -sin confirmar la contrasena, que es lo que si
+ * pide "Eliminar mi cuenta" en Configuracion- y podia restringirse, con lo
+ * que perdia el acceso en la misma peticion. Si fuera el unico, nadie
+ * podria volver a administrar el sistema.
+ *
+ * @param {number|string} idUsuario - A quien se le aplica.
+ * @param {number|string} idSolicitante - Quien lo pide.
+ * @param {string} accion - Para el mensaje.
+ */
+function noContraUnoMismo(idUsuario, idSolicitante, accion) {
+  if (Number(idUsuario) !== Number(idSolicitante)) return;
+
+  const error = new Error(`Un administrador no puede ${accion} su propia cuenta`);
+  error.status = 400;
+  throw error;
+}
+
+/**
  * Elimina logicamente un usuario: deja de estar disponible, pero su
  * informacion y sus relaciones se conservan.
+ *
  * @param {number|string} idUsuario
+ * @param {number|string} idSolicitante
  */
-async function eliminarUsuario(idUsuario) {
+async function eliminarUsuario(idUsuario, idSolicitante) {
   await obtenerUsuarioPorId(idUsuario);
+
+  // Para darse de baja esta DELETE /api/usuarios/me, que pide la contrasena
+  noContraUnoMismo(idUsuario, idSolicitante, 'eliminar');
 
   await usuarioRepository.eliminarLogico(idUsuario);
 }

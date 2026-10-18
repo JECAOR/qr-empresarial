@@ -10,7 +10,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Parte | Estado |
 |---|---|
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
-| Base de datos MySQL `qr_empresarial` (11 tablas, 12 migraciones) | Implementada |
+| Base de datos MySQL `qr_empresarial` (11 tablas, 14 migraciones) | Implementada |
 | Frontend HTML/CSS/JS (11 pantallas, PWA, pruebas Playwright) | Implementado y conectado a la API. `localStorage` queda como caché: el servidor es la fuente de verdad |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
@@ -65,6 +65,7 @@ sistema no tiene reseñas en ninguna parte.
 | `v1.7.1` | El selector de color ya no reemplaza el perfil: `PATCH /perfiles/me/tema` |
 | `v1.7.2` | Fuera el aviso de reseñas, que prometía algo inexistente. Módulo 7 cerrado |
 | `v1.8.0` | RN del último bloque activo: no se vacía un perfil que ya tiene código QR |
+| `v1.9.0` | Pruebas automaticas del backend con Jest y Supertest, y los cuatro defectos que encontraron |
 
 ## API disponible
 
@@ -191,7 +192,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman; Jest + Supertest (API) y Playwright + axe-core (E2E) | Parcial |
+| Pruebas | Postman (201 peticiones), Jest + Supertest (95) y Playwright + axe-core (308) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -240,7 +241,7 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **Cambio de contraseña:** al restablecerla o cambiarla se cierran todas las sesiones de la cuenta. Quien recupera su cuenta suele hacerlo porque perdió el control de ella, así que las sesiones abiertas antes del cambio dejan de servir. Al cambiarla desde Configuración se devuelve un token nuevo, para no echar de la pantalla a quien la cambió.
 - **RN-22** El módulo de administración es exclusivo del rol `administrador`; los demás reciben 403.
 - **RN-23** Una cuenta puede quedar `activo` o `restringido`; una restringida no puede iniciar sesión ni seguir usando tokens emitidos antes.
-- **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas. La puede pedir el administrador o el propio dueño de la cuenta, confirmando su contraseña. Un administrador no puede eliminarse a sí mismo: si fuera el único, nadie podría volver a administrar el sistema.
+- **Eliminación lógica:** al borrar un usuario se marca `deleted_at` y su correo se prefija con `eliminado_<id>_`, para liberar la dirección sin perder el historial ni romper las claves foráneas. La puede pedir el administrador o el propio dueño de la cuenta, confirmando su contraseña. Un administrador no puede eliminarse a sí mismo **ni restringirse**: si fuera el único, nadie podría volver a administrar el sistema. Tiene que pedírselo a otro administrador. Esta regla figuraba aquí y **no estaba en el código**; la encontraron las pruebas automáticas del backend en `v1.9.0`.
 
 - **Un perfil por cuenta.** La columna `id_usuario` de `perfil_empresarial` es única, y de eso depende el RF-07: un código QR por perfil.
 - **La dirección pública no cambia.** El `slug` se fija al crear el perfil y no sigue al nombre del negocio. Si cambiara, los códigos QR ya impresos dejarían de funcionar, que es justo lo que el RF-09 debe evitar.
@@ -271,6 +272,7 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `010-preparar-eventos.sql` | Fecha automática e índices en `evento`, para las estadísticas |
 | `011-tema-y-preferencias.sql` | Columna `tema` en `perfil_empresarial` y tabla `preferencia_usuario` |
 | `012-quitar-aviso-resenas.sql` | Se quita `aviso_resenas`: el sistema no tiene reseñas |
+| `013-sembrar-categorias.sql` | Las ocho categorías de enlace y las cinco de elemento, que no estaban versionadas |
 
 ## Estructura de carpetas
 
@@ -354,17 +356,12 @@ Route → Validator → Controller → Service → Repository → MySQL
 ```bash
 # 1. Base de datos
 mysql -u root -p < database/schema.sql
-mysql -u root -p qr_empresarial < database/migrations/001-agregar-rol-slug-evento.sql
-mysql -u root -p qr_empresarial < database/migrations/002-renombrar-columna-contrasena.sql
-mysql -u root -p qr_empresarial < database/migrations/003-agregar-deleted-at-usuario.sql
-mysql -u root -p qr_empresarial < database/migrations/004-crear-token-recuperacion.sql
-mysql -u root -p qr_empresarial < database/migrations/005-crear-sesion-revocada.sql
-mysql -u root -p qr_empresarial < database/migrations/006-agregar-sesiones-validas-desde.sql
-mysql -u root -p qr_empresarial < database/migrations/007-ampliar-perfil-empresarial.sql
-mysql -u root -p qr_empresarial < database/migrations/008-ampliar-contenido.sql
-mysql -u root -p qr_empresarial < database/migrations/009-corregir-fechas-codigo-qr.sql
-mysql -u root -p qr_empresarial < database/migrations/010-preparar-eventos.sql
-mysql -u root -p qr_empresarial < database/migrations/011-tema-y-preferencias.sql
+
+# Las migraciones, en orden. Se listan solas para que este bloque no se
+# quede atras cada vez que se agrega una.
+for f in database/migrations/*.sql; do
+  mysql -u root -p qr_empresarial < "$f"
+done
 
 # 2. Backend
 cd backend
@@ -376,12 +373,22 @@ npm run dev               # servidor con nodemon en http://localhost:3000
 # GET  http://localhost:3000/api/health  →  {"status":"ok"}
 # Abra http://localhost:3000/login.html  →  la aplicación completa
 
-# 4. Pruebas del frontend
+# 4. Pruebas automaticas del backend (95, Jest + Supertest)
+# (se sigue en backend/, desde el paso 2)
+npm test                  # crea su propia base qr_empresarial_test; no toca la suya
+
+# 5. Pruebas del frontend (308, Playwright)
 cd ../frontend
 npm install
 npx playwright install chromium
 npm test                  # no necesita el backend encendido: simula la API
 ```
+
+Las pruebas del backend levantan la aplicación de verdad contra una base
+`qr_empresarial_test` que recrean en cada ejecución desde `schema.sql` y todas
+las migraciones. Eso comprueba de paso que la base se pueda reconstruir desde
+el repositorio —que es como se encontró que no se podía—. El detalle está en
+[`backend/tests/README.md`](backend/tests/README.md).
 
 El backend publica también las pantallas, así que **toda la aplicación vive en
 `http://localhost:3000`**: no hace falta un segundo servidor. Esto importa para
