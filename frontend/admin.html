@@ -89,6 +89,21 @@
     </div>
   </div>
 
+  <!-- Detalle de una cuenta (RF-13).
+       GET /api/admin/usuarios/:id devuelve los últimos eventos del perfil, y
+       es lo único que la tabla no puede mostrar: en una lista de cuentas no
+       caben diez líneas de actividad por fila. -->
+  <dialog id="admin-detalle">
+    <div class="dialog-inner">
+      <h3 id="admin-detalle-titulo">Cuenta</h3>
+      <div id="admin-detalle-cuerpo"></div>
+
+      <div class="dialog-actions">
+        <button type="button" id="admin-detalle-cerrar" class="btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Confirmación antes de restringir o eliminar (RF-14) -->
   <dialog id="admin-confirmar">
     <form class="dialog-inner" method="dialog">

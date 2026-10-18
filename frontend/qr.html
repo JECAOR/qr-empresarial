@@ -34,7 +34,9 @@
           <div class="qr-card">
             <div class="qr-card-header">
               <h2>Tu Código QR</h2>
-              <span class="pill-online">● En línea</span>
+              <!-- Decía siempre "En línea", pasara lo que pasara. Ahora es el
+                   estado real del código, que se puede apagar más abajo. -->
+              <span class="pill-online" id="qr-estado">…</span>
             </div>
 
             <div class="qr-body">
@@ -104,10 +106,28 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                 <span style="color:var(--color-primary);">Correo electrónico</span>
               </a>
-              <a href="https://instagram.com/fondalacosecha.co" target="_blank" rel="noopener" class="qr-share-btn" style="background:#FCE7F3;">
+              <!-- Antes era un enlace fijo a instagram.com/fondalacosecha.co,
+                   el negocio de ejemplo: cualquier cuenta real abría el
+                   Instagram de otro. Instagram no admite compartir una
+                   dirección por enlace, así que lo útil es copiarla para
+                   pegarla en la biografía, que es donde va. -->
+              <button type="button" id="share-instagram" class="qr-share-btn" style="background:#FCE7F3;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ba3878" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                <span style="color:#ba3878;">Instagram</span>
-              </a>
+                <span style="color:#ba3878;">Copiar para Instagram</span>
+              </button>
+            </div>
+
+            <!-- RF-07 y RF-09: publicar o retirar la página.
+                 El endpoint PATCH /api/qr/estado existía desde el módulo 4,
+                 con sus reglas y sus pruebas, y ninguna pantalla lo usaba:
+                 el dueño no tenía forma de retirar su página. Peor aún, la
+                 regla del módulo 3 no le deja quitar el último bloque
+                 mientras el código esté encendido, así que quedaba
+                 atrapado. -->
+            <div class="qr-side-card">
+              <h3>Visibilidad</h3>
+              <p class="qr-visibilidad-texto" id="qr-visibilidad-texto"></p>
+              <button type="button" id="qr-visibilidad-btn" class="btn-secondary"></button>
             </div>
 
             <div class="qr-info-box">
@@ -129,6 +149,20 @@
   <div id="toast" class="toast"></div>
 
   <script src="js/vendor/qrcode.min.js"></script>
+  <!-- Retirar la página deja sin servicio a los códigos ya impresos: no es
+       algo que deba pasar de un solo clic. -->
+  <dialog id="qr-confirmar">
+    <form class="dialog-inner" method="dialog">
+      <h3 id="qr-confirmar-titulo"></h3>
+      <p id="qr-confirmar-texto" class="qr-visibilidad-texto"></p>
+
+      <div class="dialog-actions">
+        <button type="button" id="qr-confirmar-cancelar" class="btn-secondary">Cancelar</button>
+        <button type="button" id="qr-confirmar-aceptar" class="btn-primary" style="width:auto;"></button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="js/business-data.js"></script>
   <script src="js/api.js"></script>
   <script src="js/guardia.js"></script>

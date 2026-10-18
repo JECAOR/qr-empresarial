@@ -118,7 +118,7 @@ function pintarFilas(usuarios) {
       <tr data-id="${u.id}">
         <td data-label="Cuenta">
           <div class="admin-cuenta">
-            <span class="admin-nombre">${escapeHtml(u.nombre)}</span>
+            <button type="button" class="admin-nombre" data-accion="detalle">${escapeHtml(u.nombre)}</button>
             <span class="admin-correo">${escapeHtml(u.correo)}</span>
             ${esAdmin ? '<span class="admin-chip admin-chip--rol">Administrador</span>' : ""}
           </div>
@@ -301,6 +301,68 @@ document.getElementById("admin-aceptar").addEventListener("click", async () => {
   }
 });
 
+// --- Detalle de una cuenta (RF-13) ---
+
+const dialogoDetalle = document.getElementById("admin-detalle");
+
+/** Una línea del detalle: etiqueta a la izquierda, valor a la derecha. */
+function linea(etiqueta, valor) {
+  return `
+    <div class="admin-detalle-linea">
+      <span>${escapeHtml(etiqueta)}</span>
+      <strong>${escapeHtml(String(valor))}</strong>
+    </div>`;
+}
+
+const NOMBRE_DEL_EVENTO = { escaneo: "Escaneo", visita: "Visita", clic: "Clic" };
+
+async function abrirDetalle(id) {
+  const cuerpo = document.getElementById("admin-detalle-cuerpo");
+
+  cuerpo.innerHTML = '<p class="admin-detalle-cargando">Cargando…</p>';
+  dialogoDetalle.showModal();
+
+  try {
+    const { data } = await Api.detalleUsuarioAdmin(id);
+
+    document.getElementById("admin-detalle-titulo").textContent = data.nombre;
+
+    const perfil = data.perfil;
+
+    const eventos = data.ultimosEventos.length
+      ? data.ultimosEventos
+          .map((e) => `
+            <li>
+              <span>${escapeHtml(NOMBRE_DEL_EVENTO[e.tipo] || e.tipo)}${e.enlace ? " · " + escapeHtml(e.enlace) : ""}</span>
+              <span class="admin-detalle">${escapeHtml(fecha(e.fecha, true) || "")}</span>
+            </li>`)
+          .join("")
+      : '<li class="admin-detalle">Sin actividad todavía.</li>';
+
+    cuerpo.innerHTML = `
+      ${linea("Correo", data.correo)}
+      ${linea("Rol", data.rol === "administrador" ? "Administrador" : "Empresa")}
+      ${linea("Estado", data.estado === "activo" ? "Activo" : "Restringido")}
+      ${linea("Registro", fecha(data.fechaRegistro) || "—")}
+      ${linea("Último acceso", data.ultimoAcceso ? fecha(data.ultimoAcceso, true) : "Nunca entró")}
+      ${linea("Negocio", perfil ? perfil.nombreNegocio : "Sin perfil")}
+      ${perfil ? linea("Bloques activos", perfil.bloquesActivos) : ""}
+      ${perfil ? linea("Código QR", perfil.qr === null ? "Sin generar" : perfil.qr ? "Publicado" : "Retirado") : ""}
+      ${linea("Escaneos", numero(data.actividad.escaneos))}
+      ${linea("Visitas", numero(data.actividad.visitas))}
+      ${linea("Clics", numero(data.actividad.clics))}
+
+      <h4 class="admin-detalle-titulo">Actividad reciente</h4>
+      <ul class="admin-detalle-eventos">${eventos}</ul>`;
+  } catch (error) {
+    cuerpo.innerHTML = `<p class="admin-detalle-cargando">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+document.getElementById("admin-detalle-cerrar").addEventListener("click", () => {
+  dialogoDetalle.close();
+});
+
 document.getElementById("admin-filas").addEventListener("click", (evento) => {
   const boton = evento.target.closest("[data-accion]");
 
@@ -310,6 +372,11 @@ document.getElementById("admin-filas").addEventListener("click", (evento) => {
   const usuario = usuariosEnPantalla.find((u) => u.id === id);
 
   if (!usuario) return;
+
+  if (boton.dataset.accion === "detalle") {
+    abrirDetalle(id);
+    return;
+  }
 
   if (boton.dataset.accion === "estado") {
     const estado = boton.dataset.estado;

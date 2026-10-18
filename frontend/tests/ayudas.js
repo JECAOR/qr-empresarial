@@ -65,6 +65,13 @@ const USUARIOS_ADMIN = [
   }
 ];
 
+// Los ultimos eventos que devuelve el detalle de una cuenta (RF-13)
+const EVENTOS_ADMIN = [
+  { tipo: "escaneo", fecha: "2026-10-17T15:40:00.000Z", enlace: null },
+  { tipo: "clic", fecha: "2026-10-17T15:41:00.000Z", enlace: "Ver menu completo" },
+  { tipo: "visita", fecha: "2026-10-16T09:12:00.000Z", enlace: null }
+];
+
 const RESUMEN_ADMIN = {
   total: 4, activos: 3, restringidos: 1, administradores: 1,
   nuncaEntraron: 1, inactivos30Dias: 1, nuevos30Dias: 1
@@ -195,14 +202,16 @@ async function simularApi(page, opciones = {}) {
     errorAlGuardarDatos = null,
     errorAlGuardarPreferencias = null,
     errorAlAdministrar = null,
-    comoAdministrador = false
+    comoAdministrador = false,
+    // Para probar que no se enciende un codigo sobre un perfil vacio
+    sinContenidoActivo = false
   } = opciones;
 
   // El simulador recuerda el perfil y el contenido, como haría el servidor:
   // si una prueba guarda y luego abre otra pantalla o recarga, debe
   // encontrar lo que guardó.
   let perfilActual = { ...PERFIL };
-  let contenidoActual = contenidoInicial();
+  let contenidoActual = sinContenidoActivo ? [] : contenidoInicial();
   let siguienteId = 100;
 
   // Los eventos que informó la pantalla, para poder comprobarlos (RF-11)
@@ -588,6 +597,19 @@ async function simularApi(page, opciones = {}) {
       });
     }
 
+    // El detalle va antes que la lista: "/admin/usuarios/5" tambien
+    // contiene "/admin/usuarios", y con el orden al reves nunca se llegaria
+    if (/\/admin\/usuarios\/\d+$/.test(url)) {
+      const id = Number(url.match(/\/admin\/usuarios\/(\d+)$/)[1]);
+      const usuario = usuariosAdmin.find((u) => u.id === id);
+
+      if (!usuario) return responder(404, { message: "El usuario no existe" });
+
+      return responder(200, {
+        data: { ...usuario, ultimosEventos: usuario.perfil ? EVENTOS_ADMIN : [] }
+      });
+    }
+
     if (url.includes("/admin/usuarios")) {
       const parametros = new URL(url).searchParams;
 
@@ -776,6 +798,6 @@ async function prepararSesion(page) {
 
 module.exports = {
   USUARIO, ADMINISTRADOR, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS, QR,
-  ESTADISTICAS, USUARIOS_ADMIN, RESUMEN_ADMIN,
+  ESTADISTICAS, USUARIOS_ADMIN, RESUMEN_ADMIN, EVENTOS_ADMIN,
   simularApi, sembrarSesion, prepararSesion, prepararSesionAdmin, simularImagenes
 };
