@@ -220,6 +220,55 @@ function renderBanner() {
   sub.innerHTML = `Tu perfil está activo · <strong>${formatear(escaneos)} ${veces}</strong> en los últimos ${dias} días`;
 }
 
+/**
+ * Enlaces más pulsados (RF-11).
+ *
+ * Es la información más accionable del módulo: a quien administra el negocio
+ * le dice qué enlace funciona y cuál no vale la pena mantener. El servidor
+ * devuelve el título y no solo el identificador, justamente para esto.
+ *
+ * La barra es relativa al más pulsado, no a un total: lo que interesa de un
+ * golpe es cuál destaca sobre los demás.
+ */
+function renderTopEnlaces() {
+  const contenedor = document.getElementById("top-enlaces");
+  const sub = document.getElementById("top-enlaces-sub");
+
+  if (!contenedor) return;
+
+  if (sub) sub.textContent = `Últimos ${estadisticas.dias || 7} días`;
+
+  const enlaces = estadisticas.enlacesMasPulsados || [];
+
+  if (enlaces.length === 0) {
+    contenedor.innerHTML = `
+      <p class="top-enlaces-vacio">
+        Todavía nadie ha pulsado un enlace. Cuando lo hagan, aquí verá cuáles usan más.
+      </p>`;
+    return;
+  }
+
+  const masPulsado = enlaces[0].clics || 1;
+
+  contenedor.innerHTML = enlaces.map((enlace, indice) => {
+    const proporcion = Math.round((enlace.clics / masPulsado) * 100);
+    const veces = enlace.clics === 1 ? "clic" : "clics";
+
+    return `
+      <div class="top-enlace">
+        <span class="top-enlace-puesto">${indice + 1}</span>
+        <div class="top-enlace-info">
+          <div class="top-enlace-titulo" title="${escapeHtml(enlace.titulo)}">${escapeHtml(enlace.titulo)}</div>
+          <div class="top-enlace-categoria">${escapeHtml(enlace.categoria)}</div>
+        </div>
+        <div class="top-enlace-barra" aria-hidden="true">
+          <span style="width:${proporcion}%"></span>
+        </div>
+        <span class="top-enlace-clics">${formatear(enlace.clics)} ${veces}</span>
+      </div>`;
+  }).join("");
+}
+
 function dibujarTodo() {
   graficas.forEach((g) => g.destroy());
   graficas = [];
@@ -227,6 +276,7 @@ function dibujarTodo() {
   renderBanner();
   renderKPIs();
   renderMainChart();
+  renderTopEnlaces();
 }
 
 /**

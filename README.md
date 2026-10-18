@@ -24,7 +24,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M3. Gestión de contenido (RF-05 y RF-06) | Terminado (`v1.3.0`) |
 | M4. Código QR (RF-07 y RF-08) | Terminado (`v1.4.0`) |
 | M5. Vista pública (RF-09) | Terminado (`v1.5.2`) |
-| M6. Estadísticas (RF-11) | Terminado (`v1.6.0`) |
+| M6. Estadísticas (RF-11) | Terminado (`v1.6.1`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -49,6 +49,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v1.5.1` | La pantalla del menú también consume la API, en lugar de datos de ejemplo |
 | `v1.5.2` | Se muestra el logo del negocio, y el service worker deja de guardar la API |
 | `v1.6.0` | Módulo 6: escaneos, visitas y clics reales en el panel |
+| `v1.6.1` | El panel muestra los enlaces más pulsados |
 
 ## API disponible
 
