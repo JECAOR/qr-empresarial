@@ -430,3 +430,44 @@ test.describe("Eliminar la cuenta propia", () => {
     expect(quedaAlgo).toBe(false);
   });
 });
+
+// La pantalla de inicio de sesión es la primera que ve cualquiera, incluido
+// quien evalúa el proyecto. Traía tres cifras escritas a mano —«1,200+
+// empresas activas», «4.8M escaneos este mes», «99.9% tiempo en línea»— que
+// nada calculaba, y un testimonio firmado por una persona que no existe.
+// Es la misma clase de invención que el aggregateRating que se quitó de la
+// vista pública en v2.0.2, solo que sobre el producto en vez de sobre el
+// negocio del usuario.
+test.describe("La portada no afirma cosas inventadas [regresión]", () => {
+  test("no hay cifras de adopción ni de disponibilidad", async ({ page }) => {
+    await page.goto("/login.html");
+
+    const texto = await page.locator("body").innerText();
+
+    for (const invento of ["1,200+", "4.8M", "99.9%", "Empresas activas", "Escaneos este mes"]) {
+      expect(texto).not.toContain(invento);
+    }
+  });
+
+  test("no hay un testimonio de un cliente que no existe", async ({ page }) => {
+    await page.goto("/login.html");
+
+    const texto = await page.locator("body").innerText();
+
+    expect(texto).not.toContain("Camila Restrepo");
+    expect(texto).not.toContain("subieron un 35%");
+  });
+
+  test("en su lugar dice lo que el sistema sí hace", async ({ page }) => {
+    await page.goto("/login.html");
+
+    const panel = page.locator(".auth-stats");
+
+    await expect(panel).toContainText("Un código, mil cambios");
+    await expect(panel).toContainText("Mide lo que pasa");
+
+    // Las tres son capacidades reales: QR dinámico (RF-07), edición del
+    // contenido (RF-05 y RF-06) y estadísticas (RF-11)
+    await expect(panel.locator(".auth-stat-row")).toHaveCount(3);
+  });
+});

@@ -71,6 +71,7 @@ sistema no tiene reseñas en ninguna parte.
 | `v2.0.0` | Módulo 8: administración de usuarios, su actividad y el reporte en CSV. Los 15 RF |
 | `v2.0.1` | Dos endpoints que no tenían pantalla: retirar la página y el detalle de una cuenta |
 | `v2.0.2` | La vista previa de `/p/{slug}` la arma el servidor con los datos de cada negocio |
+| `v2.0.3` | Fuera las cifras y el testimonio inventados de la pantalla de inicio de sesión |
 
 ## API disponible
 
@@ -202,7 +203,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (232 peticiones), Jest + Supertest (130) y Playwright + axe-core (376) | En uso |
+| Pruebas | Postman (232 peticiones), Jest + Supertest (130) y Playwright + axe-core (382) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -235,6 +236,7 @@ El CRUD de usuarios del sprint 1 resultó ser la mitad del módulo 8: el RF-14 �
 - **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP; los inicios correctos no gastan cupo. La solicitud de recuperación lleva su propio contador (10 por 15 minutos, contando todas), para que agotar uno no inhabilite el otro.
 - **El logo del negocio se muestra** en la vista pública y en la barra lateral del panel. Si no hay logo, o si la dirección deja de servir, se usa el dibujo genérico o las iniciales: la imagen la escribe una persona y puede caducar.
 - **El service worker no guarda las respuestas de la API.** Solo las pantallas. Son datos de una cuenta concreta, y en un equipo compartido sin conexión la caché habría devuelto los de quien usó el navegador antes.
+- **Ninguna pantalla afirma cifras que nadie calcula.** La de inicio de sesión traía «1,200+ empresas activas», «4.8M escaneos este mes» y «99.9% tiempo en línea» escritas a mano, y un testimonio firmado por una persona que no existe. En su lugar hay tres capacidades reales del sistema. Es la misma regla que quitó la calificación inventada de la vista pública: si no se mide, no se afirma.
 - **Ninguna pantalla pública muestra datos de ejemplo.** La del menú mostraba los platos y precios de un negocio de muestra a cualquier visitante; ahora enseña los bloques que el negocio publicó en la sección «menu» de su panel, y su botón se oculta si esa sección está vacía.
 - **El tema de color es del negocio, no de quien lo mira.** Vive en el perfil empresarial y la vista pública lo aplica, así que quien escanea el código ve los colores que eligió el negocio. Antes se guardaba solo en el navegador, de modo que ese color no llegaba nunca a un visitante.
 - **Para cambiar el correo hay que confirmar la contraseña**, y para cambiar el nombre no. El correo es el identificador con el que se inicia sesión y al que llega el enlace de recuperación: quien se hiciera con una sesión abierta podría cambiarlo y después apropiarse de la cuenta.
