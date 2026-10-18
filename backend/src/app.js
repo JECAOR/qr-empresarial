@@ -15,6 +15,7 @@ const usuarioRoutes = require('./modules/usuarios/usuario.routes');
 const perfilRoutes = require('./modules/perfiles/perfil.routes');
 const contenidoRoutes = require('./modules/contenido/contenido.routes');
 const qrRoutes = require('./modules/qr/qr.routes');
+const publicoRoutes = require('./modules/publico/publico.routes');
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
@@ -58,6 +59,19 @@ app.use(express.json());
 // y ahi no hay archivos que servir.
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
 
+// --- Vista publica (RF-09) ---
+//
+// Es la direccion que llevan codificada los codigos QR. No es un archivo, asi
+// que express.static no la encuentra: se responde con la pantalla publica, y
+// es su JavaScript el que pide los datos del negocio a /api/publico/:slug.
+//
+// El slug no se toca aqui. Se entrega siempre la misma pantalla, exista el
+// perfil o no, y es la pantalla la que muestra el aviso si no hay nada: asi
+// esta ruta no revela que slugs estan registrados.
+app.get('/p/:slug', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'public.html'));
+});
+
 // Endpoint de comprobacion: verifica que la API esta en funcionamiento
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -72,6 +86,7 @@ app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/perfiles', perfilRoutes);   // RF-04: perfil empresarial
 app.use('/api/contenido', contenidoRoutes); // RF-05 y RF-06: contenido
 app.use('/api/qr', qrRoutes);              // RF-07 y RF-08: codigo QR
+app.use('/api/publico', publicoRoutes);    // RF-09: vista publica, sin token
 
 // Cualquier otra ruta /api/... no existe: se responde en JSON, no con el
 // HTML que Express devuelve por defecto, porque quien llama espera JSON.

@@ -104,6 +104,22 @@
     {
       "key": "idContenidoQr",
       "value": ""
+    },
+    {
+      "key": "tokenPublico",
+      "value": ""
+    },
+    {
+      "key": "slugPublico",
+      "value": ""
+    },
+    {
+      "key": "idVisible",
+      "value": ""
+    },
+    {
+      "key": "idOculto",
+      "value": ""
     }
   ],
   "item": [
@@ -6431,6 +6447,664 @@
                 {
                   "key": "token",
                   "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia 6 - Vista publica (RF-09)",
+      "item": [
+        {
+          "name": "133 Login de la empresa (prepara el escenario)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "La vista publica no necesita token; esta sesion es solo para preparar y limpiar lo que las pruebas van a consultar.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenPublico', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "134 Consultar el perfil propio (para saber el slug)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPublico}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set('slugPublico', d.slug);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "135 Agregar un bloque visible (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPublico}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"Ver la carta\",\n  \"detalle\": \"https://laespiga.co/carta\",\n  \"idCategoria\": 4,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idVisible', json.data.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "136 Agregar un bloque y desactivarlo (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPublico}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"texto\",\n  \"titulo\": \"Promo que ya paso\",\n  \"detalle\": \"No deberia verse\",\n  \"idCategoria\": 1,\n  \"seccion\": \"promos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idOculto', json.data.id);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "137 Desactivarlo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idOculto}}/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idOculto}}",
+                "estado"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPublico}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "138 Ver el perfil publico SIN token (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugPublico}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugPublico}}"
+              ]
+            },
+            "description": "Es el unico endpoint abierto del proyecto: quien escanea el codigo QR no tiene cuenta ni deberia necesitarla.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae el perfil', () => pm.expect(d.perfil.nombreNegocio).to.be.a('string').and.not.empty);",
+                  "pm.test('Trae el contenido agrupado', () => pm.expect(d).to.have.property('porSeccion'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "139 Solo muestra el contenido activo (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugPublico}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugPublico}}"
+              ]
+            },
+            "description": "Desactivar un bloque en el panel es exactamente esto: que deje de aparecer aqui (RF-06).",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const titulos = pm.response.json().data.contenido.map(i => i.titulo);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Esta el bloque activo', () => pm.expect(titulos).to.include('Ver la carta'));",
+                  "pm.test('No esta el desactivado', () => pm.expect(titulos).to.not.include('Promo que ya paso'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "140 No expone datos de la cuenta (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugPublico}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugPublico}}"
+              ]
+            },
+            "description": "El perfil publico se arma campo por campo, no con un SELECT *: si manana se agrega una columna a la tabla, no se filtra sola.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const p = pm.response.json().data.perfil;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Sin identificadores internos', () => {",
+                  "  pm.expect(p).to.not.have.property('idPerfil');",
+                  "  pm.expect(p).to.not.have.property('idUsuario');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "141 Slug que no existe (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/publico/no-existe-este-negocio",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "no-existe-este-negocio"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "142 Desactivar el codigo QR (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPublico}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "143 Con el codigo desactivado, el perfil no se muestra (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugPublico}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugPublico}}"
+              ]
+            },
+            "description": "Desactivar el codigo es el interruptor que apaga la vista publica sin borrar nada. Se responde 404 y no un mensaje distinto: decir 'existe pero esta suspendido' no es asunto de quien escanea.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "144 Reactivarlo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPublico}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "145 Vuelve a mostrarse (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugPublico}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugPublico}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "146 Eliminar el bloque visible (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idVisible}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idVisible}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPublico}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "147 Eliminar el bloque oculto (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idOculto}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idOculto}}"
+              ]
+            },
+            "description": "Deja la base como estaba para que la coleccion se pueda repetir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenPublico}}",
                   "type": "string"
                 }
               ]

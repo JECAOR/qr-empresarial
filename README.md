@@ -23,6 +23,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M2. Perfil empresarial (RF-04 y RF-10) | Terminado (`v1.1.0`) |
 | M3. Gestión de contenido (RF-05 y RF-06) | Terminado (`v1.3.0`) |
 | M4. Código QR (RF-07 y RF-08) | Terminado (`v1.4.0`) |
+| M5. Vista pública (RF-09) | Terminado (`v1.5.0`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -43,6 +44,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v1.2.0` | Módulo 3: enlaces, textos y botones del perfil, con secciones y orden |
 | `v1.3.0` | Reordenar el contenido arrastrando o con el teclado |
 | `v1.4.0` | Módulo 4: código QR por perfil y descarga en PNG, SVG y PDF |
+| `v1.5.0` | Módulo 5: vista pública en `/p/{slug}`. Flujo principal completo |
 
 ## API disponible
 
@@ -51,6 +53,7 @@ Base: `http://localhost:3000/api`
 | Método | Endpoint | Acceso | Operación |
 |---|---|---|---|
 | GET | `/health` | Público | Comprobación del servidor |
+| GET | `/publico/:slug` | Público | Perfil y contenido visible (lo que ve quien escanea) |
 | POST | `/auth/registro` | Público | Registro de una empresa (rol forzado a `empresa`) |
 | POST | `/auth/login` | Público | Iniciar sesión y obtener el JWT |
 | POST | `/auth/logout` | Autenticado | Cerrar la sesión actual |
@@ -82,7 +85,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 137 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 152 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Cómo consume la API el frontend
 
@@ -121,16 +124,18 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | Toda pantalla privada | `GET /perfiles/me` al cargar, para traer los datos del negocio |
 | `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido`, `GET /contenido/categorias` y `PUT /contenido/orden` |
 | `qr.html` | `GET/POST /qr` y `GET /qr/imagen` |
+| `public.html` | `GET /publico/:slug`, sin token |
 
 Los datos del negocio ya vienen del servidor: `js/guardia.js` consulta
 `GET /perfiles/me` al abrir cualquier pantalla privada y los deja en el almacén
 local, que pasó de ser la fuente de verdad a ser una caché. Así el dashboard, el
 código QR y la barra lateral siguieron funcionando sin cambios.
 
-La vista pública lee la caché del navegador hasta que exista la ruta por slug del
-módulo 5. El color, el tamaño y el formato elegidos en la pantalla del código QR
-sí siguen en `localStorage`, y ahí se quedan: son preferencias de quien mira esa
-pantalla, no datos del negocio. Y
+La vista pública se sirve en `/p/{slug}`, que es la dirección que llevan
+codificada los códigos QR, y pide los datos a `GET /api/publico/:slug` sin token.
+El color, el tamaño y el formato elegidos en la pantalla del código QR sí siguen
+en `localStorage`, y ahí se quedan: son preferencias de quien mira esa pantalla,
+no datos del negocio. Y
 los seis endpoints de administración de usuarios no tienen pantalla: son el
 módulo 8 (RF-13 a RF-15).
 
@@ -173,8 +178,8 @@ módulo 8 (RF-13 a RF-15).
 | 1 | 06/10 – 13/10 | M1. Autenticación, registro público, cierre de sesión, recuperación y cambio de contraseña | RF-01, RF-02, RF-03 | Terminado |
 | 2 | 14/10 – 20/10 | M2. Perfil empresarial | RF-04, RF-10 | Terminado |
 | 3 | 20/10 – 26/10 | M3. Gestión de contenido (enlaces, textos, botones) | RF-05, RF-06 | Terminado |
-| 4 | 27/10 – 02/11 | M4. Código QR dinámico (terminado) + M5. Vista pública | RF-07, RF-08, RF-09 | En curso |
-| 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Pendiente |
+| 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Terminado |
+| 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Siguiente |
 | 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Pendiente |
 | 7 | 17/11 – 23/11 | Pruebas de integración, aceptación y seguridad | Todos | Pendiente |
 | 8 | 24/11 – 18/12 | Despliegue, manuales y cierre | — | Pendiente |
@@ -188,6 +193,7 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **RN-01** El correo es único entre las cuentas activas.
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
 - **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP; los inicios correctos no gastan cupo. La solicitud de recuperación lleva su propio contador (10 por 15 minutos, contando todas), para que agotar uno no inhabilite el otro.
+- **La vista pública se apaga, no se borra.** Deja de responder si el código QR fue desactivado o si la cuenta dueña está restringida, y en los tres casos —incluido el perfil inexistente— devuelve lo mismo: decir «existe pero está suspendido» no es asunto de quien escanea.
 - **Un código QR por perfil, y no se regenera.** La base lo garantiza con un `UNIQUE` sobre `id_perfil` (RF-07). Pedirlo otra vez devuelve el mismo: cambiar su dirección invalidaría los códigos ya impresos.
 - **No se genera un código para un perfil vacío.** Hace falta al menos un bloque de contenido activo. Un código que lleva a una página en blanco es peor que no tener código: quien lo escanea se queda sin saber si el negocio existe.
 - **El contenido se reordena arrastrando o con el teclado.** El asa de cada bloque es un botón enfocable: con las flechas arriba y abajo también se mueve. Arrastrar es cómodo con el ratón e imposible sin él, así que ofrecer solo esa vía dejaría fuera a quien no pueda usarlo.
@@ -243,7 +249,7 @@ qr-empresarial/
 │   │   │   ├── perfiles/            # route, validator, controller, service, repository
 │   │   │   ├── contenido/           # route, validator, controller, service, repository
 │   │   │   ├── qr/                  # route, validator, controller, service, repository
-│   │   │   ├── publico/             # pendiente
+│   │   │   ├── publico/             # route, controller, service, repository
 │   │   │   ├── estadisticas/        # pendiente
 │   │   │   ├── configuracion/       # pendiente
 │   │   │   └── admin/               # pendiente

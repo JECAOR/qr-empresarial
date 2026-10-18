@@ -50,23 +50,25 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Fonda La Cosecha" />
   <meta name="twitter:image" content="assets/og-image.png" />
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
-  <link rel="manifest" href="manifest.json" />
+  <!-- Rutas absolutas a proposito: esta pantalla tambien se sirve en
+       /p/<slug>, y desde ahi una ruta relativa apuntaria a /p/js/... -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/theme.css" />
-  <script src="js/theme.js"></script>
-  <link rel="stylesheet" href="css/public.css" />
-  <link rel="stylesheet" href="css/polish.css" />
+  <link rel="stylesheet" href="/css/theme.css" />
+  <script src="/js/theme.js"></script>
+  <link rel="stylesheet" href="/css/public.css" />
+  <link rel="stylesheet" href="/css/polish.css" />
 </head>
 <body class="public-page">
 
   <main class="profile-wrap">
-    <div class="profile-card">
+    <div class="profile-card" id="public-card">
 
       <!-- Banner + logo -->
       <div class="profile-banner-wrap">
@@ -124,7 +126,7 @@
 
       <!-- Enlaces de acción -->
       <div class="profile-links">
-        <a href="menu.html" class="profile-link-btn link-primary-btn">
+        <a href="/menu.html" class="profile-link-btn link-primary-btn">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
           <span>Ver menú completo</span>
           <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -160,6 +162,22 @@
           <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--slate-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
       </div>
+
+      <!-- Contenido que arma la empresa desde el panel (RF-05 y RF-06).
+           Lo rellena public.js con lo que devuelva la API; si no hay nada,
+           queda vacío y no se ve. -->
+      <div class="profile-sections" id="public-content"></div>
+    </div>
+
+    <!-- Si el perfil no existe, la cuenta está restringida o el código fue
+         desactivado, se muestra esto en lugar de la tarjeta -->
+    <div class="profile-card profile-unavailable" id="public-unavailable" hidden>
+      <h1>Este perfil no está disponible</h1>
+      <p>
+        Puede que la dirección esté mal escrita o que el negocio haya dejado de
+        publicar su perfil. Si llegó escaneando un código, pregúntele al negocio
+        por uno actualizado.
+      </p>
     </div>
 
     <div class="profile-footer">
@@ -167,11 +185,12 @@
     </div>
   </main>
 
-  <script src="js/business-data.js"></script>
-  <script src="js/public.js"></script>
+  <script src="/js/business-data.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/public.js"></script>
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
     }
   </script>
 </body>
