@@ -284,6 +284,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idAdmin', pm.response.json().data.usuario.idUsuario);",
                   "if (json.data && json.data.token) {",
                   "  pm.collectionVariables.set('token', json.data.token);",
                   "  console.log('token de administrador guardado');",
@@ -649,15 +650,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/4",
+              "raw": "{{baseUrl}}/{{idAdmin}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "4"
+                "{{idAdmin}}"
               ]
             },
-            "description": "Usuario 4: Cafe Raices."
+            "description": "El identificador sale del login de la guia 1, no escrito a mano. En la base de desarrollo el administrador es el 4; en una instalacion nueva, sembrada con database/seed.sql, es el 1. Con el id fijo esta peticion fallaba en cualquier instalacion que no fuera la del autor."
           },
           "response": [],
           "event": [
@@ -1565,15 +1566,15 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/5",
+              "raw": "{{baseUrl}}/{{idAdmin}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "5"
+                "{{idAdmin}}"
               ]
             },
-            "description": "Se detiene en el middleware de roles: no llega a la base de datos.",
+            "description": "RN-22. Se intenta eliminar al administrador con un token de empresa. El guardia de rol responde antes de buscar al usuario, asi que el 403 no depende de que ese id exista; aun asi se usa la variable y no un numero fijo, para que la peticion se lea sola.",
             "auth": {
               "type": "bearer",
               "bearer": [

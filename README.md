@@ -381,6 +381,11 @@ for f in database/migrations/*.sql; do
   mysql -u root -p qr_empresarial < "$f"
 done
 
+# Datos de demostracion: dos cuentas, un perfil con contenido, su codigo QR
+# y la actividad de los ultimos siete dias. Sin esto la aplicacion arranca
+# vacia y la coleccion de Postman no tiene con que entrar.
+mysql -u root -p qr_empresarial < database/seed.sql
+
 # 2. Backend
 cd backend
 npm install
@@ -407,6 +412,23 @@ Las pruebas del backend levantan la aplicación de verdad contra una base
 las migraciones. Eso comprueba de paso que la base se pueda reconstruir desde
 el repositorio —que es como se encontró que no se podía—. El detalle está en
 [`backend/tests/README.md`](backend/tests/README.md).
+
+**Las cuentas de demostración.** `database/seed.sql` crea dos, las dos con la
+contraseña `Clave123*`:
+
+| Correo | Rol | Para qué |
+|---|---|---|
+| `admin@caferaices.co` | administrador | La pantalla de Administración (RF-13 a RF-15) |
+| `contacto@laespiga.co` | empresa | El recorrido completo: perfil, contenido, QR y estadísticas |
+
+La contraseña está en el repositorio a propósito: son cuentas de demostración de un
+proyecto formativo, y el archivo lleva el hash que les corresponde. **Antes de desplegar,
+cámbielas o elimínelas.** El archivo se puede ejecutar las veces que haga falta: devuelve la
+demostración a su estado inicial en lugar de duplicarla.
+
+Los identificadores no se fijan a mano, así que en una instalación nueva serán 1 y 2 y en
+una que ya tenga cuentas serán otros. Nada depende de ellos, tampoco la colección de
+Postman.
 
 El backend publica también las pantallas, así que **toda la aplicación vive en
 `http://localhost:3000`**: no hace falta un segundo servidor. Esto importa para
