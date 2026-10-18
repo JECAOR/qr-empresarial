@@ -23,7 +23,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M2. Perfil empresarial (RF-04 y RF-10) | Terminado (`v1.1.0`) |
 | M3. Gestión de contenido (RF-05 y RF-06) | Terminado (`v1.3.0`) |
 | M4. Código QR (RF-07 y RF-08) | Terminado (`v1.4.0`) |
-| M5. Vista pública (RF-09) | Terminado (`v1.5.0`) |
+| M5. Vista pública (RF-09) | Terminado (`v1.5.1`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -45,6 +45,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v1.3.0` | Reordenar el contenido arrastrando o con el teclado |
 | `v1.4.0` | Módulo 4: código QR por perfil y descarga en PNG, SVG y PDF |
 | `v1.5.0` | Módulo 5: vista pública en `/p/{slug}`. Flujo principal completo |
+| `v1.5.1` | La pantalla del menú también consume la API, en lugar de datos de ejemplo |
 
 ## API disponible
 
@@ -125,6 +126,7 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido`, `GET /contenido/categorias` y `PUT /contenido/orden` |
 | `qr.html` | `GET/POST /qr` y `GET /qr/imagen` |
 | `public.html` | `GET /publico/:slug`, sin token |
+| `menu.html` | `GET /publico/:slug`, sin token (la sección «menu» del perfil) |
 
 Los datos del negocio ya vienen del servidor: `js/guardia.js` consulta
 `GET /perfiles/me` al abrir cualquier pantalla privada y los deja en el almacén
@@ -193,6 +195,7 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **RN-01** El correo es único entre las cuentas activas.
 - **RN-02** La contraseña tiene mínimo 8 caracteres, con mayúscula, número y símbolo, y se guarda cifrada con bcrypt (10 rondas).
 - **RN-03** El inicio de sesión se bloquea 15 minutos tras 5 intentos fallidos desde la misma IP; los inicios correctos no gastan cupo. La solicitud de recuperación lleva su propio contador (10 por 15 minutos, contando todas), para que agotar uno no inhabilite el otro.
+- **Ninguna pantalla pública muestra datos de ejemplo.** La del menú mostraba los platos y precios de un negocio de muestra a cualquier visitante; ahora enseña los bloques que el negocio publicó en la sección «menu» de su panel, y su botón se oculta si esa sección está vacía.
 - **La vista pública se apaga, no se borra.** Deja de responder si el código QR fue desactivado o si la cuenta dueña está restringida, y en los tres casos —incluido el perfil inexistente— devuelve lo mismo: decir «existe pero está suspendido» no es asunto de quien escanea.
 - **Un código QR por perfil, y no se regenera.** La base lo garantiza con un `UNIQUE` sobre `id_perfil` (RF-07). Pedirlo otra vez devuelve el mismo: cambiar su dirección invalidaría los códigos ya impresos.
 - **No se genera un código para un perfil vacío.** Hace falta al menos un bloque de contenido activo. Un código que lleva a una página en blanco es peor que no tener código: quien lo escanea se queda sin saber si el negocio existe.

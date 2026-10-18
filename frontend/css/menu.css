@@ -100,3 +100,37 @@
 body.menu-page {
   background: var(--slate-100);
 }
+
+/* --- Bloques que vienen del panel del negocio (RF-05) --- */
+/* La pantalla se diseñó como un menú de restaurante con precios escritos a
+   mano. El contenido real no tiene precios: son los bloques que la empresa
+   arma en su panel, con título y detalle. Por eso el ancho que ocupaba el
+   precio queda para el texto. */
+.menu-item-info {
+  flex: 1;
+}
+
+a.menu-item {
+  text-decoration: none;
+  color: inherit;
+}
+
+a.menu-item:hover {
+  border-color: var(--color-primary);
+}
+
+.menu-item-arrow {
+  color: var(--slate-400);
+  flex-shrink: 0;
+}
+
+.menu-empty {
+  text-align: center;
+  padding: 36px 20px;
+}
+
+.menu-empty p {
+  font-size: 13px;
+  color: var(--slate-500);
+  margin: 0;
+}

@@ -179,6 +179,28 @@ function pintarContenido(porSeccion) {
   }).join("");
 }
 
+/**
+ * Prepara el botón "Ver menú completo".
+ *
+ * Le pasa el slug, porque menu.html se sirve en la raíz y sin él no sabría
+ * de qué negocio mostrar el menú. Y se oculta cuando la sección está vacía:
+ * no tiene sentido ofrecer un botón que lleva a una pantalla sin nada.
+ */
+function prepararEnlaceDelMenu(slug, porSeccion) {
+  const boton = document.getElementById("link-menu");
+
+  if (!boton) return;
+
+  const bloques = porSeccion.menu || [];
+
+  if (bloques.length === 0) {
+    boton.hidden = true;
+    return;
+  }
+
+  boton.href = `/menu.html?slug=${encodeURIComponent(slug)}`;
+}
+
 async function cargarPerfilPublico() {
   const slug = slugDeLaDireccion();
 
@@ -192,6 +214,7 @@ async function cargarPerfilPublico() {
 
     pintarPerfil(data.perfil);
     pintarContenido(data.porSeccion);
+    prepararEnlaceDelMenu(slug, data.porSeccion);
   } catch (error) {
     // 404: no existe, la cuenta está restringida o el código fue desactivado.
     // El servidor responde lo mismo en los tres casos, a propósito.

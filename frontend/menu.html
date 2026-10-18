@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Menú · Fonda La Cosecha</title>
-  <meta name="description" content="Consulta el menú digital de Fonda La Cosecha: entradas, platos fuertes y bebidas con precios actualizados." />
+  <title>Menú · QR Empresarial</title>
+  <meta name="description" content="Consulta el menú digital del negocio, con la información que publica desde su panel." />
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
@@ -22,73 +22,19 @@
 
   <main class="menu-wrap">
     <div class="menu-header">
-      <a href="public.html" class="menu-back">
+      <a href="/public.html" class="menu-back" id="menu-back">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         Volver al perfil
       </a>
-      <h1 id="menu-biz-name">Fonda La Cosecha</h1>
-      <p>Menú actualizado · Precios en pesos colombianos (COP)</p>
+      <h1 id="menu-biz-name">Menú</h1>
+      <p id="menu-subtitle">Cargando...</p>
     </div>
 
-    <div class="menu-category">
-      <h2>Entradas</h2>
-    </div>
-    <div class="menu-item">
-      <div class="menu-item-info">
-        <h3>Empanadas antioqueñas (x3)</h3>
-        <p>Con ají de la casa</p>
-      </div>
-      <div class="menu-item-price">$9.000</div>
-    </div>
-    <div class="menu-item">
-      <div class="menu-item-info">
-        <h3>Patacones con hogao</h3>
-        <p>Plátano verde frito, hogao y queso costeño</p>
-      </div>
-      <div class="menu-item-price">$14.000</div>
-    </div>
+    <!-- Lo llena menu.js con la sección "menu" del perfil (RF-05) -->
+    <div id="menu-items"></div>
 
-    <div class="menu-category">
-      <h2>Platos fuertes</h2>
-    </div>
-    <div class="menu-item">
-      <div class="menu-item-info">
-        <h3>Bandeja paisa completa</h3>
-        <p>Frijoles, arroz, carne molida, chicharrón, chorizo, arepa, huevo y aguacate</p>
-      </div>
-      <div class="menu-item-price">$32.000</div>
-    </div>
-    <div class="menu-item">
-      <div class="menu-item-info">
-        <h3>Sancocho de gallina</h3>
-        <p>Con papa, yuca, mazorca y aguacate</p>
-      </div>
-      <div class="menu-item-price">$26.000</div>
-    </div>
-    <div class="menu-item">
-      <div class="menu-item-info">
-        <h3>Mondongo antioqueño</h3>
-        <p>Servido con arroz blanco y arepa</p>
-      </div>
-      <div class="menu-item-price">$24.000</div>
-    </div>
-
-    <div class="menu-category">
-      <h2>Bebidas</h2>
-    </div>
-    <div class="menu-item">
-      <div class="menu-item-info">
-        <h3>Jugo natural</h3>
-        <p>Lulo, mora, maracuyá o mango</p>
-      </div>
-      <div class="menu-item-price">$7.000</div>
-    </div>
-    <div class="menu-item">
-      <div class="menu-item-info">
-        <h3>Limonada de coco</h3>
-        <p></p>
-      </div>
-      <div class="menu-item-price">$9.000</div>
+    <div class="menu-empty" id="menu-empty" hidden>
+      <p>Este negocio todavía no ha publicado su menú.</p>
     </div>
 
     <div class="menu-footer">
@@ -97,11 +43,8 @@
   </main>
 
   <script src="js/business-data.js"></script>
-  <script>
-    const menuBiz = getBusinessData();
-    document.title = `Menú · ${menuBiz.name}`;
-    document.getElementById("menu-biz-name").textContent = menuBiz.name;
-  </script>
+  <script src="js/api.js"></script>
+  <script src="js/menu.js"></script>
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js").catch(() => {});
