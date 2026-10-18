@@ -16,6 +16,7 @@ const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
 
 const perfilRepository = require('../perfiles/perfil.repository');
+const contenidoRepository = require('../contenido/contenido.repository');
 const qrRepository = require('./qr.repository');
 
 const FORMATOS = ['png', 'svg', 'pdf'];
@@ -133,7 +134,7 @@ async function generarMiQr(idUsuario) {
     return { qr: aRespuesta(existente, perfil.slug), yaExistia: true };
   }
 
-  const bloquesActivos = await qrRepository.contarContenidoActivo(perfil.id_perfil);
+  const bloquesActivos = await contenidoRepository.contarActivos(perfil.id_perfil);
 
   if (bloquesActivos === 0) {
     const error = new Error(

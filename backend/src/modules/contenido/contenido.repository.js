@@ -72,6 +72,28 @@ async function buscarPorId(clase, id, idPerfil) {
 }
 
 /**
+ * Cuántos bloques activos tiene un perfil, de las dos tablas.
+ *
+ * Lo usan dos reglas distintas y conviene que sea la misma cuenta: el módulo
+ * 4 no genera un código QR para un perfil vacío, y el módulo 3 no deja
+ * quitar el último bloque de un perfil que ya tiene código. Si cada una
+ * contara por su cuenta, podrían dejar de estar de acuerdo.
+ *
+ * @param {number} idPerfil
+ * @returns {Promise<number>}
+ */
+async function contarActivos(idPerfil) {
+  const [filas] = await pool.execute(
+    `SELECT
+       (SELECT COUNT(*) FROM enlace   WHERE id_perfil = ? AND activo = 1) +
+       (SELECT COUNT(*) FROM elemento WHERE id_perfil = ? AND activo = 1) AS total`,
+    [idPerfil, idPerfil]
+  );
+
+  return Number(filas[0].total);
+}
+
+/**
  * Siguiente posición libre dentro de una sección.
  *
  * Se mira en las dos tablas porque el orden es de la sección completa, no de
@@ -268,6 +290,7 @@ async function listarCategorias() {
 module.exports = {
   listarPorPerfil,
   buscarPorId,
+  contarActivos,
   siguienteOrden,
   crearEnlace,
   crearElemento,

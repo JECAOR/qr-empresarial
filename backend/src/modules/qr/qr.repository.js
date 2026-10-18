@@ -63,29 +63,14 @@ async function cambiarEstado(idPerfil, activo) {
   return resultado.affectedRows;
 }
 
-/**
- * Cuenta los bloques de contenido activos de un perfil.
- *
- * Lo necesita la regla del RF-07: no se genera un código que lleve a un
- * perfil vacío, porque quien lo escanee no encontraría nada.
- *
- * @param {number} idPerfil
- * @returns {Promise<number>}
- */
-async function contarContenidoActivo(idPerfil) {
-  const [filas] = await pool.execute(
-    `SELECT
-       (SELECT COUNT(*) FROM enlace   WHERE id_perfil = ? AND activo = 1) +
-       (SELECT COUNT(*) FROM elemento WHERE id_perfil = ? AND activo = 1) AS total`,
-    [idPerfil, idPerfil]
-  );
-
-  return Number(filas[0].total);
-}
+// El contador de bloques activos vivia aqui. Se movio a
+// contenido.repository.contarActivos, porque cuenta datos del contenido y lo
+// usan dos reglas que tienen que estar de acuerdo: esta (no generar un codigo
+// para un perfil vacio) y la del modulo 3 (no dejar vacio un perfil que ya
+// tiene codigo). Con dos copias podrian dejar de coincidir.
 
 module.exports = {
   buscarPorPerfil,
   crear,
-  cambiarEstado,
-  contarContenidoActivo
+  cambiarEstado
 };

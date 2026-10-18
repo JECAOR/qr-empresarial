@@ -9,6 +9,7 @@
 
 const perfilRepository = require('../perfiles/perfil.repository');
 const contenidoRepository = require('./contenido.repository');
+const qrRepository = require('../qr/qr.repository');
 
 // Qué tabla y qué categorías corresponden a cada tipo de la API.
 // "enlace" lleva a otra parte; "texto" y "boton" son contenido propio.
@@ -274,6 +275,47 @@ async function actualizarContenido(idUsuario, idContenido, datos) {
 }
 
 /**
+ * Impide dejar sin contenido activo un perfil que ya tiene código QR.
+ *
+ * El módulo 4 no genera un código para un perfil vacío, porque quien lo
+ * escanee no encontraría nada. Sin esta comprobación esa garantía duraba lo
+ * que tardara el dueño en quitar su último bloque: el código ya impreso y
+ * pegado en la vitrina seguía llevando a un perfil en blanco. Se vigilaba la
+ * puerta de entrada y no la de salida.
+ *
+ * **Se vigilan las dos salidas.** Borrar y desactivar dejan el perfil igual
+ * de vacío; comprobar solo el borrado se esquivaría desactivando.
+ *
+ * **Solo si hay código.** Mientras el perfil se está armando no hay nada que
+ * proteger, y bloquearlo atraparía a quien se equivocó al escribir su primer
+ * enlace y quiere corregirlo.
+ *
+ * @param {object} perfil
+ * @param {'enlace'|'elemento'} clase
+ * @param {number} id
+ * @throws {Error} 409 si es el último bloque activo y el perfil tiene código.
+ */
+async function comprobarQueNoSeQuedaVacio(perfil, clase, id) {
+  const bloque = await contenidoRepository.buscarPorId(clase, id, perfil.id_perfil);
+
+  // Si ya estaba inactivo, la operación no cambia cuántos quedan
+  if (!bloque || !bloque.activo) return;
+
+  const codigo = await qrRepository.buscarPorPerfil(perfil.id_perfil);
+
+  if (!codigo || !codigo.activo) return;
+
+  if (await contenidoRepository.contarActivos(perfil.id_perfil) > 1) return;
+
+  const error = new Error(
+    'Es el último bloque activo y el perfil ya tiene un código QR. ' +
+    'Agregue otro antes de quitarlo, o quien escanee el código no encontrará nada'
+  );
+  error.status = 409;
+  throw error;
+}
+
+/**
  * Activa o desactiva un bloque (RF-06).
  *
  * Desactivar no es borrar: el bloque sigue en el panel pero deja de
@@ -283,6 +325,9 @@ async function actualizarContenido(idUsuario, idContenido, datos) {
 async function cambiarEstadoContenido(idUsuario, idContenido, activo) {
   const perfil = await perfilDeLaCuenta(idUsuario);
   const { clase, id } = descomponerId(idContenido);
+
+  // Activar nunca deja el perfil vacío
+  if (!activo) await comprobarQueNoSeQuedaVacio(perfil, clase, id);
 
   const filas = await contenidoRepository.cambiarEstado(clase, id, perfil.id_perfil, activo);
 
@@ -297,6 +342,8 @@ async function cambiarEstadoContenido(idUsuario, idContenido, activo) {
 async function eliminarContenido(idUsuario, idContenido) {
   const perfil = await perfilDeLaCuenta(idUsuario);
   const { clase, id } = descomponerId(idContenido);
+
+  await comprobarQueNoSeQuedaVacio(perfil, clase, id);
 
   const filas = await contenidoRepository.eliminar(clase, id, perfil.id_perfil);
 

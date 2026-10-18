@@ -64,6 +64,7 @@ sistema no tiene reseñas en ninguna parte.
 | `v1.7.0` | Módulo 7: datos personales, avisos de la cuenta y tema del negocio |
 | `v1.7.1` | El selector de color ya no reemplaza el perfil: `PATCH /perfiles/me/tema` |
 | `v1.7.2` | Fuera el aviso de reseñas, que prometía algo inexistente. Módulo 7 cerrado |
+| `v1.8.0` | RN del último bloque activo: no se vacía un perfil que ya tiene código QR |
 
 ## API disponible
 
@@ -231,6 +232,7 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **La vista pública se apaga, no se borra.** Deja de responder si el código QR fue desactivado o si la cuenta dueña está restringida, y en los tres casos —incluido el perfil inexistente— devuelve lo mismo: decir «existe pero está suspendido» no es asunto de quien escanea.
 - **Un código QR por perfil, y no se regenera.** La base lo garantiza con un `UNIQUE` sobre `id_perfil` (RF-07). Pedirlo otra vez devuelve el mismo: cambiar su dirección invalidaría los códigos ya impresos.
 - **No se genera un código para un perfil vacío.** Hace falta al menos un bloque de contenido activo. Un código que lleva a una página en blanco es peor que no tener código: quien lo escanea se queda sin saber si el negocio existe.
+- **Y tampoco se deja vacío un perfil que ya tiene código.** No se puede quitar el último bloque activo —ni borrándolo ni desactivándolo, que dejan el perfil igual de vacío— mientras el código esté encendido. Sin esto, la regla anterior duraba lo que tardara el dueño en borrar su último enlace: se vigilaba la puerta de entrada y no la de salida, y el código ya impreso seguía llevando a una página en blanco. Para vaciar el perfil a propósito hay que apagar el código primero.
 - **El contenido se reordena arrastrando o con el teclado.** El asa de cada bloque es un botón enfocable: con las flechas arriba y abajo también se mueve. Arrastrar es cómodo con el ratón e imposible sin él, así que ofrecer solo esa vía dejaría fuera a quien no pueda usarlo.
 - **Desactivar no es borrar.** Un bloque de contenido inactivo sigue en el panel y deja de aparecer en la vista pública (RF-06). Sirve para una promoción que vuelve cada temporada, sin volver a escribirla.
 - **Los enlaces solo admiten `http` y `https`.** Un `javascript:` guardado como enlace acabaría ejecutándose en la vista pública. El WhatsApp es la excepción: acepta un teléfono y se guarda convertido en `https://wa.me/<dígitos>`.
@@ -246,8 +248,10 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 
 ### Reglas previstas
 
-- Un único QR por perfil activo, con URL fija `/p/{slug}`, generado solo si el perfil tiene contenido activo.
-- URL válidas (http/https); no se puede eliminar el último enlace activo.
+Ninguna pendiente de las que tenía este apartado. Las cuatro que figuraban aquí —un QR por
+perfil, URL fija `/p/{slug}`, generarlo solo con contenido activo y no poder quitar el último
+bloque— están arriba, en las aplicadas. Las tres primeras ya lo estaban y este apartado se
+había quedado sin actualizar; la cuarta se implementó en `v1.8.0`.
 
 ## Base de datos
 
