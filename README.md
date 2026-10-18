@@ -23,7 +23,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M2. Perfil empresarial (RF-04 y RF-10) | Terminado (`v1.1.0`) |
 | M3. Gestión de contenido (RF-05 y RF-06) | Terminado (`v1.3.0`) |
 | M4. Código QR (RF-07 y RF-08) | Terminado (`v1.4.0`) |
-| M5. Vista pública (RF-09) | Terminado (`v1.5.2`) |
+| M5. Vista pública (RF-09) | Terminado (`v2.0.2`) |
 | M6. Estadísticas (RF-11) | Terminado (`v1.6.1`) |
 | M7. Configuración (RF-12) | Terminado (`v1.7.2`) |
 | M8. Administración (RF-13 a RF-15) | Terminado (`v2.0.1`) |
@@ -70,6 +70,7 @@ sistema no tiene reseñas en ninguna parte.
 | `v1.9.1` | Se cierra la puerta trasera del código QR: no se enciende sobre un perfil vacío |
 | `v2.0.0` | Módulo 8: administración de usuarios, su actividad y el reporte en CSV. Los 15 RF |
 | `v2.0.1` | Dos endpoints que no tenían pantalla: retirar la página y el detalle de una cuenta |
+| `v2.0.2` | La vista previa de `/p/{slug}` la arma el servidor con los datos de cada negocio |
 
 ## API disponible
 
@@ -201,7 +202,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (232 peticiones), Jest + Supertest (123) y Playwright + axe-core (376) | En uso |
+| Pruebas | Postman (232 peticiones), Jest + Supertest (130) y Playwright + axe-core (376) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -239,6 +240,7 @@ El CRUD de usuarios del sprint 1 resultó ser la mitad del módulo 8: el RF-14 �
 - **Para cambiar el correo hay que confirmar la contraseña**, y para cambiar el nombre no. El correo es el identificador con el que se inicia sesión y al que llega el enlace de recuperación: quien se hiciera con una sesión abierta podría cambiarlo y después apropiarse de la cuenta.
 - **Un escaneo se distingue de una visita directa.** La imagen del código lleva `?qr=1` y el enlace que se comparte no, así que la vista pública sabe por dónde llegó la persona. Son dos de las tres medidas del RF-11; la tercera son los clics en enlaces.
 - **Las estadísticas no identifican a quien visita.** No se guarda ni la IP ni nada parecido, así que se cuentan visitas, no visitantes únicos. El RF-11 pide «visitas al perfil».
+- **La vista previa del enlace la arma el servidor.** `<title>`, Open Graph, Twitter Card y Schema.org se generan en `/p/{slug}` con los datos de ese negocio. No sirve hacerlo con JavaScript: los robots que las leen —WhatsApp, Telegram, Google— no lo ejecutan. Mientras estuvieron escritas a mano, cualquier negocio que compartiera su enlace mostraba la vista previa del negocio de ejemplo, y el bloque de datos estructurados declaraba 4,6 estrellas con 215 reseñas que nadie había dejado. Ahora no se declara ninguna calificación: el sistema no tiene reseñas.
 - **La vista pública se apaga, no se borra.** Deja de responder si el código QR fue desactivado o si la cuenta dueña está restringida, y en los tres casos —incluido el perfil inexistente— devuelve lo mismo: decir «existe pero está suspendido» no es asunto de quien escanea.
 - **Un código QR por perfil, y no se regenera.** La base lo garantiza con un `UNIQUE` sobre `id_perfil` (RF-07). Pedirlo otra vez devuelve el mismo: cambiar su dirección invalidaría los códigos ya impresos.
 - **No se genera un código para un perfil vacío.** Hace falta al menos un bloque de contenido activo. Un código que lleva a una página en blanco es peor que no tener código: quien lo escanea se queda sin saber si el negocio existe.

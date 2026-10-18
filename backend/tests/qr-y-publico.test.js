@@ -312,3 +312,112 @@ describe('No se enciende un codigo QR sobre un perfil vacio', () => {
     expect((await como(token).patch('/api/qr/estado').send({ activo: true })).status).toBe(409);
   });
 });
+
+// Las etiquetas de vista previa estaban escritas a mano en public.html con
+// los datos del negocio de ejemplo, y el navegador no las corrige: los
+// robots que las leen -WhatsApp, Telegram, Google- no ejecutan JavaScript.
+// Cualquier negocio que compartiera su enlace mostraba "Fonda La Cosecha", y
+// el bloque de Schema.org declaraba 4,6 estrellas con 215 resenas que nadie
+// habia dejado.
+describe('Metadatos de la pagina publica (RF-09)', () => {
+  test('la vista previa lleva los datos de ese negocio', async () => {
+    const { token, slug } = await cuentaPublicada('Reposteria Dona Luz');
+
+    await como(token).put('/api/perfiles/me').send({
+      nombreNegocio: 'Reposteria Dona Luz',
+      descripcion: 'Tortas por encargo desde 1998',
+      telefono: '+57 311 555 4433',
+      direccion: 'Calle 45 #12-30'
+    });
+
+    const html = (await request(app).get(`/p/${slug}`)).text;
+
+    expect(html).toContain('<title>Reposteria Dona Luz · QR Empresarial</title>');
+    expect(html).toContain('<meta property="og:title" content="Reposteria Dona Luz" />');
+    expect(html).toContain('Tortas por encargo desde 1998');
+    expect(html).toContain(`/p/${slug}`);
+  });
+
+  test('no queda rastro del negocio de ejemplo [regresion]', async () => {
+    const { slug } = await cuentaPublicada('Negocio Propio');
+
+    const html = (await request(app).get(`/p/${slug}`)).text;
+
+    expect(html).not.toContain('og:title" content="Fonda La Cosecha');
+    expect(html).not.toContain('"name": "Fonda La Cosecha"');
+    expect(html).not.toContain('El Poblado');
+  });
+
+  test('NO declara una calificacion que nadie dejo [regresion]', async () => {
+    const { slug } = await cuentaPublicada();
+
+    const html = (await request(app).get(`/p/${slug}`)).text;
+
+    // No se rellena con ceros ni se inventa: el sistema no tiene resenas,
+    // asi que la propiedad no debe existir. Es dato legible por maquinas
+    // adosado a un negocio real.
+    expect(html).not.toContain('aggregateRating');
+    expect(html).not.toContain('ratingValue');
+    expect(html).not.toContain('reviewCount');
+  });
+
+  test('los datos estructurados son un JSON valido', async () => {
+    const { token, slug } = await cuentaPublicada('Negocio Estructurado');
+
+    await como(token).put('/api/perfiles/me').send({
+      nombreNegocio: 'Negocio Estructurado',
+      descripcion: 'Con "comillas" y & simbolos',
+      instagram: '@negocioestructurado'
+    });
+
+    const html = (await request(app).get(`/p/${slug}`)).text;
+    const bloque = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+
+    expect(bloque).not.toBeNull();
+
+    const datos = JSON.parse(bloque[1]);
+
+    expect(datos['@type']).toBe('LocalBusiness');
+    expect(datos.name).toBe('Negocio Estructurado');
+    expect(datos.sameAs).toEqual(['https://instagram.com/negocioestructurado']);
+    expect(datos).not.toHaveProperty('aggregateRating');
+  });
+
+  test('un nombre con etiquetas no se cuela en el HTML', async () => {
+    const { token, slug } = await cuentaPublicada('Negocio Normal');
+
+    await como(token).put('/api/perfiles/me').send({
+      nombreNegocio: 'Pan <script>alert(1)</script>'
+    });
+
+    const html = (await request(app).get(`/p/${slug}`)).text;
+
+    // El nombre lo escribe una persona y acaba dentro de content="..." y
+    // dentro de un bloque <script>: sin escapar, es una inyeccion de HTML
+    // en una pagina que ve cualquiera
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
+  test('un perfil retirado no filtra el nombre del negocio', async () => {
+    const { token, slug } = await cuentaPublicada('Negocio Retirado');
+
+    await como(token).patch('/api/qr/estado').send({ activo: false });
+
+    const html = (await request(app).get(`/p/${slug}`)).text;
+
+    // Misma pantalla y mismas etiquetas que un slug inventado: responder
+    // distinto revelaria que ese slug existe
+    expect(html).toContain('Perfil no disponible');
+    expect(html).not.toContain('Negocio Retirado');
+    expect(html).toContain('noindex');
+  });
+
+  test('un slug que no existe responde la pagina, no un error', async () => {
+    const respuesta = await request(app).get('/p/esto-no-existe-de-ninguna-manera');
+
+    // La pantalla muestra el aviso; la ruta no revela que slugs hay
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.text).toContain('Perfil no disponible');
+  });
+});

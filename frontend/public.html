@@ -3,53 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fonda La Cosecha · QR Empresarial</title>
-  <meta name="description" content="Fonda La Cosecha — Sabores tradicionales de Antioquia en un ambiente cálido y familiar. Bandeja paisa, sancocho y mucho más, desde 2015." />
+  <!-- Lo que hay entre las marcas METADATOS lo reemplaza el servidor en
+       /p/:slug con los datos del negocio (backend/src/modules/publico/
+       publico.metadatos.js).
 
-  <!-- Open Graph / vista previa al compartir el enlace -->
-  <!-- Nota: estas etiquetas son estáticas (no leen localStorage) porque los
-       robots que generan la vista previa (WhatsApp, etc.) no ejecutan JavaScript.
-       Reflejan el negocio de ejemplo; con un backend real, el servidor podría
-       generarlas dinámicamente por cada negocio. -->
+       Hace falta en el servidor y no en JavaScript: los robots que generan
+       la vista previa -WhatsApp, Telegram, Google- no ejecutan JS, así que
+       leen lo que venga en el HTML. Mientras esto estuvo escrito a mano,
+       cualquier negocio que compartiera su enlace mostraba la vista previa
+       del negocio de ejemplo, y el bloque de Schema.org declaraba una
+       calificación de 4,6 estrellas con 215 reseñas que nadie había dejado.
+
+       Lo de aquí abajo es el valor por defecto: se ve al abrir
+       public.html?slug=... directamente, sin pasar por /p/:slug. -->
+  <!-- METADATOS:INICIO -->
+  <title>Perfil · QR Empresarial</title>
+  <meta name="description" content="Perfil empresarial publicado con QR Empresarial." />
+
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Fonda La Cosecha" />
-  <meta property="og:description" content="Sabores tradicionales de Antioquia en un ambiente cálido y familiar. Bandeja paisa, sancocho y mucho más, desde 2015." />
-  <meta property="og:image" content="assets/og-image.png" />
-
-  <!-- Datos estructurados (schema.org) para que Google entienda que esto
-       es el perfil de un negocio real. Igual que las etiquetas Open Graph,
-       reflejan el negocio de ejemplo de forma estática — con un backend
-       real, el servidor generaría este bloque dinámicamente por negocio. -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Restaurant",
-    "name": "Fonda La Cosecha",
-    "description": "Sabores tradicionales de Antioquia en un ambiente cálido y familiar. Bandeja paisa, sancocho y mucho más, desde 2015.",
-    "servesCuisine": "Colombiana",
-    "telephone": "+57 300 456 7890",
-    "email": "contacto@fondalacosecha.co",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Cra. 35 #8A-45",
-      "addressLocality": "El Poblado, Medellín",
-      "addressCountry": "CO"
-    },
-    "openingHours": "Tu-Su 11:00-21:00",
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.6",
-      "reviewCount": "215"
-    },
-    "sameAs": [
-      "https://instagram.com/fondalacosecha"
-    ]
-  }
-  </script>
+  <meta property="og:title" content="Perfil · QR Empresarial" />
+  <meta property="og:description" content="Perfil empresarial publicado con QR Empresarial." />
+  <meta property="og:image" content="/assets/og-image.png" />
   <meta property="og:locale" content="es_CO" />
+
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Fonda La Cosecha" />
-  <meta name="twitter:image" content="assets/og-image.png" />
+  <meta name="twitter:title" content="Perfil · QR Empresarial" />
+  <meta name="twitter:image" content="/assets/og-image.png" />
+  <!-- METADATOS:FIN -->
   <!-- Rutas absolutas a proposito: esta pantalla tambien se sirve en
        /p/<slug>, y desde ahi una ruta relativa apuntaria a /p/js/... -->
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
@@ -74,7 +54,7 @@
       <div class="profile-banner-wrap">
         <div class="profile-banner"></div>
         <div class="profile-avatar">
-          <svg class="profile-avatar-logo" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo de Fonda La Cosecha">
+          <svg class="profile-avatar-logo" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo del negocio">
             <circle cx="24" cy="10" r="4" fill="currentColor" opacity="0.85"/>
             <path d="M24 16 L24 40" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
             <path d="M24 20 C19 19, 15 21, 13 25" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
@@ -89,28 +69,31 @@
       </div>
 
       <!-- Info del negocio -->
+      <!-- Los campos de aquí abajo van vacíos a propósito: los rellena
+           public.js con el negocio que corresponda. Antes traían los datos
+           del negocio de ejemplo, y lo que no ejecuta JavaScript -los
+           buscadores, los robots de vista previa- leía la dirección y el
+           teléfono de un restaurante de Medellín para cualquier negocio. -->
       <div class="profile-info">
         <div class="profile-name-row">
-          <h1 id="profile-name">Fonda La Cosecha</h1>
+          <h1 id="profile-name"></h1>
           <svg class="verified-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
 
-        <p class="profile-description" id="profile-description">
-          Sabores tradicionales de Antioquia en un ambiente cálido y familiar. Bandeja paisa, sancocho y mucho más, desde 2015.
-        </p>
+        <p class="profile-description" id="profile-description"></p>
 
         <div class="profile-meta">
           <div class="profile-meta-row">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span id="profile-address">Cra. 35 #8A-45, El Poblado, Medellín</span>
+            <span id="profile-address"></span>
           </div>
           <div class="profile-meta-row is-open">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span id="profile-hours">Mar-Dom 11:00–21:00 · Abierto ahora</span>
+            <span id="profile-hours"></span>
           </div>
           <div class="profile-meta-row">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--slate-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            <span id="profile-phone">+57 300 456 7890</span>
+            <span id="profile-phone"></span>
           </div>
         </div>
       </div>
@@ -129,27 +112,27 @@
           <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
 
-        <a id="link-maps" href="https://maps.google.com/?q=Cra.+35+%238A-45%2C+El+Poblado%2C+Medell%C3%ADn" target="_blank" rel="noopener" class="profile-link-btn link-outline-btn">
+        <a id="link-maps" target="_blank" rel="noopener" class="profile-link-btn link-outline-btn">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--slate-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           <span>Cómo llegar · Google Maps</span>
           <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--slate-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
 
-        <a id="link-whatsapp" href="https://wa.me/573004567890" target="_blank" rel="noopener" class="profile-link-btn link-whatsapp-btn">
+        <a id="link-whatsapp" target="_blank" rel="noopener" class="profile-link-btn link-whatsapp-btn">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-          <span id="link-whatsapp-text">WhatsApp: +57 300 456 7890</span>
+          <span id="link-whatsapp-text"></span>
           <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
 
-        <a id="link-instagram" href="https://instagram.com/fondalacosecha.co" target="_blank" rel="noopener" class="profile-link-btn link-instagram-btn">
+        <a id="link-instagram" target="_blank" rel="noopener" class="profile-link-btn link-instagram-btn">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          <span id="link-instagram-text">@fondalacosecha.co</span>
+          <span id="link-instagram-text"></span>
           <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
 
-        <a id="link-email" href="mailto:contacto@fondalacosecha.co" class="profile-link-btn link-outline-btn">
+        <a id="link-email" class="profile-link-btn link-outline-btn">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--slate-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-          <span id="link-email-text">contacto@fondalacosecha.co</span>
+          <span id="link-email-text"></span>
           <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--slate-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
       </div>
