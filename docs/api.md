@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.7.0
+- **Versión:** v1.7.1
 
 ## Resumen
 
@@ -28,6 +28,7 @@ Documentación de los endpoints disponibles.
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
 | PUT | `/perfiles/me` | Autenticado | Crear o actualizar el perfil empresarial |
+| PATCH | `/perfiles/me/tema` | Autenticado | Cambiar solo el color de marca |
 | GET | `/contenido` | Autenticado | Listar el contenido del perfil |
 | GET | `/contenido/categorias` | Autenticado | Categorías disponibles |
 | POST | `/contenido` | Autenticado | Agregar un enlace, texto o botón |
@@ -659,11 +660,38 @@ cuenta. **La vista pública lo aplica**, así que quien escanea el código ve lo
 eligió el negocio; antes esa pantalla usaba el tema guardado en el navegador del visitante y
 el color del negocio no llegaba nunca.
 
-Si no se envía, **se conserva el que ya tenía**. Importa porque el formulario de los datos
+Se puede enviar aquí, pero el selector de color usa `PATCH /perfiles/me/tema`, que toca una sola columna (ver abajo). Si no se envía, **se conserva el que ya tenía**. Importa porque el formulario de los datos
 del negocio no lo manda —se cambia con su propio selector—, y sin eso guardar el teléfono
 devolvería el color a `indigo` sin que nadie lo pidiera.
 
 **Errores:** 400 (falta el nombre; algún formato o largo inválido), 401 (sin token).
+
+---
+
+### PATCH /api/perfiles/me/tema
+
+**Cuerpo**
+
+```json
+{ "tema": "teal" }
+```
+
+Devuelve el perfil completo, igual que el GET.
+
+**Por qué el color tiene su propio endpoint** y no se guarda con el PUT del perfil: el
+selector está en la barra lateral de **todas** las pantallas privadas, no solo en el
+formulario del negocio. Para usar el PUT habría que mandar el perfil entero, y lo único
+que el navegador tiene a mano es la copia en caché. Eso fue exactamente el fallo: si esa
+caché aún no se había sincronizado —al entrar y pulsar un color antes de que llegara el
+perfil— el negocio real quedaba **reemplazado por los datos de ejemplo**. Se comprobó:
+«Panadería La Espiga», con su categoría, su dirección y su teléfono, se convirtió en
+«Fonda La Cosecha» solo por elegir un color.
+
+Este endpoint hace un `UPDATE` de una sola columna, así que no hay nada más que pueda
+cambiar. La validación del valor es la misma que en el PUT.
+
+**Errores:** 400 (tema que no es `indigo`, `teal` ni `terracota`), 401 (sin token),
+404 (la cuenta no tiene perfil todavía).
 
 ---
 

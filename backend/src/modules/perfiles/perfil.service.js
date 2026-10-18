@@ -171,8 +171,29 @@ async function actualizarMiPerfil(idUsuario, datos) {
   return aRespuesta(await perfilRepository.buscarPorUsuario(idUsuario));
 }
 
+/**
+ * Cambia el color de marca del negocio (RF-12).
+ *
+ * @param {number} idUsuario
+ * @param {string} tema
+ * @returns {Promise<object>} El perfil como queda.
+ * @throws {Error} 404 si la cuenta no tiene perfil.
+ */
+async function actualizarMiTema(idUsuario, tema) {
+  const filas = await perfilRepository.actualizarTema(idUsuario, tema);
+
+  if (filas === 0) {
+    const error = new Error('Esta cuenta todavía no tiene un perfil empresarial');
+    error.status = 404;
+    throw error;
+  }
+
+  return aRespuesta(await perfilRepository.buscarPorUsuario(idUsuario));
+}
+
 module.exports = {
   crearParaUsuario,
+  actualizarMiTema,
   obtenerMiPerfil,
   actualizarMiPerfil,
   generarSlugUnico,

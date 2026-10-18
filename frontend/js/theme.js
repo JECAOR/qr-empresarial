@@ -59,17 +59,19 @@ function setTheme(themeId) {
 /**
  * Guarda el tema en el perfil y después recarga.
  *
- * Se envía el perfil completo porque el PUT reemplaza el recurso; los demás
- * campos salen de la caché, que la guardia mantiene al día.
+ * Usa un endpoint que solo toca esa columna. Antes enviaba el perfil completo
+ * tomándolo de la caché del navegador, y eso tenía un fallo serio: si la
+ * caché todavía no se había sincronizado —al entrar y pulsar un color antes
+ * de que llegara el perfil—, el negocio real quedaba reemplazado por los
+ * datos de ejemplo. El selector de color está en todas las pantallas, así que
+ * no debería poder tocar nada más que el color.
  */
 async function guardarTemaEnElPerfil(themeId) {
   try {
-    const datos = datosLocalesAPerfilApi(getBusinessData());
-
-    await Api.guardarMiPerfilEmpresarial({ ...datos, tema: themeId });
+    await Api.guardarMiTema(themeId);
   } catch (error) {
-    // El color ya está aplicado en este navegador; si no se pudo guardar,
-    // se avisa y al recargar desde otro equipo volverá el anterior
+    // El color ya está aplicado en este navegador; si no se pudo guardar, al
+    // abrir desde otro equipo volverá el anterior
     console.warn("No se pudo guardar el tema en el perfil:", error.message);
   }
 

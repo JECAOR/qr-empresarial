@@ -35,7 +35,24 @@ async function actualizarMiPerfil(req, res, next) {
   }
 }
 
+/**
+ * PATCH /api/perfiles/me/tema — cambia solo el color de marca (RF-12).
+ */
+async function actualizarMiTema(req, res, next) {
+  try {
+    const perfil = await perfilService.actualizarMiTema(req.usuario.id, req.body.tema);
+
+    return res.status(200).json({
+      message: 'Tema actualizado correctamente',
+      data: perfil
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   obtenerMiPerfil,
-  actualizarMiPerfil
+  actualizarMiPerfil,
+  actualizarMiTema
 };

@@ -283,6 +283,11 @@ const Api = {
   guardarMiPerfilEmpresarial: (datos) =>
     peticion("/perfiles/me", { metodo: "PUT", cuerpo: datos }),
 
+  // El tema tiene su propio endpoint justamente para no mandar el perfil
+  // entero desde una caché que puede estar sin sincronizar.
+  guardarMiTema: (tema) =>
+    peticion("/perfiles/me/tema", { metodo: "PATCH", cuerpo: { tema } }),
+
   // Datos personales de la cuenta (RF-12). La contraseña solo hace falta si
   // el correo cambia; el servidor decide comparando con el que ya tiene.
   actualizarMisDatos: (nombre, correo, contrasena) =>

@@ -200,3 +200,66 @@ test.describe("Tema del negocio", () => {
     )).toBe(null);
   });
 });
+
+// Prueba de regresión de un fallo destructivo: el selector de color guardaba
+// el perfil COMPLETO tomándolo de la caché del navegador. Si esa caché aún no
+// se había sincronizado —al entrar y pulsar un color antes de que llegara el
+// perfil—, el negocio real quedaba reemplazado por los datos de ejemplo.
+//
+// Se comprobó de verdad: "Panadería La Espiga" se convirtió en "Fonda La
+// Cosecha", con su categoría, su dirección y su teléfono, solo por elegir un
+// color. Ahora el tema tiene su propio endpoint, que toca una sola columna.
+test.describe("Cambiar el tema no toca el resto del perfil", () => {
+  test("usa el endpoint del tema, no el que reemplaza el perfil", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/dashboard.html");
+
+    // Se vacía la caché para reproducir el instante en que la guardia aún no
+    // ha traído el perfil
+    await page.evaluate(() => localStorage.removeItem("qre-business"));
+
+    // Al terminar, la función recarga la página para repintar los <canvas>
+    // con el color nuevo. Aquí se neutraliza: una recarga destruiría el
+    // contexto y la prueba no podría comprobar nada.
+    await page.evaluate(() => {
+      window.__recargas = 0;
+      recargarParaRepintar = () => { window.__recargas += 1; };
+    });
+
+    await page.evaluate(() => guardarTemaEnElPerfil("teal"));
+
+    await expect
+      .poll(() => page.peticionesPerfil.filter((p) => p.url === "/perfiles/me/tema").length)
+      .toBeGreaterThan(0);
+
+    // Lo que no debe haber ocurrido: un PUT del perfil entero
+    const reemplazos = page.peticionesPerfil.filter(
+      (p) => p.url === "/perfiles/me" && p.metodo === "PUT"
+    );
+    expect(reemplazos).toHaveLength(0);
+  });
+
+  test("el negocio sigue siendo el mismo después de cambiar el color", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/dashboard.html");
+
+    await page.evaluate(() => localStorage.removeItem("qre-business"));
+
+    await page.evaluate(() => {
+      window.__recargas = 0;
+      recargarParaRepintar = () => { window.__recargas += 1; };
+    });
+
+    await page.evaluate(() => guardarTemaEnElPerfil("terracota"));
+
+    const perfil = await page.evaluate(async () => (await Api.miPerfilEmpresarial()).data);
+
+    // Lo que importa: el negocio quedó intacto y solo cambió el color
+    expect(perfil.nombreNegocio).toBe(PERFIL.nombreNegocio);
+    expect(perfil.direccion).toBe(PERFIL.direccion);
+    expect(perfil.tema).toBe("terracota");
+
+    // Y sí se pidió repintar: los <canvas> ya dibujados necesitan el color nuevo
+    expect(await page.evaluate(() => window.__recargas)).toBe(1);
+  });
+});

@@ -132,10 +132,33 @@ async function actualizarPorUsuario(idUsuario, datos) {
   return resultado.affectedRows;
 }
 
+/**
+ * Cambia solo el tema del perfil (RF-12).
+ *
+ * Existe aparte del UPDATE completo por seguridad, no por comodidad: el
+ * selector de color vive en la barra lateral de todas las pantallas, y antes
+ * guardaba el perfil entero tomandolo de la cache del navegador. Si esa cache
+ * todavia no se habia sincronizado, pulsar un color reemplazaba el negocio
+ * real por los datos de ejemplo. Tocando una sola columna eso no puede pasar.
+ *
+ * @param {number} idUsuario
+ * @param {string} tema
+ * @returns {Promise<number>} Filas afectadas.
+ */
+async function actualizarTema(idUsuario, tema) {
+  const [resultado] = await pool.execute(
+    'UPDATE perfil_empresarial SET tema = ? WHERE id_usuario = ?',
+    [tema, idUsuario]
+  );
+
+  return resultado.affectedRows;
+}
+
 module.exports = {
   buscarPorUsuario,
   buscarPorSlug,
   slugEnUso,
   crear,
-  actualizarPorUsuario
+  actualizarPorUsuario,
+  actualizarTema
 };
