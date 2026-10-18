@@ -66,6 +66,7 @@ sistema no tiene reseñas en ninguna parte.
 | `v1.7.2` | Fuera el aviso de reseñas, que prometía algo inexistente. Módulo 7 cerrado |
 | `v1.8.0` | RN del último bloque activo: no se vacía un perfil que ya tiene código QR |
 | `v1.9.0` | Pruebas automaticas del backend con Jest y Supertest, y los cuatro defectos que encontraron |
+| `v1.9.1` | Se cierra la puerta trasera del código QR: no se enciende sobre un perfil vacío |
 
 ## API disponible
 
@@ -192,7 +193,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (201 peticiones), Jest + Supertest (95) y Playwright + axe-core (308) | En uso |
+| Pruebas | Postman (204 peticiones), Jest + Supertest (99) y Playwright + axe-core (308) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -233,6 +234,7 @@ El CRUD de usuarios del sprint 1 es la base que consumirán los requisitos RF-13
 - **La vista pública se apaga, no se borra.** Deja de responder si el código QR fue desactivado o si la cuenta dueña está restringida, y en los tres casos —incluido el perfil inexistente— devuelve lo mismo: decir «existe pero está suspendido» no es asunto de quien escanea.
 - **Un código QR por perfil, y no se regenera.** La base lo garantiza con un `UNIQUE` sobre `id_perfil` (RF-07). Pedirlo otra vez devuelve el mismo: cambiar su dirección invalidaría los códigos ya impresos.
 - **No se genera un código para un perfil vacío.** Hace falta al menos un bloque de contenido activo. Un código que lleva a una página en blanco es peor que no tener código: quien lo escanea se queda sin saber si el negocio existe.
+- **Y tampoco se enciende un código sobre un perfil vacío.** Son tres puertas al mismo sitio —generar el código, quitar el contenido y encenderlo— y las tres están vigiladas. Vigilar solo las dos primeras dejaba una puerta trasera: apagar el código sí se permite, así que apagar → vaciar → encender dejaba el perfil en blanco con el código funcionando. Se comprobó contra el servidor que ocurría (`v1.9.1`).
 - **Y tampoco se deja vacío un perfil que ya tiene código.** No se puede quitar el último bloque activo —ni borrándolo ni desactivándolo, que dejan el perfil igual de vacío— mientras el código esté encendido. Sin esto, la regla anterior duraba lo que tardara el dueño en borrar su último enlace: se vigilaba la puerta de entrada y no la de salida, y el código ya impreso seguía llevando a una página en blanco. Para vaciar el perfil a propósito hay que apagar el código primero.
 - **El contenido se reordena arrastrando o con el teclado.** El asa de cada bloque es un botón enfocable: con las flechas arriba y abajo también se mueve. Arrastrar es cómodo con el ratón e imposible sin él, así que ofrecer solo esa vía dejaría fuera a quien no pueda usarlo.
 - **Desactivar no es borrar.** Un bloque de contenido inactivo sigue en el panel y deja de aparecer en la vista pública (RF-06). Sirve para una promoción que vuelve cada temporada, sin volver a escribirla.

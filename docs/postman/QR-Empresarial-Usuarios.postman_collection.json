@@ -5523,6 +5523,99 @@
           ]
         },
         {
+          "name": "111a Asegurar que existe el codigo QR (201 o 200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr"
+              ]
+            },
+            "description": "Las dos peticiones siguientes necesitan un codigo. Si ya existe, esta lo devuelve.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 o 200', () => pm.expect([200, 201]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "111b Encenderlo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "Se puede porque ahora mismo el perfil tiene los cuatro bloques de esta guia. La coleccion deja el codigo apagado al terminar, asi que se vuelve a encender aqui y se puede repetir entera cuantas veces haga falta.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "112 Eliminar el enlace (200)",
           "request": {
             "method": "DELETE",
@@ -5739,7 +5832,7 @@
           ]
         },
         {
-          "name": "114d Desactivar el codigo QR para poder limpiar (200)",
+          "name": "114d Apagar el codigo para poder limpiar (200)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -5758,7 +5851,7 @@
                 "estado"
               ]
             },
-            "description": "La regla protege un codigo emitido. Si no hay codigo activo no hay nada que proteger, y el perfil puede quedarse vacio: es lo que pasa mientras se esta armando. Apagarlo es un acto deliberado del dueno, no un descuido.",
+            "description": "La regla protege un codigo encendido. Apagarlo es un acto deliberado del dueno -la via para retirar su pagina-, no un descuido, asi que no se bloquea nunca.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -5833,7 +5926,7 @@
           ]
         },
         {
-          "name": "115b Reactivar el codigo QR (200)",
+          "name": "115b Encender el codigo sobre un perfil vacio (409)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -5852,7 +5945,7 @@
                 "estado"
               ]
             },
-            "description": "Se deja la cuenta como la encontro la coleccion, para que se pueda repetir.",
+            "description": "LA PUERTA TRASERA, YA CERRADA. La regla del modulo 3 no deja quitar el ultimo bloque mientras el codigo este encendido, pero apagarlo si se permite: la secuencia apagar, vaciar y encender dejaba exactamente el estado que las dos reglas existen para evitar -un codigo impreso que lleva a una pagina en blanco-. Se comprobo contra el servidor que ocurria.\n\nSon tres puertas al mismo sitio y ahora las tres estan vigiladas: generar el codigo (peticion 118 de la guia 6), quitar el contenido (114b y 114c) y encenderlo (esta).\n\nLa coleccion termina aqui con el codigo apagado y el perfil vacio, que es un estado valido y el mismo con el que empieza.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -5880,7 +5973,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Dice que falta contenido', () => pm.expect(pm.response.json().message).to.include('contenido activo'));"
                 ]
               }
             }
@@ -5990,6 +6084,100 @@
                   "const json = pm.response.json();",
                   "pm.collectionVariables.set('idContenidoQr', json.data.id);",
                   "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "117b Asegurar que existe el codigo (201 o 200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/qr",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr"
+              ]
+            },
+            "description": "Asi esta carpeta funciona tambien si se ejecuta sola, sin haber corrido la guia 5.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 o 200', () => pm.expect([200, 201]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "117c Encenderlo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "La guia anterior lo deja apagado. Ahora se puede encender porque la peticion 117 acaba de agregar contenido; sin el, seria 409.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda activo', () => pm.expect(pm.response.json().data.activo).to.eql(true));"
                 ]
               }
             }
@@ -6744,60 +6932,6 @@
                   "type": "string"
                 }
               ]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "132b Volver a encender el codigo (200)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{apiUrl}}/qr/estado",
-              "host": [
-                "{{apiUrl}}"
-              ],
-              "path": [
-                "qr",
-                "estado"
-              ]
-            },
-            "description": "Deja la cuenta como la encontro la coleccion.",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{tokenQr}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"activo\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": [],

@@ -310,6 +310,15 @@ async function simularApi(page, opciones = {}) {
     if (url.includes("/qr")) {
       if (metodo === "PATCH") {
         const cuerpo = JSON.parse(route.request().postData() || "{}");
+
+        // La misma regla que el servidor: no se enciende un codigo sobre un
+        // perfil vacio, porque quien lo escanee no encontraria nada
+        if (cuerpo.activo === true && contenidoActual.filter((i) => i.activo).length === 0) {
+          return responder(409, {
+            message: "Agregue al menos un bloque de contenido activo antes de encender el código QR"
+          });
+        }
+
         QR.activo = cuerpo.activo;
 
         return responder(200, {

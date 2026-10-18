@@ -1,6 +1,6 @@
 # Pruebas automáticas del backend
 
-95 pruebas de integración sobre la API, con **Jest** y **Supertest**.
+99 pruebas de integración sobre la API, con **Jest** y **Supertest**.
 
 ```bash
 npm test
@@ -49,9 +49,9 @@ quedaron es la forma más rápida de entender por qué.
 | `usuarios.test.js` | RF-01 (administración), RF-12 | 20 |
 | `perfiles.test.js` | RF-04, RF-10, tema | 14 |
 | `contenido.test.js` | RF-05, RF-06 | 19 |
-| `qr-y-publico.test.js` | RF-07, RF-08, RF-09, RF-11 | 22 |
+| `qr-y-publico.test.js` | RF-07, RF-08, RF-09, RF-11 | 26 |
 
-Cobertura: **83,7 % de las sentencias** y 90,8 % de las funciones de `src/`.
+Cobertura: **83,8 % de las sentencias** y 90,8 % de las funciones de `src/`.
 
 El acento está en lo que, si se rompe, **no da un error visible**. Un 401 que pasa a 200 no
 hace fallar ninguna pantalla: simplemente deja entrar a quien no debía. Por eso hay pruebas
@@ -79,6 +79,11 @@ Cuatro defectos reales, todos corregidos:
 
 4. **Y podía restringirse a sí mismo**, con lo que perdía el acceso en la misma petición que
    lo pedía. Si fuera el único administrador, nadie podría volver a administrar el sistema.
+
+Un quinto defecto se cerró en `v1.9.1`, y ese no lo encontraron las pruebas sino al
+implementar la regla del módulo 3: la secuencia **apagar el código → vaciar el perfil →
+encenderlo** dejaba justo el estado que esa regla existe para evitar. Ahora tiene sus cuatro
+pruebas en `qr-y-publico.test.js`.
 
 Los dos primeros solo se podían ver reconstruyendo la base desde cero. Contra la base de
 desarrollo nunca habrían aparecido, porque allí los datos ya estaban puestos.
@@ -109,8 +114,8 @@ cambia esos datos.
 
 Las tres se complementan y ninguna sobra:
 
-- **Postman** (201 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
+- **Postman** (204 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
   para explorar la API.
-- **Jest + Supertest** (95) es la red de seguridad automática del backend: corre entera en
+- **Jest + Supertest** (99) es la red de seguridad automática del backend: corre entera en
   medio minuto y avisa si un módulo nuevo rompe uno viejo.
 - **Playwright** (308) prueba las pantallas, con la API simulada.
