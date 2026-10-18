@@ -122,19 +122,22 @@
             <h2>Notificaciones</h2>
             <p class="settings-sub">Elige qué avisos quieres recibir por correo</p>
 
+            <!-- Honestidad por delante: la eleccion se guarda en el servidor y
+                 sobrevive al navegador, pero todavia no hay ningun proceso que
+                 mande estos correos. Decirlo aqui es mejor que dejar que el
+                 usuario los espere. Habia un tercer interruptor, "Nuevas
+                 resenas", que se quito: el sistema no tiene resenas. -->
+            <p class="settings-note">
+              Tu elección queda guardada en tu cuenta. El envío automático de
+              estos correos todavía no está disponible.
+            </p>
+
             <div class="settings-notif-row">
               <div class="settings-notif-text">
                 <div class="title">Resumen semanal</div>
                 <div class="desc">Escaneos, visitantes y clics de los últimos 7 días</div>
               </div>
               <button class="item-toggle settings-notif-toggle on" data-notif-key="weekly" aria-label="Desactivar Resumen semanal" aria-pressed="true"><span class="knob"></span></button>
-            </div>
-            <div class="settings-notif-row">
-              <div class="settings-notif-text">
-                <div class="title">Nuevas reseñas</div>
-                <div class="desc">Cuando un cliente deja una calificación</div>
-              </div>
-              <button class="item-toggle settings-notif-toggle on" data-notif-key="reviews" aria-label="Desactivar Nuevas reseñas" aria-pressed="true"><span class="knob"></span></button>
             </div>
             <div class="settings-notif-row">
               <div class="settings-notif-text">

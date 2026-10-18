@@ -165,7 +165,7 @@ async function simularApi(page, opciones = {}) {
 
   // Datos de la cuenta y preferencias de avisos (RF-12), con memoria
   let cuentaActual = { ...USUARIO };
-  let preferenciasActuales = { resumen: true, resenas: true, novedades: false, guardadas: false };
+  let preferenciasActuales = { resumen: true, novedades: false, guardadas: false };
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();

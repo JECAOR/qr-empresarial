@@ -217,19 +217,23 @@ function validarMisDatos(req, res, next) {
 /**
  * Valida el cuerpo de PUT /api/usuarios/me/preferencias.
  *
- * Los tres avisos son obligatorios: la pantalla manda siempre los tres
- * interruptores, y aceptar un cuerpo a medias dejaria los que faltan en su
+ * Los dos avisos son obligatorios: la pantalla manda siempre los dos
+ * interruptores, y aceptar un cuerpo a medias dejaria el que falta en su
  * valor por defecto sin que nadie lo pidiera.
+ *
+ * Eran tres hasta la migracion 012. El tercero avisaba de resenas nuevas, y
+ * en el sistema no hay resenas: se quito en lugar de dejar un interruptor que
+ * promete un correo que nunca llegaria.
  */
 function validarPreferencias(req, res, next) {
-  const { resumen, resenas, novedades } = req.body || {};
+  const { resumen, novedades } = req.body || {};
 
-  const todosBooleanos = [resumen, resenas, novedades]
+  const todosBooleanos = [resumen, novedades]
     .every((valor) => typeof valor === 'boolean');
 
   if (!todosBooleanos) {
     return res.status(400).json({
-      message: 'Los avisos resumen, resenas y novedades deben ser true o false'
+      message: 'Los avisos resumen y novedades deben ser true o false'
     });
   }
 

@@ -112,12 +112,40 @@ test.describe("Preferencias de avisos", () => {
     // Antes se leían de localStorage, que es de ese navegador y de nadie más
     await page.goto("/configuracion.html");
 
-    // Los valores por defecto que responde el servidor: resumen y reseñas sí,
+    // Los valores por defecto que responde el servidor: resumen sí,
     // novedades no
     await expect.poll(async () => page.evaluate(() =>
       [...document.querySelectorAll(".settings-notif-toggle")]
         .map((b) => b.classList.contains("on")).join(",")
-    )).toBe("true,true,false");
+    )).toBe("true,false");
+  });
+
+  // Había un tercer interruptor, «Nuevas reseñas — Cuando un cliente deja una
+  // calificación», que prometía avisos de algo que no existe: el esquema tiene
+  // once tablas y ninguna guarda calificaciones. Ofrecer avisar de lo que el
+  // sistema no puede detectar es peor que no ofrecerlo, porque quien lo deja
+  // encendido se queda esperando un correo que no va a llegar.
+  test("no queda rastro del interruptor de reseñas [regresión]", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/configuracion.html");
+
+    await expect(page.locator('[data-notif-key="reviews"]')).toHaveCount(0);
+    await expect(page.locator("text=Nuevas reseñas")).toHaveCount(0);
+    await expect(page.locator(".settings-notif-toggle")).toHaveCount(2);
+
+    // Y tampoco se le manda al servidor: el campo ya no existe en la API
+    const enviado = await page.evaluate(() => prefsParaLaApi({ weekly: true, updates: false }));
+    expect(enviado).toEqual({ resumen: true, novedades: false });
+  });
+
+  // La pantalla prometía «avisos por correo» y ningún proceso los envía: el
+  // único correo del sistema es el enlace de recuperación. La preferencia se
+  // guarda de verdad, así que se dice eso y no otra cosa.
+  test("advierte que el envío automático todavía no existe", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/configuracion.html");
+
+    await expect(page.locator(".settings-note")).toContainText("todavía no está disponible");
   });
 
   test("al pulsar un interruptor se guarda en el servidor", async ({ page }) => {

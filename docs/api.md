@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.7.1
+- **Versión:** v1.7.2
 
 ## Resumen
 
@@ -368,7 +368,6 @@ desde otro equipo los perdía.
 {
   "data": {
     "resumen": true,
-    "resenas": true,
     "novedades": false,
     "guardadas": false
   }
@@ -379,14 +378,26 @@ desde otro equipo los perdía.
 valores por defecto. **No es un 404**: la pantalla necesita algo que mostrar en los
 interruptores, y «no has cambiado nada» no es un error.
 
+> **Son una preferencia guardada, no un envío programado.** Hoy ningún proceso las consulta
+> para mandar correos: el único que el sistema envía es el enlace de recuperación de
+> contraseña. Se guardan para que la elección de cada cuenta sobreviva al navegador, que es
+> lo que pide el RF-12 con «personalizar opciones de la plataforma». La pantalla de
+> Configuración lo dice también, para que nadie se quede esperando un correo.
+
+**Eran tres hasta la migración 012.** El tercero, `resenas`, avisaba de calificaciones nuevas
+de clientes, y en el sistema **no hay reseñas**: el esquema tiene once tablas y ninguna las
+guarda, ni el RF-12 ni ningún otro requisito las pide. Era el mismo problema que ya se
+corrigió en otras pantallas —un control que parece funcionar y no acciona nada—, así que se
+quitó en lugar de dejarlo.
+
 ---
 
 ### PUT /api/usuarios/me/preferencias
 
-**Cuerpo:** `{ "resumen": false, "resenas": true, "novedades": true }`
+**Cuerpo:** `{ "resumen": false, "novedades": true }`
 
-**Los tres son obligatorios.** La pantalla manda siempre los tres interruptores, y aceptar un
-cuerpo a medias dejaría los que faltan en su valor por defecto sin que nadie lo pidiera.
+**Los dos son obligatorios.** La pantalla manda siempre los dos interruptores, y aceptar un
+cuerpo a medias dejaría el que falta en su valor por defecto sin que nadie lo pidiera.
 
 La fila se crea la primera vez que se guarda, con un `INSERT ... ON DUPLICATE KEY UPDATE`: la
 columna `id_usuario` es única, así que la base decide si toca crear o actualizar y no hay
