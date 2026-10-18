@@ -228,3 +228,68 @@ body.public-page {
   color: var(--color-primary);
   font-weight: 700;
 }
+
+/* --- Contenido que arma la empresa desde el panel (RF-05) --- */
+.profile-sections {
+  padding: 0 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.profile-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+  margin: 0 0 10px;
+}
+
+.profile-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 13px;
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  background: var(--white);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Solo los bloques que llevan a otra parte reaccionan al pasar por encima */
+a.profile-block:hover {
+  border-color: var(--color-primary);
+}
+
+.profile-block-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--slate-900);
+}
+
+.profile-block-detail {
+  font-size: 12px;
+  color: var(--slate-500);
+  word-break: break-word;
+}
+
+/* --- Perfil que no se puede mostrar --- */
+.profile-unavailable {
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.profile-unavailable h1 {
+  font-size: 18px;
+  color: var(--slate-900);
+  margin: 0 0 10px;
+}
+
+.profile-unavailable p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--slate-500);
+  margin: 0;
+}

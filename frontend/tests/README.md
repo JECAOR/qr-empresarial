@@ -47,6 +47,7 @@ npm run test:ui
 | `accessibility.spec.js` | Auditoría automática con axe-core en las 11 páginas y los 3 temas |
 | `responsive.spec.js` | Que ninguna página se desborde horizontalmente en móvil |
 | `perfil.spec.js` | Perfil empresarial: sincronización con el servidor, guardado y validación del RF-10 |
+| `publico.spec.js` | Vista pública: perfil y contenido sin sesión, contacto incompleto y escape de HTML |
 | `ayudas.js` | No es una prueba: es el apoyo compartido que simula la API |
 
 ## Por qué no hace falta el backend

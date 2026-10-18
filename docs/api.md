@@ -5,13 +5,14 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.4.0
+- **Versión:** v1.5.0
 
 ## Resumen
 
 | Método | Endpoint | Acceso | Operación |
 |---|---|---|---|
 | GET | `/health` | Público | Comprobación del servidor |
+| GET | `/publico/:slug` | Público | Perfil y contenido visible |
 | POST | `/auth/registro` | Público | Registro de una empresa |
 | POST | `/auth/login` | Público | Iniciar sesión |
 | POST | `/auth/logout` | Autenticado | Cerrar la sesión actual |
@@ -799,13 +800,76 @@ la que decidirá si la vista pública responde (RF-09).
 
 ---
 
+## Vista pública
+
+Es lo que ve quien escanea el código QR, y **el único endpoint abierto del proyecto**: no
+lleva token porque quien escanea no tiene cuenta ni debería necesitarla.
+
+El RF-09 pide «mostrar la información actualizada del perfil cuando el código QR sea
+escaneado, sin generar un nuevo código». Eso es justo lo que hace esta ruta: el código
+siempre apunta a la misma dirección y aquí se devuelve el estado de ahora. No hay nada que
+regenerar, y de eso depende que un código ya impreso siga sirviendo.
+
+**La pantalla se sirve en `/p/{slug}`**, que es la dirección que llevan codificada los
+códigos. Esa ruta devuelve siempre `public.html`, exista el perfil o no —así tampoco revela
+qué slugs están registrados—, y es su JavaScript el que consulta este endpoint.
+
+### GET /api/publico/:slug
+
+```json
+{
+  "data": {
+    "perfil": {
+      "nombreNegocio": "Panadería Doña Luz",
+      "categoria": "Panadería artesanal",
+      "descripcion": "Pan de masa madre horneado cada mañana.",
+      "direccion": "Calle 12 #3-45, Bogotá",
+      "telefono": "+57 300 111 2233",
+      "correoContacto": "hola@donaluz.co",
+      "instagram": "@panaderiadonaluz",
+      "horario": "Lun-Sáb 6:00–19:00",
+      "imagen": "https://ejemplo.co/logo.png",
+      "slug": "panaderia-dona-luz",
+      "actualizadoEn": "2026-10-17T21:02:11.000Z"
+    },
+    "contenido": [],
+    "porSeccion": { "menu": [] }
+  }
+}
+```
+
+**Solo el contenido activo.** Desactivar un bloque en el panel es exactamente esto: que deje
+de aparecer aquí (RF-06).
+
+**El perfil se arma campo por campo**, no con un `SELECT *`. Si mañana se agrega una columna
+a la tabla, no se filtra sola; y no se devuelven ni el correo de la cuenta ni ningún
+identificador interno.
+
+**Cuándo responde 404.** Tres situaciones distintas, con la misma respuesta:
+
+1. El slug no corresponde a ningún perfil.
+2. La cuenta dueña está restringida o se dio de baja (RN-23).
+3. El código QR fue desactivado — es el interruptor que apaga la vista pública sin borrar
+   nada.
+
+Distinguirlas le diría a cualquiera que ese negocio existe y está suspendido, y eso no es
+asunto de quien escanea. Un perfil **sin** código generado sí se muestra: el enlace puede
+haberse compartido por WhatsApp o copiado a mano, sin pasar por el QR.
+
+**Se puede guardar en caché un minuto** (`Cache-Control: public, max-age=60`). La información
+cambia cuando el negocio la edita, no en cada escaneo, así que un perfil muy visitado no
+debería consultar la base cada vez; y un minuto es poco para que una corrección tarde en
+verse.
+
+---
+
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 137 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 152 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
 | Endpoint | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Módulos Público, Estadísticas, Configuración y Administración | RF-09 a RF-15 | Pendientes |
+| Módulos Estadísticas, Configuración y Administración | RF-11 a RF-15 | Pendientes |

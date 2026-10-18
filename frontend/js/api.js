@@ -256,6 +256,11 @@ const Api = {
   reordenarContenido: (ids) =>
     peticion("/contenido/orden", { metodo: "PUT", cuerpo: { ids } }),
 
+  // Vista pública (RF-09). Es el único endpoint que no lleva token: quien
+  // escanea el código QR no tiene cuenta.
+  perfilPublico: (slug) =>
+    peticion("/publico/" + encodeURIComponent(slug), { autenticada: false }),
+
   // Código QR (RF-07 y RF-08)
   miQr: () => peticion("/qr"),
 

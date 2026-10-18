@@ -120,7 +120,8 @@ async function simularApi(page, opciones = {}) {
     errorAlGuardarPerfil = null,
     errorAlOrdenar = null,
     sinQr = false,
-    errorAlGenerarQr = null
+    errorAlGenerarQr = null,
+    perfilPublicoNoDisponible = false
   } = opciones;
 
   // El simulador recuerda el perfil y el contenido, como haría el servidor:
@@ -168,6 +169,49 @@ async function simularApi(page, opciones = {}) {
       }
 
       return responder(200, { message: "El enlace es válido" });
+    }
+
+    if (url.includes("/publico/")) {
+      if (perfilPublicoNoDisponible) {
+        return responder(404, { message: "Este perfil no está disponible" });
+      }
+
+      // Solo el contenido activo: es lo que hace la consulta del servidor
+      const visible = contenidoActual.filter((i) => i.activo);
+      const porSeccion = {};
+
+      for (const item of visible) {
+        if (!porSeccion[item.seccion]) porSeccion[item.seccion] = [];
+        porSeccion[item.seccion].push({
+          id: item.id,
+          tipo: item.tipo,
+          seccion: item.seccion,
+          titulo: item.titulo,
+          detalle: item.detalle,
+          categoria: item.categoria.nombre,
+          icono: item.categoria.icono
+        });
+      }
+
+      return responder(200, {
+        data: {
+          perfil: {
+            nombreNegocio: perfilActual.nombreNegocio,
+            categoria: perfilActual.categoria,
+            descripcion: perfilActual.descripcion,
+            direccion: perfilActual.direccion,
+            telefono: perfilActual.telefono,
+            correoContacto: perfilActual.correoContacto,
+            instagram: perfilActual.instagram,
+            horario: perfilActual.horario,
+            imagen: perfilActual.imagen,
+            slug: perfilActual.slug,
+            actualizadoEn: null
+          },
+          contenido: visible,
+          porSeccion
+        }
+      });
     }
 
     if (url.includes("/qr/imagen")) {

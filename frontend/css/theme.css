@@ -3,6 +3,15 @@
    (equivalente al objeto THEMES del prototipo)
    ============================================ */
 
+/* El atributo hidden oculta porque el navegador le aplica display:none, y
+   cualquier display propio del elemento le gana. Varios componentes usan
+   display:flex, así que sin esta regla un elemento con hidden seguía
+   visible: pasó con los botones de contacto de la vista pública, que
+   aparecían vacíos cuando el negocio no había llenado ese dato. */
+[hidden] {
+  display: none !important;
+}
+
 :root {
   /* Tema por defecto: Índigo */
   --color-primary: #4F46E5;
