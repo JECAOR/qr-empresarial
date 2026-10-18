@@ -156,12 +156,33 @@ async function generarMiQr(idUsuario) {
 /**
  * Activa o desactiva el código.
  *
+ * **No se enciende sobre un perfil vacío**, por lo mismo que no se genera:
+ * quien lo escanee no encontraría nada.
+ *
+ * Sin esta comprobación, la regla del módulo 3 tenía una puerta trasera.
+ * Esa regla no deja quitar el último bloque activo mientras el código esté
+ * encendido, pero apagarlo es un acto permitido —es la vía para vaciar el
+ * perfil a propósito—, así que la secuencia apagar → vaciar → encender
+ * dejaba exactamente el estado que las dos reglas existen para evitar. Se
+ * comprobó contra el servidor que ocurría.
+ *
+ * Son tres puertas al mismo sitio y ahora las tres están vigiladas: generar
+ * el código, quitar el contenido y encender el código.
+ *
  * @param {number} idUsuario
  * @param {boolean} activo
  * @returns {Promise<object>}
  */
 async function cambiarEstadoMiQr(idUsuario, activo) {
   const perfil = await perfilDeLaCuenta(idUsuario);
+
+  if (activo && (await contenidoRepository.contarActivos(perfil.id_perfil)) === 0) {
+    const error = new Error(
+      'Agregue al menos un bloque de contenido activo antes de encender el código QR'
+    );
+    error.status = 409;
+    throw error;
+  }
 
   const filas = await qrRepository.cambiarEstado(perfil.id_perfil, activo);
 

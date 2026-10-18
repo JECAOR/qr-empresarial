@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.9.0
+- **Versión:** v1.9.1
 
 ## Resumen
 
@@ -933,7 +933,27 @@ leer esa cabecera y guardaría los archivos con un nombre genérico.
 Desactivarlo no lo borra: el código impreso sigue existiendo en el mundo, y esta bandera es
 la que decidirá si la vista pública responde (RF-09).
 
-**Errores:** 400, 401, 404.
+> **No se enciende sobre un perfil vacío** (409), por lo mismo que no se genera: quien lo
+> escanee no encontraría nada.
+>
+> Sin esta comprobación, la regla del módulo 3 tenía una puerta trasera. Esa regla no deja
+> quitar el último bloque activo mientras el código esté encendido, pero **apagarlo sí se
+> permite** —es la vía para retirar la página a propósito—, así que la secuencia
+> **apagar → vaciar → encender** dejaba exactamente el estado que las dos reglas existen
+> para evitar. Se comprobó contra el servidor que ocurría.
+>
+> Son **tres puertas al mismo sitio** y las tres están vigiladas: generar el código
+> (`POST /api/qr`), quitar el contenido (`DELETE` y `PATCH` de `/api/contenido/:id`) y
+> encenderlo (aquí).
+
+**Apagarlo nunca se bloquea.** Solo se vigila encender: apagar algo que ya está apagado no
+deja a nadie peor, y el dueño tiene que poder retirar su página cuando quiera.
+
+**`POST /api/qr` no lo enciende.** Si ya existe un código apagado, lo devuelve tal cual. La
+desactivación fue un acto deliberado y «generar» no debería deshacerla por su cuenta; para
+volver a publicarlo está este endpoint.
+
+**Errores:** 400, 401, 404, 409 (el perfil no tiene contenido activo).
 
 ---
 

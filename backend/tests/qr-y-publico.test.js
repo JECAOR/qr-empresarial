@@ -251,3 +251,64 @@ describe('Estadisticas (RF-11)', () => {
     expect((await como(otra.token).get('/api/estadisticas')).body.data.totales.escaneos).toBe(0);
   });
 });
+
+// La regla del modulo 3 tenia una puerta trasera: apagar el codigo esta
+// permitido -es la via para vaciar el perfil a proposito-, asi que la
+// secuencia apagar -> vaciar -> encender dejaba exactamente el estado que las
+// dos reglas existen para evitar. Se comprobo contra el servidor que ocurria.
+describe('No se enciende un codigo QR sobre un perfil vacio', () => {
+  test('la secuencia apagar, vaciar y encender ya no cuela', async () => {
+    const { token, idEnlace } = await cuentaPublicada();
+
+    expect((await como(token).patch('/api/qr/estado').send({ activo: false })).status).toBe(200);
+    expect((await como(token).delete(`/api/contenido/${idEnlace}`)).status).toBe(200);
+
+    const encender = await como(token).patch('/api/qr/estado').send({ activo: true });
+
+    expect(encender.status).toBe(409);
+  });
+
+  test('vuelve a encenderse en cuanto hay contenido', async () => {
+    const { token, idEnlace } = await cuentaPublicada();
+
+    await como(token).patch('/api/qr/estado').send({ activo: false });
+    await como(token).delete(`/api/contenido/${idEnlace}`);
+
+    await agregarBloque(token, { titulo: 'Contenido nuevo' });
+
+    const encender = await como(token).patch('/api/qr/estado').send({ activo: true });
+
+    expect(encender.status).toBe(200);
+    expect(encender.body.data.activo).toBe(true);
+  });
+
+  test('apagarlo nunca se bloquea, aunque el perfil este vacio', async () => {
+    const { token, idEnlace } = await cuentaPublicada();
+
+    await como(token).patch('/api/qr/estado').send({ activo: false });
+    await como(token).delete(`/api/contenido/${idEnlace}`);
+
+    // Apagar algo que ya esta apagado no deja a nadie peor: lo que se vigila
+    // es encender, no apagar
+    expect((await como(token).patch('/api/qr/estado').send({ activo: false })).status).toBe(200);
+  });
+
+  test('las tres puertas al mismo sitio estan vigiladas', async () => {
+    const { token } = await crearCuenta();
+
+    // 1. Generar el codigo sin contenido
+    expect((await como(token).post('/api/qr')).status).toBe(409);
+
+    const id = await agregarBloque(token);
+    await como(token).post('/api/qr');
+
+    // 2. Quitar el contenido con el codigo encendido
+    expect((await como(token).delete(`/api/contenido/${id}`)).status).toBe(409);
+
+    await como(token).patch('/api/qr/estado').send({ activo: false });
+    await como(token).delete(`/api/contenido/${id}`);
+
+    // 3. Encender el codigo sin contenido
+    expect((await como(token).patch('/api/qr/estado').send({ activo: true })).status).toBe(409);
+  });
+});
