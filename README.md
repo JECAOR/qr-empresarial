@@ -10,7 +10,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Parte | Estado |
 |---|---|
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
-| Base de datos MySQL `qr_empresarial` (11 tablas, 15 migraciones) | Implementada |
+| Base de datos MySQL `qr_empresarial` (11 tablas, 14 migraciones) | Implementada |
 | Frontend HTML/CSS/JS (12 pantallas, PWA, pruebas Playwright) | Implementado y conectado a la API. `localStorage` queda como caché: el servidor es la fuente de verdad |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
@@ -72,6 +72,7 @@ sistema no tiene reseñas en ninguna parte.
 | `v2.0.1` | Dos endpoints que no tenían pantalla: retirar la página y el detalle de una cuenta |
 | `v2.0.2` | La vista previa de `/p/{slug}` la arma el servidor con los datos de cada negocio |
 | `v2.0.3` | Fuera las cifras y el testimonio inventados de la pantalla de inicio de sesión |
+| `v2.0.4` | La atribución del proyecto va con las iniciales del autor |
 
 ## API disponible
 
@@ -122,7 +123,7 @@ Base: `http://localhost:3000/api`
 
 El detalle de cada endpoint, con sus cuerpos y códigos de respuesta, está en [`docs/api.md`](docs/api.md).
 
-Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 193 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+Las pruebas están en `docs/postman/QR-Empresarial-Usuarios.postman_collection.json`: 232 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importan en Postman y se ejecutan con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ### Cómo consume la API el frontend
 
@@ -222,7 +223,7 @@ módulo 8 (RF-13 a RF-15).
 | 4 | 27/10 – 02/11 | M4. Código QR dinámico + M5. Vista pública | RF-07, RF-08, RF-09 | Terminado |
 | 5 | 03/11 – 09/11 | M6. Estadísticas + M7. Configuración | RF-11, RF-12 | Terminado |
 | 6 | 10/11 – 16/11 | M8. Administración | RF-13 a RF-15 | Terminado |
-| 7 | 17/11 – 23/11 | Pruebas de integración, aceptación y seguridad | Todos | Adelantado: 123 pruebas de API con Jest + Supertest desde `v1.9.0` |
+| 7 | 17/11 – 23/11 | Pruebas de integración, aceptación y seguridad | Todos | Adelantado: 130 pruebas de API con Jest + Supertest desde `v1.9.0` |
 | 8 | 24/11 – 18/12 | Despliegue, manuales y cierre | — | Pendiente |
 
 El orden sigue las dependencias entre módulos (usuario → perfil → contenido → QR). Así, el flujo principal queda completo al final del sprint 4.
