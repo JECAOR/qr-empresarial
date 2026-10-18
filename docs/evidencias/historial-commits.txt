@@ -1,0 +1,154 @@
+HISTORIAL DE COMMITS - QR Empresarial
+Proyecto formativo ADSO - SENA ficha 3336250 - JCOH
+https://github.com/JECAOR/qr-empresarial
+
+Generado con:
+  git log --graph --date=short --pretty=format:"%h %ad %d %s"
+
+Se lee de abajo hacia arriba: abajo el primer commit, arriba el ultimo.
+Cada modulo se desarrollo en su propia rama y se integro con merge --no-ff,
+para que la rama quede en el historial en lugar de aplanarse.
+
+======================================================================
+
+* 1d6d85e 2026-10-18  (HEAD -> feature/evidencias-sena) fix(panel): tres cosas que el panel afirmaba sin haberlas comprobado
+* 29da1b4 2026-10-18  fix(qr): el boton de visibilidad ofrecia la accion contraria mientras cargaba
+*   a3add83 2026-10-18  (tag: v2.1.0, origin/main, main) Merge: datos de demostracion versionados (v2.1.0)
+|\  
+| * 0fa0991 2026-10-18  (feature/datos-de-demostracion) feat(database): datos de demostracion versionados
+|/  
+*   507d964 2026-10-18  (tag: v2.0.5) Merge: cifras del README al dia (v2.0.5)
+|\  
+| * 1914c39 2026-10-18  (docs/cifras-al-dia) docs: se corrigen cifras que se habian quedado atras
+|/  
+*   c5aca1d 2026-10-18  (tag: v2.0.4) Merge: la atribucion va con las iniciales (v2.0.4)
+|\  
+| * 6aee850 2026-10-18  (style/iniciales-autor) style(login): la atribucion del proyecto va con las iniciales
+|/  
+*   9aad08c 2026-10-18  (tag: v2.0.3) Merge: la portada deja de afirmar cifras inventadas (v2.0.3)
+|\  
+| * 38bba11 2026-10-18  (fix/portada-sin-cifras-inventadas) fix(login): fuera las cifras y el testimonio inventados
+|/  
+*   fa2a34e 2026-10-18  (tag: v2.0.2) Merge: metadatos propios en la vista publica (v2.0.2)
+|\  
+| * 4e860ab 2026-10-18  (fix/metadatos-vista-publica) fix(publico): la vista previa del enlace se arma con los datos del negocio
+|/  
+*   205ee64 2026-10-18  (tag: v2.0.1) Merge: endpoints que existian sin pantalla (v2.0.1)
+|\  
+| * c3805f3 2026-10-18  (fix/endpoints-sin-pantalla) fix(frontend): dos endpoints que existian sin pantalla
+|/  
+*   c8c768c 2026-10-18  (tag: v2.0.0) Merge: modulo 8, administracion de usuarios (v2.0.0)
+|\  
+| * cb34b8a 2026-10-18  (feature/modulo-8-administracion) feat(admin): modulo 8, administracion de usuarios (RF-13, RF-14 y RF-15)
+|/  
+*   271f5d9 2026-10-18  (tag: v1.9.1) Merge: se cierra la puerta trasera del codigo QR (v1.9.1)
+|\  
+| * 53515b3 2026-10-18  (feature/cerrar-puerta-trasera-qr) fix(qr): no se enciende un codigo sobre un perfil vacio
+|/  
+*   2745dcc 2026-10-18  (tag: v1.9.0) Merge: pruebas automaticas del backend (v1.9.0)
+|\  
+| * 47dd84f 2026-10-18  (feature/pruebas-backend) test(backend): pruebas automaticas de la API con Jest y Supertest
+|/  
+*   2fe81c4 2026-10-18  (tag: v1.8.0) Merge: RN del ultimo bloque activo (v1.8.0)
+|\  
+| * a74ff63 2026-10-18  (feature/rn-ultimo-bloque-activo) feat(contenido): no se deja vacio un perfil que ya tiene codigo QR (RN modulo 3)
+|/  
+*   68d0a26 2026-10-18  (tag: v1.7.2) Merge: fuera el aviso de resenas; modulo 7 cerrado (v1.7.2)
+|\  
+| * 0c5b91c 2026-10-18  (feature/quitar-aviso-resenas) refactor(configuracion): se quita el aviso de resenas y se documentan los otros dos
+|/  
+*   1610c70 2026-10-18  (tag: v1.7.1) Merge: endpoint propio para el tema del negocio (v1.7.1)
+|\  
+| * 47c62b7 2026-10-18  (feature/tema-endpoint-dedicado) fix(perfiles): el selector de color ya no reemplaza el perfil entero
+|/  
+*   c2eb391 2026-10-17  (tag: v1.7.0) merge: modulo 7, configuracion de la cuenta (RF-12)
+|\  
+| * 6bc8446 2026-10-17  (origin/feature/configuracion-cuenta, feature/configuracion-cuenta) feat(configuracion): modulo 7, datos personales, avisos y tema (RF-12)
+|/  
+*   0d6f30a 2026-10-17  (tag: v1.6.1) merge: enlaces mas pulsados en el panel
+|\  
+| * 9ca5185 2026-10-17  (origin/feature/top-enlaces, feature/top-enlaces) feat(estadisticas): el panel muestra los enlaces mas pulsados
+|/  
+*   cf563d5 2026-10-17  (tag: v1.6.0) merge: modulo 6, estadisticas del perfil (RF-11)
+|\  
+| * b561b76 2026-10-17  (origin/feature/estadisticas, feature/estadisticas) feat(estadisticas): modulo 6, escaneos, visitas y clics reales (RF-11)
+|/  
+*   bf8e442 2026-10-17  (tag: v1.5.2) merge: logo del negocio y la API fuera de la cache del service worker
+|\  
+| * 9df0afe 2026-10-17  (origin/feature/logo-y-cache, feature/logo-y-cache) fix: muestra el logo del negocio y saca la API de la cache
+|/  
+*   b2d6062 2026-10-17  (tag: v1.5.1) merge: la pantalla del menu consume la API
+|\  
+| * da0357b 2026-10-17  (origin/feature/menu-publico, feature/menu-publico) feat(publico): la pantalla del menu consume la API
+|/  
+*   994d4ce 2026-10-17  (tag: v1.5.0) merge: modulo 5, vista publica (RF-09). Flujo principal completo
+|\  
+| * ea2b241 2026-10-17  (origin/feature/vista-publica, feature/vista-publica) feat(publico): modulo 5, vista publica del perfil (RF-09)
+|/  
+*   3b990eb 2026-10-17  (tag: v1.4.0) merge: modulo 4, codigo QR del perfil (RF-07 y RF-08)
+|\  
+| * c3837d1 2026-10-17  (origin/feature/codigo-qr, feature/codigo-qr) feat(qr): modulo 4, codigo QR por perfil y descargas (RF-07 y RF-08)
+|/  
+*   8b52072 2026-10-17  (tag: v1.3.0) merge: reordenar el contenido; frontend del modulo 3 completo
+|\  
+| * 1572519 2026-10-17  (origin/feature/reordenar-contenido, feature/reordenar-contenido) feat(contenido): reordenar arrastrando o con el teclado
+|/  
+*   f7e7877 2026-10-17  (tag: v1.2.0) merge: modulo 3, contenido del perfil (RF-05 y RF-06)
+|\  
+| * a8fdfdb 2026-10-17  (origin/feature/contenido-perfil, feature/contenido-perfil) feat(contenido): modulo 3, enlaces, textos y botones (RF-05 y RF-06)
+|/  
+*   4a9f76e 2026-10-17  (tag: v1.1.0) merge: modulo 2, perfil empresarial (RF-04 y RF-10)
+|\  
+| * dc969b7 2026-10-17  (origin/feature/perfil-empresarial, feature/perfil-empresarial) feat(perfiles): modulo 2, perfil empresarial (RF-04 y RF-10)
+|/  
+* 8990bef 2026-10-17  docs: corrige el conteo de pantallas (son 11, no 12)
+*   0def00c 2026-10-17  (tag: v1.0.0) merge: eliminacion de la cuenta propia; modulo 1 completo
+|\  
+| * f60b625 2026-10-17  (origin/feature/eliminar-cuenta-propia, feature/eliminar-cuenta-propia) feat(usuarios): eliminacion de la cuenta propia y correccion del cronograma
+|/  
+*   af9ea4a 2026-10-17  (tag: v0.9.0) merge: cambio de contrasena propio y cierre de todas las sesiones
+|\  
+| * 5cce11f 2026-10-17  (origin/feature/cambio-contrasena, feature/cambio-contrasena) feat(auth): cambio de contrasena y cierre de todas las sesiones
+|/  
+* 1be3ca5 2026-10-17  docs: documenta la conexion del frontend con la API
+*   4382270 2026-10-17  (tag: v0.8.0) merge: conecta el frontend con la API (RF-01 a RF-03 desde las pantallas)
+|\  
+| * b865762 2026-10-17  (origin/feature/frontend-conectado, feature/frontend-conectado) feat(frontend): conecta las pantallas de autenticacion con la API
+|/  
+*   0f4d2a2 2026-10-17  (tag: v0.7.0) merge: cierre de sesion (RF-02) y envio del enlace por correo (RF-03)
+|\  
+| * 9bfc171 2026-10-17  (origin/feature/auth-cierre-sesion-correo, feature/auth-cierre-sesion-correo) feat(auth): cierre de sesion y envio del enlace por correo
+|/  
+*   86de517 2026-10-17  (tag: v0.6.0) merge: recuperacion de contrasena (RF-03) y limite de intentos (RN-03)
+|\  
+| * c1c5186 2026-10-17  (origin/feature/auth-recuperacion, feature/auth-recuperacion) feat(auth): recuperacion de contrasena y limite de intentos
+|/  
+* fc34576 2026-10-13  docs: documenta la API completa y agrega la migracion 004
+*   faf3faf 2026-10-13  (tag: v0.5.0) merge: integra la autenticacion con JWT y el control de acceso por roles
+|\  
+| * 50f0b04 2026-10-13  (origin/feature/auth-jwt, feature/auth-jwt) feat(auth): implementa login con JWT, autorizacion por roles y registro publico
+|/  
+* 6bee30a 2026-10-08  docs: actualiza el README con el estado real del backend y la API disponible
+*   a1763a4 2026-10-08  (tag: v0.4.0) merge: integra el CRUD completo del modulo Usuarios
+|\  
+| * 491d538 2026-10-08  (origin/feature/usuarios-crud, feature/usuarios-crud) feat(usuarios): completa el CRUD del modulo
+|/  
+*   b0e17e7 2026-10-08  (tag: v0.3.0) merge: integra el endpoint de creacion de usuarios
+|\  
+| * 26eeca8 2026-10-08  (origin/feature/usuarios-crear, feature/usuarios-crear) feat(usuarios): implementa POST /api/usuarios con arquitectura por capas
+|/  
+* c3261e8 2026-10-07  feat(database): agrega la migracion 003 con deleted_at y fecha_registro por defecto
+*   cbba4ea 2026-10-06  (tag: v0.2.0) merge: integra la estructura inicial del backend
+|\  
+| * c4e9ac2 2026-10-06  (origin/feature/backend-estructura-inicial, feature/backend-estructura-inicial) feat(backend): configura Express, el endpoint /api/health y la verificacion de MySQL
+| * ac80906 2026-10-06  feat(database): aplica migraciones 001 y 002 (rol, estado, slug, evento y columna contrasena)
+| * 822c72a 2026-10-06  chore(backend): inicializa el proyecto Node.js con Express y la estructura por modulos
+|/  
+*   54ec066 2026-09-28  (tag: v0.1.0) merge: integra la migracion 001 a main
+|\  
+| * ee5e106 2026-09-28  (origin/feature/database-migracion-rol-slug, feature/database-migracion-rol-slug) feat(database): agrega la migracion 001 con rol, estado, slug y tabla evento
+|/  
+* b3b8b92 2026-09-28  docs: agrega la plantilla de documentacion de la API desde GitHub
+* 59ea4de 2026-09-28  feat(database): agrega el esquema qr_empresarial y la estructura de backend y docs
+* 548a453 2026-09-28  feat(frontend): agrega las 11 pantallas, estilos, scripts y pruebas Playwright
+* b5ac2cf 2026-09-28  chore: inicializa el repositorio con README, .gitignore y .editorconfig
