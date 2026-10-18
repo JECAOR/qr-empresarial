@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.8.0
+- **Versión:** v1.9.0
 
 ## Resumen
 

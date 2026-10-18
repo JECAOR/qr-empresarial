@@ -7,7 +7,13 @@
 // no debe impedir solicitar la recuperacion de la contrasena.
 // ============================================
 
-const rateLimit = require('express-rate-limit');
+const { rateLimit, MemoryStore } = require('express-rate-limit');
+
+// Se guarda el almacen de cada limitador para poder vaciarlo entre
+// pruebas. Sin esto, las pruebas que comprueban un 401 gastarian el cupo
+// de las siguientes y la suite fallaria por el orden en que corre, no por
+// el codigo. No baja ningun limite: en produccion nadie llama a reiniciar.
+const almacenes = [];
 
 const MINUTOS_BLOQUEO = 15;
 
@@ -22,7 +28,12 @@ const MINUTOS_BLOQUEO = 15;
  *   error cuando el intento no es valido, como el login.
  */
 function crearLimitador({ maxIntentos, descripcion, soloFallidos }) {
+  const almacen = new MemoryStore();
+
+  almacenes.push(almacen);
+
   return rateLimit({
+    store: almacen,
     windowMs: MINUTOS_BLOQUEO * 60 * 1000,
     limit: maxIntentos,
     standardHeaders: 'draft-7',
@@ -78,8 +89,19 @@ const limitarEventos = crearLimitador({
   soloFallidos: false
 });
 
+/**
+ * Vacia los contadores de los tres limitadores.
+ *
+ * Solo lo usan las pruebas automaticas (backend/tests). La aplicacion no lo
+ * llama nunca: si lo hiciera, el limite del RN-03 dejaria de servir.
+ */
+function reiniciarContadores() {
+  return Promise.all(almacenes.map((a) => a.resetAll()));
+}
+
 module.exports = {
   limitarLogin,
   limitarRecuperacion,
-  limitarEventos
+  limitarEventos,
+  reiniciarContadores
 };
