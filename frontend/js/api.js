@@ -261,6 +261,9 @@ const Api = {
   perfilPublico: (slug) =>
     peticion("/publico/" + encodeURIComponent(slug), { autenticada: false }),
 
+  // Estadísticas del panel (RF-11)
+  misEstadisticas: (dias) => peticion(`/estadisticas?dias=${encodeURIComponent(dias || 7)}`),
+
   // Código QR (RF-07 y RF-08)
   miQr: () => peticion("/qr"),
 
@@ -297,6 +300,45 @@ const Api = {
       salirSi401: false
     })
 };
+
+/**
+ * Informa un evento de la vista pública: escaneo, visita o clic (RF-11).
+ *
+ * No usa peticion() porque no interesa la respuesta ni hay que esperarla: lo
+ * que importa es que la persona vea el perfil, no que se apunte la visita. Si
+ * falla, se pierde ese evento y no pasa nada más.
+ *
+ * Para el clic se usa sendBeacon: el navegador se lleva la petición aunque la
+ * página se esté yendo al enlace. Con fetch, la navegación la cancelaría y el
+ * clic no se contaría nunca.
+ *
+ * @param {string} slug
+ * @param {{tipo: string, idEnlace?: number}} evento
+ */
+function informarEvento(slug, evento) {
+  const url = `${direccionApi()}/publico/${encodeURIComponent(slug)}/eventos`;
+  const cuerpo = JSON.stringify(evento);
+
+  if (navigator.sendBeacon) {
+    try {
+      const enviado = navigator.sendBeacon(url, new Blob([cuerpo], { type: "application/json" }));
+
+      if (enviado) return;
+    } catch (error) {
+      // Algunos navegadores lo rechazan con ciertos tipos; se sigue con fetch
+    }
+  }
+
+  // keepalive permite que la petición sobreviva a la navegación
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: cuerpo,
+    keepalive: true
+  }).catch(() => {
+    // Un evento perdido no es motivo para molestar a nadie
+  });
+}
 
 /**
  * Descarga la imagen del código QR (RF-08).

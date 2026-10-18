@@ -1,23 +1,52 @@
 // ============================================
-// DASHBOARD.JS — gráficas reales con Chart.js
+// DASHBOARD.JS — estadísticas reales con Chart.js (RF-11)
+//
+// Las cifras venían escritas a mano en este archivo: 2.847 escaneos, 1.932
+// visitantes, una gráfica con la semana inventada. Ahora salen de
+// GET /api/estadisticas, que cuenta los eventos que informa la vista pública.
+//
+// Una de las tarjetas decía "Visitantes únicos", y eso no se puede saber con
+// lo que se guarda: la tabla de eventos no identifica a quien visita, a
+// propósito. El RF-11 pide "visitas al perfil", que es lo que ahora muestra.
 // ============================================
 
-const WEEK = [
-  { d: "Lun", s: 124, c: 82 },
-  { d: "Mar", s: 193, c: 141 },
-  { d: "Mié", s: 157, c: 104 },
-  { d: "Jue", s: 238, c: 178 },
-  { d: "Vie", s: 291, c: 204 },
-  { d: "Sáb", s: 210, c: 155 },
-  { d: "Dom", s: 176, c: 122 },
+// Las gráficas se guardan para poder destruirlas antes de volver a
+// dibujarlas: Chart.js no admite dos sobre el mismo <canvas>.
+let graficas = [];
+
+// Mientras llega la respuesta, la semana se dibuja en cero: así la pantalla
+// no salta de unos números a otros, y nunca muestra cifras que no son.
+const SERIE_VACIA = [
+  { etiqueta: "", escaneos: 0, visitas: 0, clics: 0 }
 ];
 
-const KPIS = [
-  { label: "Escaneos totales", val: "2,847", delta: "+18%", spark: [80, 110, 95, 140, 160, 130, 176], color: "var(--color-primary)", bg: "var(--color-primary-light)" },
-  { label: "Visitantes únicos", val: "1,932", delta: "+12%", spark: [60, 80, 70, 110, 130, 100, 122], color: "#047c57", bg: "#D1FAE5" },
-  { label: "Clics en enlaces", val: "1,284", delta: "+7%", spark: [50, 70, 55, 90, 100, 85, 95], color: "#7d52dd", bg: "rgba(139,92,246,.10)" },
-  { label: "Tasa de conversión", val: "45.1%", delta: "+2pp", spark: [38, 42, 40, 46, 48, 44, 45], color: "#a75b04", bg: "#FEF3C7" },
-];
+let estadisticas = {
+  totales: { escaneos: 0, visitas: 0, clics: 0, conversion: 0 },
+  serie: SERIE_VACIA,
+  enlacesMasPulsados: []
+};
+
+/** Las cuatro tarjetas, en el orden en que las muestra la pantalla. */
+function tarjetas() {
+  const t = estadisticas.totales;
+  const serie = estadisticas.serie;
+
+  return [
+    { label: "Escaneos del QR", val: t.escaneos, spark: serie.map((d) => d.escaneos),
+      color: "var(--color-primary)", bg: "var(--color-primary-light)" },
+    { label: "Visitas al perfil", val: t.visitas, spark: serie.map((d) => d.visitas),
+      color: "#047c57", bg: "#D1FAE5" },
+    { label: "Clics en enlaces", val: t.clics, spark: serie.map((d) => d.clics),
+      color: "#7d52dd", bg: "rgba(139,92,246,.10)" },
+    { label: "Tasa de conversión", val: `${t.conversion}%`, spark: serie.map((d) => d.clics),
+      color: "#a75b04", bg: "#FEF3C7" }
+  ];
+}
+
+/** Miles con separador, como se leen en Colombia. */
+function formatear(valor) {
+  return typeof valor === "number" ? valor.toLocaleString("es-CO") : valor;
+}
 
 function cssVar(name) {
   const v = name.startsWith("var(") ? name.slice(4, -1) : name;
@@ -27,20 +56,28 @@ function cssVar(name) {
 // --- Tarjetas KPI con mini-gráficas (sparklines) reales ---
 function renderKPIs() {
   const grid = document.getElementById("kpi-grid");
-  grid.innerHTML = KPIS.map(
+  const datos = tarjetas();
+
+  // La "pill" mostraba una variación inventada (+18%, +12%...). Para
+  // calcularla de verdad habría que comparar con el periodo anterior, que el
+  // endpoint todavía no devuelve; se muestra el rango en su lugar, que sí es
+  // información cierta.
+  const rango = `${estadisticas.dias || 7} días`;
+
+  grid.innerHTML = datos.map(
     (k, i) => `
     <div class="kpi-card">
       <div class="kpi-top-row">
         <div class="kpi-label">${k.label}</div>
-        <span class="kpi-pill" style="color:${k.color};background:${k.bg}">${k.delta}</span>
+        <span class="kpi-pill" style="color:${k.color};background:${k.bg}">${rango}</span>
       </div>
-      <div class="kpi-value">${k.val}</div>
+      <div class="kpi-value">${formatear(k.val)}</div>
       <div class="kpi-spark"><canvas id="spark-${i}"></canvas></div>
     </div>`
   ).join("");
 
-  KPIS.forEach((k, i) => {
-    new Chart(document.getElementById(`spark-${i}`), {
+  datos.forEach((k, i) => {
+    graficas.push(new Chart(document.getElementById(`spark-${i}`), {
       type: "line",
       data: {
         labels: k.spark.map((_, idx) => idx),
@@ -60,7 +97,7 @@ function renderKPIs() {
         scales: { x: { display: false }, y: { display: false } },
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
       },
-    });
+    }));
   });
 }
 
@@ -78,14 +115,14 @@ function renderMainChart() {
   gradComplement.addColorStop(0, hexToRgba(complement, 0.15));
   gradComplement.addColorStop(1, hexToRgba(complement, 0));
 
-  new Chart(ctx, {
+  graficas.push(new Chart(ctx, {
     type: "line",
     data: {
-      labels: WEEK.map((w) => w.d),
+      labels: estadisticas.serie.map((d) => d.etiqueta),
       datasets: [
         {
           label: "Escaneos",
-          data: WEEK.map((w) => w.s),
+          data: estadisticas.serie.map((d) => d.escaneos),
           borderColor: primary,
           backgroundColor: gradPrimary,
           borderWidth: 2,
@@ -95,7 +132,7 @@ function renderMainChart() {
         },
         {
           label: "Clics",
-          data: WEEK.map((w) => w.c),
+          data: estadisticas.serie.map((d) => d.clics),
           borderColor: complement,
           backgroundColor: gradComplement,
           borderWidth: 2,
@@ -124,7 +161,7 @@ function renderMainChart() {
         },
       },
     },
-  });
+  }));
 }
 
 function hexToRgba(hex, alpha) {
@@ -158,7 +195,65 @@ document.getElementById("qr-active-share").addEventListener("click", () => {
   window.location.href = "qr.html";
 });
 
+/**
+ * El saludo del panel.
+ *
+ * Decía "2.847 escaneos este mes" escrito en el HTML. Ahora cuenta los de
+ * verdad, y mientras no haya ninguno no inventa un número: dice que el perfil
+ * está activo y se queda ahí.
+ */
+function renderBanner() {
+  const sub = document.getElementById("dash-banner-sub");
+
+  if (!sub) return;
+
+  const escaneos = estadisticas.totales.escaneos;
+  const dias = estadisticas.dias || 7;
+
+  if (escaneos === 0) {
+    sub.textContent = "Tu perfil está activo";
+    return;
+  }
+
+  const veces = escaneos === 1 ? "escaneo" : "escaneos";
+
+  sub.innerHTML = `Tu perfil está activo · <strong>${formatear(escaneos)} ${veces}</strong> en los últimos ${dias} días`;
+}
+
+function dibujarTodo() {
+  graficas.forEach((g) => g.destroy());
+  graficas = [];
+
+  renderBanner();
+  renderKPIs();
+  renderMainChart();
+}
+
+/**
+ * Trae las estadísticas y redibuja (RF-11).
+ *
+ * Si falla, la pantalla se queda con los ceros del dibujado inicial: es
+ * preferible a mostrar cifras de ejemplo, que es lo que hacía antes.
+ */
+async function cargarEstadisticas() {
+  try {
+    const { data } = await Api.misEstadisticas(7);
+
+    estadisticas = data;
+    dibujarTodo();
+  } catch (error) {
+    // 404: la cuenta todavía no tiene perfil, así que no hay nada que contar
+    if (error.status !== 404) {
+      console.warn("No se pudieron cargar las estadísticas:", error.message);
+    }
+  }
+}
+
 renderBusinessInfo();
-renderKPIs();
-renderMainChart();
+dibujarTodo();
 renderActiveQR();
+
+cargarEstadisticas();
+
+// Cuando la guardia trae el perfil, el nombre y la URL del QR pueden cambiar
+window.addEventListener("perfil:sincronizado", renderBusinessInfo);

@@ -62,7 +62,24 @@ const limitarRecuperacion = crearLimitador({
   soloFallidos: false
 });
 
+// Registro de eventos de la vista publica (RF-11).
+//
+// Es un endpoint abierto que escribe en la tabla que mas crece del esquema,
+// asi que conviene un techo: sin el, cualquiera podria inflar las
+// estadisticas de un negocio -o llenar la base- con un bucle.
+//
+// El cupo es alto a proposito: una misma conexion puede traer a varias
+// personas (la red de un local, una oficina) y cada visita legitima registra
+// uno o dos eventos. 120 en quince minutos deja sitio de sobra para eso y
+// corta un abuso evidente.
+const limitarEventos = crearLimitador({
+  maxIntentos: 120,
+  descripcion: 'registro de eventos',
+  soloFallidos: false
+});
+
 module.exports = {
   limitarLogin,
-  limitarRecuperacion
+  limitarRecuperacion,
+  limitarEventos
 };

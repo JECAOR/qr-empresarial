@@ -16,6 +16,7 @@ const perfilRoutes = require('./modules/perfiles/perfil.routes');
 const contenidoRoutes = require('./modules/contenido/contenido.routes');
 const qrRoutes = require('./modules/qr/qr.routes');
 const publicoRoutes = require('./modules/publico/publico.routes');
+const estadisticaRoutes = require('./modules/estadisticas/estadistica.routes');
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
@@ -87,6 +88,7 @@ app.use('/api/perfiles', perfilRoutes);   // RF-04: perfil empresarial
 app.use('/api/contenido', contenidoRoutes); // RF-05 y RF-06: contenido
 app.use('/api/qr', qrRoutes);              // RF-07 y RF-08: codigo QR
 app.use('/api/publico', publicoRoutes);    // RF-09: vista publica, sin token
+app.use('/api/estadisticas', estadisticaRoutes); // RF-11: estadisticas
 
 // Cualquier otra ruta /api/... no existe: se responde en JSON, no con el
 // HTML que Express devuelve por defecto, porque quien llama espera JSON.
