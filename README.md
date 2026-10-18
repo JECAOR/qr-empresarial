@@ -25,7 +25,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M4. Código QR (RF-07 y RF-08) | Terminado (`v1.4.0`) |
 | M5. Vista pública (RF-09) | Terminado (`v1.5.2`) |
 | M6. Estadísticas (RF-11) | Terminado (`v1.6.1`) |
-| M7. Configuración (RF-12) | Terminado (`v1.7.0`) |
+| M7. Configuración (RF-12) | Terminado (`v1.7.1`) |
 | Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
 
 ### Versiones publicadas
@@ -52,6 +52,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v1.6.0` | Módulo 6: escaneos, visitas y clics reales en el panel |
 | `v1.6.1` | El panel muestra los enlaces más pulsados |
 | `v1.7.0` | Módulo 7: datos personales, avisos de la cuenta y tema del negocio |
+| `v1.7.1` | El selector de color ya no reemplaza el perfil: `PATCH /perfiles/me/tema` |
 
 ## API disponible
 
@@ -76,6 +77,7 @@ Base: `http://localhost:3000/api`
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
 | PUT | `/perfiles/me` | Autenticado | Crear o actualizar el perfil empresarial |
+| PATCH | `/perfiles/me/tema` | Autenticado | Cambiar solo el color de marca |
 | GET | `/contenido` | Autenticado | Listar el contenido del perfil |
 | GET | `/contenido/categorias` | Autenticado | Categorías disponibles (las 8 del RF-05) |
 | POST | `/contenido` | Autenticado | Agregar un enlace, texto o botón |
@@ -134,6 +136,7 @@ petición borra la sesión y devuelve al login con el aviso correspondiente.
 | `dashboard`, `contenido`, `qr`, `configuracion` | `GET /usuarios/me` y `POST /auth/logout` |
 | `dashboard.html` | además `GET /estadisticas` |
 | `configuracion.html` | además `PUT /usuarios/me`, `GET/PUT /usuarios/me/preferencias`, `PUT /usuarios/me/contrasena`, `DELETE /usuarios/me` y `PUT /perfiles/me` |
+| Selector de color (barra lateral) | `PATCH /perfiles/me/tema` |
 | Toda pantalla privada | `GET /perfiles/me` al cargar, para traer los datos del negocio |
 | `contenido.html` | `GET/POST/PUT/PATCH/DELETE /contenido`, `GET /contenido/categorias` y `PUT /contenido/orden` |
 | `qr.html` | `GET/POST /qr` y `GET /qr/imagen` |

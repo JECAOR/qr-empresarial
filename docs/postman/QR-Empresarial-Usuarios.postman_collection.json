@@ -9122,6 +9122,120 @@
           ]
         },
         {
+          "name": "187b Cambiar solo el tema (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me/tema",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me",
+                "tema"
+              ]
+            },
+            "description": "Endpoint propio para el color, y no por comodidad: el selector esta en la barra lateral de todas las pantallas y antes guardaba el perfil COMPLETO tomandolo de la cache del navegador. Si esa cache no estaba sincronizada, pulsar un color reemplazaba el negocio real por los datos de ejemplo. Se comprobo que ocurria.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tema\": \"terracota\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cambio el tema', () => pm.expect(d.tema).to.eql('terracota'));",
+                  "pm.test('No toco el nombre del negocio', () => pm.expect(d.nombreNegocio).to.eql('Negocio de Configuracion'));",
+                  "pm.test('Ni el telefono', () => pm.expect(d.telefono).to.eql('+57 300 000 0000'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "187c Tema inventado por esa via (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me/tema",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me",
+                "tema"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConfig}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tema\": \"fucsia\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "188 Eliminar la cuenta de prueba (200)",
           "request": {
             "method": "DELETE",

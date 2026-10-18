@@ -158,6 +158,11 @@ async function simularApi(page, opciones = {}) {
   const eventosInformados = [];
   page.eventosInformados = eventosInformados;
 
+  // Lo que se pidio sobre el perfil, para poder comprobar como se guarda el
+  // tema (RF-12)
+  const peticionesPerfil = [];
+  page.peticionesPerfil = peticionesPerfil;
+
   // Datos de la cuenta y preferencias de avisos (RF-12), con memoria
   let cuentaActual = { ...USUARIO };
   let preferenciasActuales = { resumen: true, resenas: true, novedades: false, guardadas: false };
@@ -420,7 +425,21 @@ async function simularApi(page, opciones = {}) {
       return responder(200, { data: contenidoActual, porSeccion });
     }
 
+    if (url.includes("/perfiles/me/tema")) {
+      peticionesPerfil.push({ metodo, url: "/perfiles/me/tema" });
+
+      const cuerpo = JSON.parse(route.request().postData() || "{}");
+      perfilActual = { ...perfilActual, tema: cuerpo.tema };
+
+      return responder(200, {
+        message: "Tema actualizado correctamente",
+        data: perfilActual
+      });
+    }
+
     if (url.includes("/perfiles/me")) {
+      peticionesPerfil.push({ metodo, url: "/perfiles/me" });
+
       if (metodo === "PUT") {
         if (errorAlGuardarPerfil) {
           return responder(400, { message: errorAlGuardarPerfil });

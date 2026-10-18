@@ -138,8 +138,24 @@ function validarPerfil(req, res, next) {
   next();
 }
 
+/**
+ * Valida el cuerpo de PATCH /api/perfiles/me/tema.
+ */
+function validarTema(req, res, next) {
+  const { tema } = req.body || {};
+
+  if (!TEMAS.includes(tema)) {
+    return res.status(400).json({
+      message: `El tema debe ser uno de: ${TEMAS.join(', ')}`
+    });
+  }
+
+  next();
+}
+
 module.exports = {
   validarPerfil,
+  validarTema,
   esUrlValida,
   TEMAS
 };
