@@ -16,6 +16,7 @@ const perfilRoutes = require('./modules/perfiles/perfil.routes');
 const contenidoRoutes = require('./modules/contenido/contenido.routes');
 const qrRoutes = require('./modules/qr/qr.routes');
 const publicoRoutes = require('./modules/publico/publico.routes');
+const { paginaPublica } = require('./modules/publico/publico.metadatos');
 const estadisticaRoutes = require('./modules/estadisticas/estadistica.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
 const errorHandler = require('./middlewares/error.middleware');
@@ -70,8 +71,24 @@ app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
 // El slug no se toca aqui. Se entrega siempre la misma pantalla, exista el
 // perfil o no, y es la pantalla la que muestra el aviso si no hay nada: asi
 // esta ruta no revela que slugs estan registrados.
-app.get('/p/:slug', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'public.html'));
+app.get('/p/:slug', async (req, res, next) => {
+  const archivo = path.join(__dirname, '..', '..', 'frontend', 'public.html');
+
+  try {
+    // Las etiquetas de vista previa se arman aqui con los datos del negocio.
+    // No se puede dejar al navegador: los robots que las leen -WhatsApp,
+    // Telegram, Google- no ejecutan JavaScript.
+    const origen = `${req.protocol}://${req.get('host')}`;
+    const html = await paginaPublica(req.params.slug, archivo, origen);
+
+    res.type('html').send(html);
+  } catch (error) {
+    // Si algo falla armando las etiquetas, es preferible entregar la
+    // pantalla tal cual que dejar sin nada a quien escaneo el codigo
+    console.error('No se pudieron generar los metadatos publicos:', error.message);
+
+    res.sendFile(archivo);
+  }
 });
 
 // Endpoint de comprobacion: verifica que la API esta en funcionamiento

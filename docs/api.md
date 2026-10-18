@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v2.0.1
+- **Versión:** v2.0.2
 
 ## Resumen
 
@@ -51,6 +51,39 @@ Documentación de los endpoints disponibles.
 | PUT | `/usuarios/:idUsuario` | Administrador | Actualizar nombre, correo y rol |
 | PATCH | `/usuarios/:idUsuario/estado` | Administrador | Activar o restringir |
 | DELETE | `/usuarios/:idUsuario` | Administrador | Eliminación lógica |
+
+### GET /p/:slug
+
+No es un endpoint de la API: es la **pantalla** que ve quien escanea el código. Se documenta
+aquí porque el servidor hace algo más que entregar el archivo.
+
+**Las etiquetas de vista previa se arman en el servidor** con los datos de ese negocio:
+`<title>`, la descripción, Open Graph, Twitter Card y el bloque de Schema.org.
+
+Tiene que ser en el servidor y no en JavaScript, porque **los robots que generan la vista
+previa —WhatsApp, Telegram, Google— no ejecutan JS**: leen lo que venga en el HTML. Mientras
+estuvieron escritas a mano, cualquier negocio que compartiera su enlace mostraba la vista
+previa del negocio de ejemplo, un restaurante de Medellín.
+
+**No se declara ninguna calificación.** El bloque de Schema.org traía un `aggregateRating` de
+4,6 estrellas con 215 reseñas para todos. El sistema no tiene reseñas, así que la propiedad no
+existe: no se rellena con ceros ni se inventa. Era un dato legible por máquinas adosado a un
+negocio real.
+
+**Un perfil retirado responde lo mismo que un slug inventado**: la pantalla con etiquetas
+neutrales, `noindex` y sin el nombre del negocio. Responder distinto revelaría qué slugs están
+registrados, que es justo lo que evita el 404 uniforme de `GET /api/publico/:slug`.
+
+**El nombre del negocio se escapa dos veces, de forma distinta.** En los atributos `content="…"`
+con entidades HTML; dentro del `<script type="application/ld+json">` con escapes JSON, porque
+ahí el navegador no interpreta entidades y `&quot;` rompería el bloque. Lo escribe una persona
+y acaba en una página que ve cualquiera.
+
+**Los campos del cuerpo van vacíos en el HTML** y los rellena `public.js`. Antes traían los
+datos del negocio de ejemplo, de modo que lo que no ejecutara JavaScript leía la dirección y el
+teléfono de otro negocio.
+
+---
 
 ## Códigos de respuesta
 
