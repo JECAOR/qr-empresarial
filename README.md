@@ -10,8 +10,8 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Parte | Estado |
 |---|---|
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
-| Base de datos MySQL `qr_empresarial` (9 tablas, 4 migraciones) | Implementada |
-| Frontend HTML/CSS/JS (11 pantallas, PWA, pruebas Playwright) | Implementado. Autenticación conectada a la API; el resto de las pantallas sigue con datos en `localStorage` |
+| Base de datos MySQL `qr_empresarial` (11 tablas, 12 migraciones) | Implementada |
+| Frontend HTML/CSS/JS (11 pantallas, PWA, pruebas Playwright) | Implementado y conectado a la API. `localStorage` queda como caché: el servidor es la fuente de verdad |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
@@ -25,8 +25,18 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M4. Código QR (RF-07 y RF-08) | Terminado (`v1.4.0`) |
 | M5. Vista pública (RF-09) | Terminado (`v1.5.2`) |
 | M6. Estadísticas (RF-11) | Terminado (`v1.6.1`) |
-| M7. Configuración (RF-12) | Terminado (`v1.7.1`) |
-| Backend — perfiles, contenido, QR, estadísticas y administración | Pendiente |
+| M7. Configuración (RF-12) | Terminado (`v1.7.2`) |
+| M8. Administración (RF-13 a RF-15) | Pendiente |
+
+### Limitaciones conocidas
+
+**Los avisos de la cuenta se guardan, pero nadie los envía.** Las dos preferencias de
+Configuración —resumen semanal y novedades— persisten en el servidor y sobreviven al
+navegador, que es lo que pide el RF-12 con «personalizar opciones de la plataforma». Lo que
+no existe es el proceso programado que mandaría esos correos: el único que el sistema envía
+es el enlace de recuperación de contraseña. La propia pantalla lo advierte, para que nadie
+se quede esperando. Había un tercer aviso, «Nuevas reseñas», que se quitó en `v1.7.2`: el
+sistema no tiene reseñas en ninguna parte.
 
 ### Versiones publicadas
 
@@ -53,6 +63,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | `v1.6.1` | El panel muestra los enlaces más pulsados |
 | `v1.7.0` | Módulo 7: datos personales, avisos de la cuenta y tema del negocio |
 | `v1.7.1` | El selector de color ya no reemplaza el perfil: `PATCH /perfiles/me/tema` |
+| `v1.7.2` | Fuera el aviso de reseñas, que prometía algo inexistente. Módulo 7 cerrado |
 
 ## API disponible
 
@@ -255,6 +266,7 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `009-corregir-fechas-codigo-qr.sql` | Fechas automáticas y estado por defecto en `codigo_qr` |
 | `010-preparar-eventos.sql` | Fecha automática e índices en `evento`, para las estadísticas |
 | `011-tema-y-preferencias.sql` | Columna `tema` en `perfil_empresarial` y tabla `preferencia_usuario` |
+| `012-quitar-aviso-resenas.sql` | Se quita `aviso_resenas`: el sistema no tiene reseñas |
 
 ## Estructura de carpetas
 

@@ -8639,7 +8639,7 @@
                 "preferencias"
               ]
             },
-            "description": "No es un error no haber cambiado nada: se devuelven los valores por defecto para que la pantalla tenga algo que mostrar en los interruptores.",
+            "description": "No es un error no haber cambiado nada: se devuelven los valores por defecto para que la pantalla tenga algo que mostrar en los interruptores.\n\nEran tres avisos hasta la migracion 012. El tercero avisaba de resenas nuevas y el sistema no tiene resenas: ninguna de las once tablas guarda calificaciones de clientes. Se quito en lugar de dejar un interruptor que promete un correo que nunca llegaria.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -8661,11 +8661,11 @@
                   "const d = pm.response.json().data;",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Avisa que son los de fabrica', () => pm.expect(d.guardadas).to.eql(false));",
-                  "pm.test('Resumen y resenas si, novedades no', () => {",
+                  "pm.test('Resumen si, novedades no', () => {",
                   "  pm.expect(d.resumen).to.eql(true);",
-                  "  pm.expect(d.resenas).to.eql(true);",
                   "  pm.expect(d.novedades).to.eql(false);",
-                  "});"
+                  "});",
+                  "pm.test('Ya no existe el aviso de resenas', () => pm.expect(d).to.not.have.property('resenas'));"
                 ]
               }
             }
@@ -8705,7 +8705,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"resumen\": false,\n  \"resenas\": true,\n  \"novedades\": true\n}",
+              "raw": "{\n  \"resumen\": false,\n  \"novedades\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -8796,7 +8796,7 @@
                 "preferencias"
               ]
             },
-            "description": "Se exigen los tres: la pantalla manda siempre los tres interruptores, y aceptar un cuerpo incompleto dejaria los que faltan en su valor por defecto sin que nadie lo pida.",
+            "description": "Se exigen los dos: la pantalla manda siempre los dos interruptores, y aceptar un cuerpo incompleto dejaria el que falta en su valor por defecto sin que nadie lo pida.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -8864,7 +8864,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"resumen\": \"si\",\n  \"resenas\": true,\n  \"novedades\": false\n}",
+              "raw": "{\n  \"resumen\": \"si\",\n  \"novedades\": false\n}",
               "options": {
                 "raw": {
                   "language": "json"

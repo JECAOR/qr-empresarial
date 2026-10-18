@@ -509,19 +509,23 @@ async function actualizarMisDatos(idUsuario, datos) {
  * 404: la pantalla necesita algo que mostrar en los interruptores, y "no has
  * cambiado nada" no es un error.
  *
+ * Son una preferencia guardada, no un envio programado: hoy ningun proceso
+ * las consulta para mandar correos. El unico que el sistema envia es el
+ * enlace de recuperacion de contrasena. Se guardan para que la eleccion de
+ * cada cuenta sobreviva al navegador, que es lo que pide el RF-12.
+ *
  * @param {number} idUsuario
- * @returns {Promise<{resumen: boolean, resenas: boolean, novedades: boolean}>}
+ * @returns {Promise<{resumen: boolean, novedades: boolean}>}
  */
 async function obtenerMisPreferencias(idUsuario) {
   const fila = await usuarioRepository.buscarPreferencias(idUsuario);
 
   if (!fila) {
-    return { resumen: true, resenas: true, novedades: false, guardadas: false };
+    return { resumen: true, novedades: false, guardadas: false };
   }
 
   return {
     resumen: Boolean(fila.aviso_resumen),
-    resenas: Boolean(fila.aviso_resenas),
     novedades: Boolean(fila.aviso_novedades),
     guardadas: true
   };

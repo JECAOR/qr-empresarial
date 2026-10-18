@@ -70,12 +70,6 @@ function pintarPerfil(perfil) {
   texto("profile-address", perfil.direccion || "");
   texto("profile-phone", perfil.telefono || "");
 
-  // La calificación y las reseñas no están en la base: vendrían de reseñas
-  // reales de clientes, que este proyecto no tiene. Se oculta la fila en
-  // lugar de inventar un número.
-  const fila = document.querySelector(".profile-rating");
-  if (fila) fila.hidden = true;
-
   const horario = document.getElementById("profile-hours");
   if (horario) horario.textContent = perfil.horario || "";
 

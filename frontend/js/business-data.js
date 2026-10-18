@@ -17,8 +17,6 @@ const DEFAULT_BUSINESS = {
   email: "contacto@fondalacosecha.co",
   instagram: "@fondalacosecha",
   hours: "Mar-Dom 11:00–21:00",
-  rating: "4.6",
-  reviews: "215",
 };
 
 function getBusinessData() {

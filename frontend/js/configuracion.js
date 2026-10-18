@@ -263,9 +263,9 @@ function showSavedToast(id) {
 // ya existía en inglés y la API sigue el español del esquema. Esta es la
 // única traducción.
 const NOTIF_KEY = "qre-notifications";
-const NOTIF_DEFAULTS = { weekly: true, reviews: true, updates: false };
+const NOTIF_DEFAULTS = { weekly: true, updates: false };
 
-const NOMBRE_EN_LA_API = { weekly: "resumen", reviews: "resenas", updates: "novedades" };
+const NOMBRE_EN_LA_API = { weekly: "resumen", updates: "novedades" };
 
 function getNotifPrefs() {
   try {
@@ -288,7 +288,6 @@ function saveNotifPrefs(prefs) {
 function prefsParaLaApi(prefs) {
   return {
     resumen: Boolean(prefs.weekly),
-    resenas: Boolean(prefs.reviews),
     novedades: Boolean(prefs.updates)
   };
 }
@@ -305,7 +304,6 @@ async function sincronizarNotificaciones() {
 
     saveNotifPrefs({
       weekly: data.resumen,
-      reviews: data.resenas,
       updates: data.novedades
     });
 

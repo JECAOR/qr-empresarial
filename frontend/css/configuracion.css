@@ -34,6 +34,20 @@
   margin: 0 0 16px;
 }
 
+/* El aviso de que la preferencia se guarda pero el envio no existe todavia.
+   Se marca con el borde lateral para que se lea como una nota y no como una
+   descripcion mas de la tarjeta. */
+.settings-card .settings-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--slate-500);
+  background: var(--slate-50);
+  border-left: 2px solid var(--slate-300);
+  border-radius: 0 6px 6px 0;
+  padding: 8px 10px;
+  margin: 0 0 16px;
+}
+
 .settings-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

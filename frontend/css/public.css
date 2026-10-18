@@ -97,18 +97,6 @@ body.public-page {
   flex-shrink: 0;
 }
 
-.profile-rating {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-top: 5px;
-}
-
-.profile-rating span {
-  font-size: 11px;
-  color: var(--slate-500);
-  margin-left: 4px;
-}
 
 .profile-description {
   font-size: 12px;
