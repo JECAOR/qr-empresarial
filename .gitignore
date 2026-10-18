@@ -10,6 +10,11 @@ playwright-report/
 test-results/
 coverage/
 
+# Evidencias del proyecto formativo: capturas, salida de las suites e
+# historial de commits. Se generan desde el repositorio y se entregan aparte,
+# asi que no tiene sentido versionar el resultado.
+docs/evidencias/
+
 # Archivos del sistema operativo y del editor
 Thumbs.db
 desktop.ini
