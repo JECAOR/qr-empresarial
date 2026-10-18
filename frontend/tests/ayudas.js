@@ -141,7 +141,8 @@ async function simularApi(page, opciones = {}) {
     sinQr = false,
     errorAlGenerarQr = null,
     perfilPublicoNoDisponible = false,
-    sinEstadisticas = false
+    sinEstadisticas = false,
+    sinClics = false
   } = opciones;
 
   // El simulador recuerda el perfil y el contenido, como haría el servidor:
@@ -198,6 +199,16 @@ async function simularApi(page, opciones = {}) {
     if (url.includes("/estadisticas")) {
       if (sinEstadisticas) {
         return responder(404, { message: "Esta cuenta todavía no tiene un perfil empresarial" });
+      }
+
+      if (sinClics) {
+        return responder(200, {
+          data: {
+            ...ESTADISTICAS,
+            totales: { ...ESTADISTICAS.totales, clics: 0, conversion: 0 },
+            enlacesMasPulsados: []
+          }
+        });
       }
 
       return responder(200, { data: ESTADISTICAS });

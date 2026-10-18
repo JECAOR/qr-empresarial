@@ -48,10 +48,20 @@ test.describe("Gestión de Contenido", () => {
     await page.goto("/contenido.html");
     const primeraTarjeta = page.locator(".item-card").first();
     const toggle = primeraTarjeta.locator('[data-action="toggle"]');
+
     const estabaActiva = !(await primeraTarjeta.evaluate((el) => el.classList.contains("is-inactive")));
+
     await toggle.click();
-    const activaAhora = !(await primeraTarjeta.evaluate((el) => el.classList.contains("is-inactive")));
-    expect(activaAhora).toBe(!estabaActiva);
+
+    // Se usa expect, que reintenta, en lugar de leer la clase justo después
+    // del clic: el cambio ya no es inmediato, viaja al servidor y vuelve. Con
+    // una lectura directa la prueba pasaba solo porque la API simulada
+    // responde rápido, y fallaba de vez en cuando.
+    if (estabaActiva) {
+      await expect(primeraTarjeta).toHaveClass(/is-inactive/);
+    } else {
+      await expect(primeraTarjeta).not.toHaveClass(/is-inactive/);
+    }
   });
 
   test("vaciar completamente una pestaña muestra el mensaje de estado vacío", async ({ page }) => {

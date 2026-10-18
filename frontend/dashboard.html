@@ -91,6 +91,19 @@
             </div>
           </div>
 
+          <!-- Enlaces mas pulsados (RF-11). Lo rellena dashboard.js con lo que
+               devuelve GET /api/estadisticas; si no hay clics todavia, muestra
+               su propio aviso en lugar de una tabla vacia. -->
+          <div class="chart-card top-enlaces-card">
+            <div class="chart-card-header">
+              <div>
+                <div class="chart-card-title">Enlaces más pulsados</div>
+                <div class="chart-card-sub" id="top-enlaces-sub">Últimos 7 días</div>
+              </div>
+            </div>
+            <div id="top-enlaces"></div>
+          </div>
+
         </div>
       </main>
 

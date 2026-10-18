@@ -124,3 +124,46 @@ test.describe("La vista pública informa los eventos", () => {
     expect(page.eventosInformados.filter((e) => e.tipo === "clic")).toHaveLength(0);
   });
 });
+
+// El servidor ya devolvía este ranking y ninguna pantalla lo mostraba: era
+// backend sin consumidor. Es la información más accionable del módulo, porque
+// le dice al dueño qué enlace funciona y cuál no.
+test.describe("Enlaces más pulsados", () => {
+  test("los lista ordenados, con su categoría y sus clics", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/dashboard.html");
+
+    const filas = page.locator(".top-enlace");
+    await expect(filas).toHaveCount(ESTADISTICAS.enlacesMasPulsados.length);
+
+    const primero = ESTADISTICAS.enlacesMasPulsados[0];
+    await expect(filas.nth(0).locator(".top-enlace-titulo")).toHaveText(primero.titulo);
+    await expect(filas.nth(0).locator(".top-enlace-categoria")).toHaveText(primero.categoria);
+    await expect(filas.nth(0).locator(".top-enlace-clics")).toContainText(String(primero.clics));
+    await expect(filas.nth(0).locator(".top-enlace-puesto")).toHaveText("1");
+  });
+
+  test("la barra es relativa al más pulsado", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/dashboard.html");
+
+    // Lo que interesa de un golpe es cuál destaca sobre los demás
+    const barras = page.locator(".top-enlace-barra span");
+    await expect(barras.nth(0)).toHaveAttribute("style", /width:\s*100%/);
+
+    const segundo = ESTADISTICAS.enlacesMasPulsados[1];
+    const esperado = Math.round((segundo.clics / ESTADISTICAS.enlacesMasPulsados[0].clics) * 100);
+    await expect(barras.nth(1)).toHaveAttribute("style", new RegExp(`width:\s*${esperado}%`));
+  });
+
+  test("sin clics todavía, lo explica en lugar de dejar la tarjeta vacía", async ({ page }) => {
+    await page.unroute("**/api/**");
+    await simularApi(page, { sinClics: true });
+    await sembrarSesion(page);
+
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator(".top-enlaces-vacio")).toBeVisible();
+    await expect(page.locator(".top-enlace")).toHaveCount(0);
+  });
+});
