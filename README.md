@@ -292,18 +292,6 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `013-sembrar-categorias.sql` | Las ocho categorías de enlace y las cinco de elemento, que no estaban versionadas |
 | `014-ultimo-acceso.sql` | Columna `ultimo_acceso` en `usuario`, para la actividad del RF-13 |
 
-## Evidencias
-
-[`docs/evidencias/`](docs/evidencias) reúne lo que el proyecto formativo pide
-entregar: catorce capturas de las pantallas funcionando con datos reales, la
-salida de las dos suites de pruebas y el historial de commits completo. Su
-propio [README](docs/evidencias/README.md) dice de dónde sale cada archivo.
-
-Las capturas no se toman a mano: las genera
-[`docs/evidencias/generar-capturas.js`](docs/evidencias/generar-capturas.js),
-que abre un navegador, entra con una cuenta y recorre la aplicación **contra el
-servidor real**, con los datos de `database/seed.sql`.
-
 ## Estructura de carpetas
 
 ```text
@@ -344,8 +332,7 @@ qr-empresarial/
 ├── docs/
 │   ├── api.md
 │   ├── control-versiones.md
-│   ├── postman/                     # colección de pruebas
-│   └── evidencias/                  # capturas, salida de las suites e historial
+│   └── postman/                     # colección de pruebas
 ├── .editorconfig
 ├── .gitignore
 └── README.md
