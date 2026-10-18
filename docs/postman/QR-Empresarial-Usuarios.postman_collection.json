@@ -5643,6 +5643,156 @@
           ]
         },
         {
+          "name": "114b Borrar el ultimo bloque activo (409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idBoton}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idBoton}}"
+              ]
+            },
+            "description": "Aqui ya solo queda este bloque activo. La guia 6 no deja generar un codigo QR para un perfil vacio, porque quien lo escanee no encontraria nada; sin esta comprobacion esa garantia duraba lo que tardara el dueno en quitar su ultimo bloque, y el codigo ya impreso y pegado en la vitrina seguia llevando a un perfil en blanco. Se vigilaba la puerta de entrada y no la de salida.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Explica por que', () => pm.expect(pm.response.json().message).to.include('ultimo bloque activo'.replace('u','ú')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "114c Desactivarlo tampoco (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idBoton}}/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idBoton}}",
+                "estado"
+              ]
+            },
+            "description": "Se vigilan las dos salidas: borrar y desactivar dejan el perfil igual de vacio, asi que comprobar solo el borrado se esquivaria por aqui.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "114d Desactivar el codigo QR para poder limpiar (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "La regla protege un codigo emitido. Si no hay codigo activo no hay nada que proteger, y el perfil puede quedarse vacio: es lo que pasa mientras se esta armando. Apagarlo es un acto deliberado del dueno, no un descuido.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "115 Eliminar el boton (200)",
           "request": {
             "method": "DELETE",
@@ -5657,7 +5807,7 @@
                 "{{idBoton}}"
               ]
             },
-            "description": "Deja la base como estaba para que la coleccion se pueda repetir.",
+            "description": "Con el codigo QR apagado, el perfil si puede quedarse sin contenido.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -5667,6 +5817,60 @@
                   "type": "string"
                 }
               ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "115b Reactivar el codigo QR (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "Se deja la cuenta como la encontro la coleccion, para que se pueda repetir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenContenido}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [],
@@ -6462,6 +6666,60 @@
           ]
         },
         {
+          "name": "131b Apagar el codigo antes de limpiar (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "Este es el unico bloque activo que queda, y el modulo 3 no deja quitarlo mientras el codigo este encendido: seguiria llevando a un perfil en blanco. Apagarlo primero es justo lo que la regla espera de quien quiere vaciar su perfil a proposito.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "132 Limpiar el contenido de prueba (200)",
           "request": {
             "method": "DELETE",
@@ -6486,6 +6744,60 @@
                   "type": "string"
                 }
               ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "132b Volver a encender el codigo (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/qr/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "qr",
+                "estado"
+              ]
+            },
+            "description": "Deja la cuenta como la encontro la coleccion.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenQr}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [],

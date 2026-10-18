@@ -264,3 +264,97 @@ test.describe("Reordenar los bloques", () => {
       .toBe(antes.join("|"));
   });
 });
+
+// Regla de negocio del módulo 3, que figuraba en el README como «prevista» y
+// no estaba en el código. El módulo 4 no genera un código QR para un perfil
+// vacío, porque quien lo escanee no encontraría nada; sin esta comprobación,
+// esa garantía duraba lo que tardara el dueño en quitar su último bloque, y
+// el código ya impreso y pegado en la vitrina seguía llevando a un perfil en
+// blanco. Se vigilaba la puerta de entrada y no la de salida.
+test.describe("No se puede dejar el perfil vacío si ya tiene código QR", () => {
+  /**
+   * Deja un único bloque activo en todo el perfil y devuelve su título.
+   *
+   * Se vacía por la API y no pulsando las papeleras de la pantalla porque la
+   * lista muestra solo la pestaña abierta: borrando lo visible quedarían los
+   * bloques de «Promociones» y «Reservas», y la regla no llegaría a saltar.
+   */
+  async function dejarUnSoloBloque(page) {
+    await page.goto("/contenido.html");
+
+    const titulo = await page.evaluate(async () => {
+      const { data } = await Api.listarContenido();
+      const conservar = data.find((i) => i.seccion === "menu" && i.activo);
+
+      for (const item of data) {
+        if (item.id !== conservar.id) await Api.eliminarContenido(item.id);
+      }
+
+      return conservar.titulo;
+    });
+
+    await page.reload();
+    await expect(page.locator(".item-card")).toHaveCount(1);
+
+    return titulo;
+  }
+
+  test("no deja borrar el último bloque activo", async ({ page }) => {
+    const titulo = await dejarUnSoloBloque(page);
+
+    await page.locator('.item-card [data-action="delete"]').click();
+
+    await expect(page.locator("#content-alert")).toContainText("último bloque activo");
+
+    // Y sigue ahí: el aviso no serviría de nada si el bloque se hubiera ido
+    await expect(page.locator(".item-card")).toHaveCount(1);
+    await expect(page.locator(".item-card .item-label")).toHaveText(titulo);
+  });
+
+  test("tampoco deja desactivarlo, que deja el perfil igual de vacío", async ({ page }) => {
+    await dejarUnSoloBloque(page);
+
+    // Comprobar solo el borrado se esquivaría por aquí
+    await page.locator('.item-card [data-action="toggle"]').click();
+
+    await expect(page.locator("#content-alert")).toContainText("último bloque activo");
+
+    // Se comprueba contra el servidor, no contra la pantalla
+    await expect
+      .poll(async () => page.evaluate(async () =>
+        (await Api.listarContenido()).data.filter((i) => i.activo).length
+      ))
+      .toBe(1);
+  });
+
+  test("con otro bloque activo, se puede quitar sin problema", async ({ page }) => {
+    await dejarUnSoloBloque(page);
+
+    await page.evaluate(() => Api.crearContenido({
+      tipo: "texto", titulo: "Un segundo bloque", detalle: "Hola",
+      idCategoria: 1, seccion: "menu"
+    }));
+    await page.reload();
+    await expect(page.locator(".item-card")).toHaveCount(2);
+
+    await page.locator('.item-card [data-action="delete"]').first().click();
+
+    await expect(page.locator(".item-card")).toHaveCount(1);
+    await expect(page.locator("#content-alert")).toBeHidden();
+  });
+
+  // La regla protege un código ya emitido. Mientras el perfil se está
+  // armando no hay nada que proteger, y bloquearlo atraparía a quien se
+  // equivocó al escribir su primer enlace y quiere corregirlo.
+  test("sin código QR todavía, el perfil sí puede quedarse vacío", async ({ page }) => {
+    await page.unroute("**/api/**");
+    await simularApi(page, { sinQr: true });
+
+    await dejarUnSoloBloque(page);
+
+    await page.locator('.item-card [data-action="delete"]').click();
+
+    await expect(page.locator(".item-card")).toHaveCount(0);
+    await expect(page.locator("#content-alert")).toBeHidden();
+  });
+});

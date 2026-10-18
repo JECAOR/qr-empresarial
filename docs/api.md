@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.7.2
+- **Versión:** v1.8.0
 
 ## Resumen
 
@@ -810,7 +810,20 @@ de otra cuenta).
 Desactivar no es borrar: el bloque sigue en el panel y deja de salir en la vista pública
 (RF-06).
 
-**Errores:** 400 (`activo` no es booleano), 401, 404.
+> **No se puede dejar el perfil sin contenido activo si ya tiene código QR** (409).
+> El módulo 4 no genera un código para un perfil vacío, porque quien lo escanee no
+> encontraría nada. Sin esta comprobación esa garantía duraba lo que tardara el dueño en
+> quitar su último bloque: se vigilaba la puerta de entrada y no la de salida, y el código
+> ya impreso y pegado en la vitrina seguía llevando a una página en blanco.
+>
+> **Se vigilan las dos salidas**, borrar y desactivar, porque dejan el perfil igual de
+> vacío; comprobar solo una se esquivaría por la otra. Y **solo cuenta si el código está
+> encendido**: mientras el perfil se está armando no hay nada que proteger, y bloquearlo
+> atraparía a quien se equivocó al escribir su primer enlace. Para vaciar el perfil a
+> propósito, se apaga antes el código con `PATCH /api/qr/estado`.
+
+**Errores:** 400 (`activo` no es booleano), 401, 404, 409 (es el último bloque activo y el
+perfil tiene código QR).
 
 ---
 
@@ -834,7 +847,9 @@ Aquí el borrado **sí es definitivo**, a diferencia del de usuarios: un enlace 
 no tiene historial que conservar. Los eventos del RF-11 que apuntaban a él se borran con
 él.
 
-**Errores:** 400, 401, 404.
+Rige la misma regla del último bloque activo que en `PATCH /api/contenido/:id/estado`.
+
+**Errores:** 400, 401, 404, 409 (es el último bloque activo y el perfil tiene código QR).
 
 ---
 

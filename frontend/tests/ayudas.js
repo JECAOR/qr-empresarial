@@ -391,10 +391,28 @@ async function simularApi(page, opciones = {}) {
         return responder(200, { message: "Contenido actualizado correctamente", data: item });
       }
 
+      // La misma regla que el servidor (contenido.service, RN del último
+      // bloque activo). El simulador tiene que ser igual de estricto: si
+      // dejara borrar lo que el servidor rechaza, la prueba pasaría aquí y
+      // la pantalla fallaría de verdad.
+      const dejariaElPerfilVacio = (item) =>
+        !sinQr && item && item.activo &&
+        contenidoActual.filter((i) => i.activo).length === 1;
+
+      const ultimoBloque = {
+        message:
+          "Es el último bloque activo y el perfil ya tiene un código QR. " +
+          "Agregue otro antes de quitarlo, o quien escanee el código no encontrará nada"
+      };
+
       if (metodo === "PATCH" && idEnLaUrl) {
         const item = contenidoActual.find((i) => i.id === idEnLaUrl);
 
         if (!item) return responder(404, { message: "El contenido no existe" });
+
+        if (cuerpo.activo === false && dejariaElPerfilVacio(item)) {
+          return responder(409, ultimoBloque);
+        }
 
         item.activo = cuerpo.activo;
 
@@ -405,6 +423,10 @@ async function simularApi(page, opciones = {}) {
       }
 
       if (metodo === "DELETE" && idEnLaUrl) {
+        if (dejariaElPerfilVacio(contenidoActual.find((i) => i.id === idEnLaUrl))) {
+          return responder(409, ultimoBloque);
+        }
+
         contenidoActual = contenidoActual.filter((i) => i.id !== idEnLaUrl);
 
         return responder(200, { message: "Contenido eliminado correctamente" });
