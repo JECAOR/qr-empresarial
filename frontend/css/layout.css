@@ -423,3 +423,13 @@
     padding: 14px;
   }
 }
+
+/* El logo del negocio en la barra lateral, cuando lo tiene (RF-04).
+   Reemplaza las iniciales. */
+.sidebar-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}

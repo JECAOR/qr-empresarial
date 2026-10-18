@@ -9,7 +9,7 @@
 // simula en ayudas.js.
 // ============================================
 const { test, expect } = require("@playwright/test");
-const { simularApi, sembrarSesion, prepararSesion, PERFIL } = require("./ayudas");
+const { simularApi, sembrarSesion, prepararSesion, simularImagenes, PERFIL } = require("./ayudas");
 
 test.describe("Sincronización del perfil con el servidor", () => {
   test("Configuración se llena con el perfil que devuelve la API", async ({ page }) => {
@@ -126,5 +126,34 @@ test.describe("Validación antes de guardar (RF-10)", () => {
     await page.click('#business-form button[type="submit"]');
 
     await expect(page.locator("#business-saved-toast")).toContainText("Cambios guardados");
+  });
+});
+
+test.describe("Logo en la barra lateral", () => {
+  test("muestra el logo del negocio en lugar de las iniciales", async ({ page }) => {
+    await prepararSesion(page);
+    await simularImagenes(page);
+
+    // El perfil simulado trae imagen (ver ayudas.js)
+    await page.goto("/dashboard.html");
+
+    const logo = page.locator(".sidebar-avatar-img");
+    await expect(logo).toHaveAttribute("src", PERFIL.imagen);
+  });
+
+  test("sin logo se queda con las iniciales", async ({ page }) => {
+    await simularApi(page, {});
+    await sembrarSesion(page);
+
+    // Se deja en caché un negocio sin imagen
+    await page.addInitScript(() => {
+      window.localStorage.setItem("qre-business", JSON.stringify({ name: "Sin Logo", image: "" }));
+    });
+
+    await page.goto("/dashboard.html");
+
+    // Antes de que llegue el perfil del servidor, la barra se dibuja con lo
+    // que hay en caché: ahí deben salir las iniciales
+    await expect(page.locator(".sidebar-avatar")).not.toHaveText("");
   });
 });

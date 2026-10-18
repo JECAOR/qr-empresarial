@@ -8,7 +8,7 @@
 // internet, y la app sigue abriendo si se queda sin señal.
 // ============================================
 
-const CACHE_NAME = "qr-empresarial-v8";
+const CACHE_NAME = "qr-empresarial-v9";
 
 // El "app shell": lo mínimo para que el sitio abra sin conexión.
 const APP_SHELL = [
@@ -85,6 +85,24 @@ self.addEventListener("fetch", (event) => {
   // Solo intervenir en peticiones GET del propio origen (no Google Fonts,
   // no otros dominios externos — esos siguen su comportamiento normal).
   if (event.request.method !== "GET" || !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // La API nunca se guarda. El backend sirve las pantallas y la API en el
+  // mismo origen, así que sin esto entraban también /api/contenido,
+  // /api/usuarios/me y la descarga del código QR. Dos motivos para no
+  // hacerlo:
+  //
+  //   - Son datos de una cuenta concreta. En un equipo compartido, estando
+  //     sin conexión, la caché devolvería lo de quien usó el navegador antes.
+  //   - El cache.put de abajo se hace a mano, así que pasa por encima del
+  //     Cache-Control que la propia API envía (la descarga del QR viaja con
+  //     "private, no-store" justamente para que no se guarde).
+  //
+  // Lo que sí conviene guardar son las pantallas: con ellas, la aplicación
+  // abre sin conexión y es la petición de datos la que falla, que es un
+  // estado que cada pantalla ya sabe explicar.
+  if (new URL(event.request.url).pathname.startsWith("/api/")) {
     return;
   }
 
