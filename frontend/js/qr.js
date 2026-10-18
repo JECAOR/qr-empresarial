@@ -200,6 +200,99 @@ function renderShareLinks() {
     `mailto:?subject=${encodeURIComponent("Nuestro perfil QR")}&body=${encodeURIComponent(QR_URL)}`;
 }
 
+// Instagram no admite compartir una dirección por enlace, así que lo que
+// sirve de verdad es copiarla para pegarla en la biografía.
+document.getElementById("share-instagram").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(QR_URL);
+    showToast("Enlace copiado para tu biografía de Instagram");
+  } catch {
+    showToast("No se pudo copiar el enlace");
+  }
+});
+
+// --- Publicar o retirar la página (RF-07 y RF-09) ---
+
+const dialogoQr = document.getElementById("qr-confirmar");
+
+let accionPendiente = null;
+
+/**
+ * Pinta el estado del código y el botón que lo cambia.
+ *
+ * La etiqueta de la tarjeta decía "En línea" pasara lo que pasara. Ahora
+ * dice lo que responde el servidor, que es lo único que decide si la vista
+ * pública contesta.
+ */
+function pintarVisibilidad() {
+  const etiqueta = document.getElementById("qr-estado");
+  const texto = document.getElementById("qr-visibilidad-texto");
+  const boton = document.getElementById("qr-visibilidad-btn");
+
+  if (!qrRegistrado) {
+    etiqueta.hidden = true;
+    texto.textContent = "Todavía no has generado tu código.";
+    boton.hidden = true;
+    return;
+  }
+
+  const publicada = qrRegistrado.activo;
+
+  etiqueta.hidden = false;
+  etiqueta.textContent = publicada ? "● Publicada" : "● Retirada";
+  etiqueta.className = publicada ? "pill-online" : "pill-offline";
+
+  texto.textContent = publicada
+    ? "Tu página responde a quien escanee el código."
+    : "Tu página no responde. Quien escanee el código no encontrará nada hasta que la publiques de nuevo.";
+
+  boton.hidden = false;
+  boton.textContent = publicada ? "Retirar mi página" : "Publicar mi página";
+}
+
+document.getElementById("qr-visibilidad-btn").addEventListener("click", () => {
+  const retirar = qrRegistrado && qrRegistrado.activo;
+
+  document.getElementById("qr-confirmar-titulo").textContent =
+    retirar ? "Retirar tu página" : "Publicar tu página";
+
+  document.getElementById("qr-confirmar-texto").textContent = retirar
+    ? "Los códigos que ya repartiste o imprimiste dejarán de llevar a ninguna parte. El código no se borra: puedes volver a publicarlo cuando quieras y seguirá siendo el mismo."
+    : "Tu página volverá a responder y los códigos que ya repartiste funcionarán otra vez.";
+
+  document.getElementById("qr-confirmar-aceptar").textContent =
+    retirar ? "Retirar" : "Publicar";
+
+  accionPendiente = !retirar;
+
+  dialogoQr.showModal();
+});
+
+document.getElementById("qr-confirmar-cancelar").addEventListener("click", () => {
+  accionPendiente = null;
+  dialogoQr.close();
+});
+
+document.getElementById("qr-confirmar-aceptar").addEventListener("click", async () => {
+  const activo = accionPendiente;
+
+  accionPendiente = null;
+  dialogoQr.close();
+
+  if (activo === null) return;
+
+  try {
+    qrRegistrado = (await Api.cambiarEstadoQr(activo)).data;
+
+    pintarVisibilidad();
+    showToast(activo ? "Tu página está publicada" : "Tu página quedó retirada");
+  } catch (error) {
+    // 409: el perfil no tiene contenido activo, así que publicarlo llevaría
+    // a una página en blanco. El mensaje del servidor ya lo explica.
+    showToast(error.message);
+  }
+});
+
 function renderUrlChips() {
   const displayUrl = QR_URL.replace(/^https?:\/\//, "");
   document.getElementById("qr-chip-url").textContent = displayUrl;
@@ -235,6 +328,7 @@ async function cargarQr() {
 
   renderUrlChips();
   renderShareLinks();
+  pintarVisibilidad();
   drawQR();
 }
 

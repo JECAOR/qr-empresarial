@@ -8,7 +8,7 @@
 // ============================================
 const { test, expect } = require("@playwright/test");
 const {
-  prepararSesion, prepararSesionAdmin, USUARIOS_ADMIN, RESUMEN_ADMIN
+  prepararSesion, prepararSesionAdmin, USUARIOS_ADMIN, RESUMEN_ADMIN, EVENTOS_ADMIN
 } = require("./ayudas");
 
 test.describe("Solo entra el administrador (RN-22)", () => {
@@ -185,11 +185,15 @@ test.describe("Restringir y eliminar (RF-14)", () => {
   test("el administrador no puede actuar sobre su propia cuenta", async ({ page }) => {
     const propia = filaDe(page, "Cafe Raices S.A.");
 
-    // El servidor lo rechaza con 400; aquí no se ofrece el botón, para no
+    // El servidor lo rechaza con 400; aquí no se ofrecen los botones, para no
     // prometer algo que va a fallar. Si fuera el único administrador, nadie
     // podría volver a administrar el sistema.
-    await expect(propia.locator("[data-accion]")).toHaveCount(0);
+    await expect(propia.locator('[data-accion="estado"]')).toHaveCount(0);
+    await expect(propia.locator('[data-accion="eliminar"]')).toHaveCount(0);
     await expect(propia).toContainText("Tu cuenta");
+
+    // Pero sí puede mirar su propio detalle: eso no le hace dano a nadie
+    await expect(propia.locator('[data-accion="detalle"]')).toHaveCount(1);
   });
 
   test("si el servidor rechaza la acción, se avisa y la fila no cambia", async ({ page }) => {
@@ -241,5 +245,68 @@ test.describe("Descarga del reporte (RF-15)", () => {
 
     // Un reporte que no coincide con lo que se está viendo desconcierta
     expect(peticiones[0]).toContain("busqueda=Espiga");
+  });
+});
+
+// El endpoint GET /api/admin/usuarios/:id se construyó con el módulo 8, con
+// sus pruebas y su petición de Postman, y ninguna pantalla lo llamaba: era
+// backend sin consumidor, lo mismo que llevamos ocho módulos corrigiendo.
+test.describe("Detalle de una cuenta (RF-13)", () => {
+  test.beforeEach(async ({ page }) => {
+    await prepararSesionAdmin(page);
+    await page.goto("/admin.html");
+  });
+
+  test("el nombre abre el detalle con sus datos", async ({ page }) => {
+    await page.locator('.admin-tabla tbody tr [data-accion="detalle"]').first().click();
+
+    const dialogo = page.locator("#admin-detalle");
+
+    await expect(dialogo).toBeVisible();
+    await expect(page.locator("#admin-detalle-titulo")).toHaveText("Fonda La Cosecha");
+    await expect(dialogo).toContainText("camila@fondalacosecha.co");
+    await expect(dialogo).toContainText("Publicado");
+  });
+
+  test("muestra la actividad reciente, que la tabla no puede", async ({ page }) => {
+    await page.locator('.admin-tabla tbody tr [data-accion="detalle"]').first().click();
+
+    const eventos = page.locator(".admin-detalle-eventos li");
+
+    await expect(eventos).toHaveCount(EVENTOS_ADMIN.length);
+    await expect(eventos.nth(1)).toContainText("Ver menu completo");
+  });
+
+  test("una cuenta sin perfil lo dice y no inventa actividad", async ({ page }) => {
+    await page
+      .locator('.admin-tabla tbody tr', { hasText: "Cuenta Sin Estrenar" })
+      .locator('[data-accion="detalle"]')
+      .click();
+
+    await expect(page.locator("#admin-detalle")).toContainText("Sin perfil");
+    await expect(page.locator("#admin-detalle")).toContainText("Nunca entró");
+    await expect(page.locator(".admin-detalle-eventos li")).toContainText("Sin actividad");
+  });
+
+  test("se cierra sin tocar nada", async ({ page }) => {
+    await page.locator('.admin-tabla tbody tr [data-accion="detalle"]').first().click();
+    await expect(page.locator("#admin-detalle")).toBeVisible();
+
+    await page.click("#admin-detalle-cerrar");
+
+    await expect(page.locator("#admin-detalle")).toBeHidden();
+    await expect(page.locator(".admin-tabla tbody tr")).toHaveCount(USUARIOS_ADMIN.length);
+  });
+
+  test("abrir el detalle no dispara las acciones del RF-14", async ({ page }) => {
+    // Las tres acciones comparten el mismo manejador de la tabla: un fallo
+    // de orden haría que pulsar el nombre restringiera la cuenta
+    await page.locator('.admin-tabla tbody tr [data-accion="detalle"]').first().click();
+
+    await expect(page.locator("#admin-confirmar")).toBeHidden();
+    await expect(
+      page.locator('.admin-tabla tbody tr', { hasText: "Fonda La Cosecha" })
+        .locator(".admin-chip--activo")
+    ).toBeVisible();
   });
 });

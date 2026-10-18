@@ -155,3 +155,115 @@ test.describe("Código QR contra el servidor", () => {
     expect(descarga.suggestedFilename()).toBe(`qr-${QR.slug}.svg`);
   });
 });
+
+// RF-07 y RF-09: publicar o retirar la página.
+//
+// El endpoint PATCH /api/qr/estado existía desde el módulo 4, con sus reglas
+// y sus nueve pruebas de backend, y ninguna pantalla lo usaba: el dueño no
+// tenía forma de retirar su página. Peor: la regla del módulo 3 no le deja
+// quitar su último bloque mientras el código esté encendido, así que quedaba
+// atrapado sin salida. La documentación de la v1.9.1 llegó a decir que
+// apagarlo era «la vía para retirar la página a propósito» — y esa vía no
+// existía en la aplicación.
+test.describe("Publicar y retirar la página", () => {
+  test("la etiqueta dice el estado real, no «En línea» siempre", async ({ page }) => {
+    await page.goto("/qr.html");
+
+    // Estaba escrita a mano en el HTML y no cambiaba nunca
+    await expect(page.locator("#qr-estado")).toHaveText("● Publicada");
+    await expect(page.locator("#qr-estado")).toHaveClass("pill-online");
+  });
+
+  test("retirar pide confirmación y explica qué implica", async ({ page }) => {
+    await page.goto("/qr.html");
+
+    await page.click("#qr-visibilidad-btn");
+
+    await expect(page.locator("#qr-confirmar")).toBeVisible();
+    await expect(page.locator("#qr-confirmar-texto"))
+      .toContainText("dejarán de llevar a ninguna parte");
+
+    // Mientras no se confirme, no ha pasado nada
+    await expect(page.locator("#qr-estado")).toHaveText("● Publicada");
+  });
+
+  test("cancelar deja la página publicada", async ({ page }) => {
+    await page.goto("/qr.html");
+
+    await page.click("#qr-visibilidad-btn");
+    await page.click("#qr-confirmar-cancelar");
+
+    await expect(page.locator("#qr-confirmar")).toBeHidden();
+    await expect(page.locator("#qr-estado")).toHaveText("● Publicada");
+  });
+
+  test("al confirmar, el servidor la retira de verdad", async ({ page }) => {
+    await page.goto("/qr.html");
+
+    await page.click("#qr-visibilidad-btn");
+    await page.click("#qr-confirmar-aceptar");
+
+    await expect(page.locator("#qr-estado")).toHaveText("● Retirada");
+    await expect(page.locator("#qr-estado")).toHaveClass("pill-offline");
+    await expect(page.locator("#qr-visibilidad-btn")).toHaveText("Publicar mi página");
+
+    // Se comprueba contra el servidor, no contra la etiqueta repintada
+    await expect
+      .poll(async () => page.evaluate(async () => (await Api.miQr()).data.activo))
+      .toBe(false);
+  });
+
+  test("y vuelve a publicarse", async ({ page }) => {
+    await page.goto("/qr.html");
+
+    await page.click("#qr-visibilidad-btn");
+    await page.click("#qr-confirmar-aceptar");
+    await expect(page.locator("#qr-estado")).toHaveText("● Retirada");
+
+    await page.click("#qr-visibilidad-btn");
+    await expect(page.locator("#qr-confirmar-texto")).toContainText("volverá a responder");
+    await page.click("#qr-confirmar-aceptar");
+
+    await expect(page.locator("#qr-estado")).toHaveText("● Publicada");
+  });
+
+  test("si el servidor rechaza publicarla, se avisa y no miente el estado", async ({ page }) => {
+    await page.unroute("**/api/**");
+    await simularApi(page, { sinContenidoActivo: true });
+    await sembrarSesion(page);
+
+    await page.goto("/qr.html");
+
+    await page.click("#qr-visibilidad-btn");
+    await page.click("#qr-confirmar-aceptar");
+    await expect(page.locator("#qr-estado")).toHaveText("● Retirada");
+
+    // Ahora el perfil está vacío: publicarlo llevaría a una página en blanco
+    await page.click("#qr-visibilidad-btn");
+    await page.click("#qr-confirmar-aceptar");
+
+    await expect(page.locator("#toast")).toContainText("contenido activo");
+    await expect(page.locator("#qr-estado")).toHaveText("● Retirada");
+  });
+});
+
+test.describe("Compartir el enlace", () => {
+  test("el botón de Instagram copia el enlace propio [regresión]", async ({ page }) => {
+    await page.goto("/qr.html");
+
+    // Era un enlace fijo a instagram.com/fondalacosecha.co, el negocio de
+    // ejemplo: cualquier cuenta real abría el Instagram de otro
+    await expect(page.locator('a[href*="instagram.com/fondalacosecha"]')).toHaveCount(0);
+
+    await page.evaluate(() => {
+      window.__copiado = null;
+      navigator.clipboard.writeText = async (texto) => { window.__copiado = texto; };
+    });
+
+    await page.click("#share-instagram");
+
+    const copiado = await page.evaluate(() => window.__copiado);
+
+    expect(copiado).toBe(QR.url);
+  });
+});

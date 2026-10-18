@@ -308,3 +308,25 @@
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* Tarjeta de visibilidad: explica qué significa retirar la página antes de
+   ofrecer el botón que lo hace. */
+.qr-visibilidad-texto {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--slate-500);
+  margin: 0 0 10px;
+}
+
+#qr-visibilidad-btn {
+  width: 100%;
+}
+
+/* El botón de Instagram era un enlace; ahora copia el enlace al portapapeles
+   y hay que igualarlo a los otros dos, que siguen siendo <a>. */
+button.qr-share-btn {
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  width: 100%;
+}

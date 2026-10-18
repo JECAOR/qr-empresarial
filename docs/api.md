@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v2.0.0
+- **Versión:** v2.0.1
 
 ## Resumen
 
@@ -952,6 +952,12 @@ la que decidirá si la vista pública responde (RF-09).
 
 **Apagarlo nunca se bloquea.** Solo se vigila encender: apagar algo que ya está apagado no
 deja a nadie peor, y el dueño tiene que poder retirar su página cuando quiera.
+
+**Quién lo llama:** la tarjeta «Visibilidad» de `qr.html`, con los botones *Retirar mi
+página* / *Publicar mi página*. Hasta `v2.0.1` este endpoint no tenía pantalla: existía,
+estaba probado y documentado, y el dueño no tenía forma de usarlo. Como además la regla
+del módulo 3 no le deja quitar su último bloque mientras el código esté encendido,
+quedaba sin salida.
 
 **`POST /api/qr` no lo enciende.** Si ya existe un código apagado, lo devuelve tal cual. La
 desactivación fue un acto deliberado y «generar» no debería deshacerla por su cuenta; para
