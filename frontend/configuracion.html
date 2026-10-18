@@ -143,11 +143,55 @@
               </div>
               <button class="item-toggle settings-notif-toggle" data-notif-key="updates" aria-label="Activar Novedades de QR Empresarial" aria-pressed="false"><span class="knob"></span></button>
             </div>
+
+            <!-- Los interruptores se guardan al pulsarlos, sin botón. Este
+                 aviso es para cuando el servidor rechaza el cambio. -->
+            <div class="settings-save-row">
+              <span id="notif-saved-toast" class="settings-saved-toast"></span>
+            </div>
           </div>
 
-          <!-- Cambiar contraseña -->
+          <!-- Datos personales (RF-12). Antes no habia donde cambiarlos. -->
+          <form id="account-form" class="settings-card" novalidate>
+            <h2>Datos personales</h2>
+            <p class="settings-sub">El nombre y el correo con los que inicias sesión</p>
+
+            <div class="settings-grid">
+              <div class="form-field">
+                <label for="acc-name">Nombre</label>
+                <div class="form-input-wrap">
+                  <input type="text" id="acc-name" placeholder="Panadería La Espiga">
+                </div>
+                <span class="form-error">Escribe al menos 2 caracteres.</span>
+              </div>
+
+              <div class="form-field">
+                <label for="acc-email">Correo electrónico</label>
+                <div class="form-input-wrap">
+                  <input type="email" id="acc-email" placeholder="contacto@tunegocio.co">
+                </div>
+                <span class="form-error">Escribe un correo válido.</span>
+              </div>
+            </div>
+
+            <!-- Solo se pide si el correo cambia: es el identificador con el
+                 que se entra y al que llega el enlace de recuperación. -->
+            <div class="form-field" id="acc-password-field" hidden>
+              <label for="acc-password">Confirma tu contraseña para cambiar el correo</label>
+              <div class="form-input-wrap">
+                <input type="password" id="acc-password" placeholder="••••••••••" autocomplete="current-password">
+              </div>
+              <span class="form-error">Escribe tu contraseña.</span>
+            </div>
+
+            <div class="settings-save-row">
+              <span id="account-saved-toast" class="settings-saved-toast"></span>
+              <button type="submit" class="btn-primary">Guardar cambios</button>
+            </div>
+          </form>
+
           <form id="password-form" class="settings-card" novalidate>
-            <h2>Cuenta</h2>
+            <h2>Contraseña</h2>
             <p class="settings-sub">Cambia tu contraseña de acceso</p>
 
             <div class="form-field">

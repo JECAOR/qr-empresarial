@@ -116,6 +116,8 @@ function perfilApiADatosLocales(perfil) {
     instagram: perfil.instagram || "",
     hours: perfil.horario || "",
     image: perfil.imagen || "",
+    // El tema es el color de marca del negocio (RF-12)
+    tema: perfil.tema || "indigo",
     // El slug lo decide el servidor y no cambia aunque se edite el nombre:
     // los códigos QR ya impresos deben seguir funcionando (RF-09).
     slug: perfil.slug || ""
@@ -132,6 +134,7 @@ function datosLocalesAPerfilApi(datos) {
     correoContacto: datos.email || "",
     instagram: datos.instagram || "",
     horario: datos.hours || "",
-    imagen: datos.image || ""
+    imagen: datos.image || "",
+    tema: datos.tema || "indigo"
   };
 }

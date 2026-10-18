@@ -283,6 +283,21 @@ const Api = {
   guardarMiPerfilEmpresarial: (datos) =>
     peticion("/perfiles/me", { metodo: "PUT", cuerpo: datos }),
 
+  // Datos personales de la cuenta (RF-12). La contraseña solo hace falta si
+  // el correo cambia; el servidor decide comparando con el que ya tiene.
+  actualizarMisDatos: (nombre, correo, contrasena) =>
+    peticion("/usuarios/me", {
+      metodo: "PUT",
+      cuerpo: contrasena ? { nombre, correo, contrasena } : { nombre, correo },
+      // Un 401 aquí es "la contraseña no es correcta", no "su sesión venció"
+      salirSi401: false
+    }),
+
+  misPreferencias: () => peticion("/usuarios/me/preferencias"),
+
+  guardarMisPreferencias: (prefs) =>
+    peticion("/usuarios/me/preferencias", { metodo: "PUT", cuerpo: prefs }),
+
   cambiarContrasena: (contrasenaActual, contrasenaNueva) =>
     peticion("/usuarios/me/contrasena", {
       metodo: "PUT",

@@ -13,6 +13,7 @@ const pool = require('../../config/database');
 
 const authRepository = require('./auth.repository');
 const perfilService = require('../perfiles/perfil.service');
+const usuarioRepository = require('../usuarios/usuario.repository');
 const usuarioService = require('../usuarios/usuario.service');
 const { enviarEnlaceRecuperacion } = require('../../utils/correo');
 
@@ -440,11 +441,112 @@ async function eliminarMiCuenta(idUsuario, contrasena) {
   console.warn('Cuenta eliminada por su propio dueno:', idUsuario);
 }
 
+/**
+ * Actualiza los datos personales de la cuenta (RF-12).
+ *
+ * Cambiar el correo es delicado: es el identificador con el que se inicia
+ * sesion y al que llega el enlace de recuperacion. Quien se haga con una
+ * sesion abierta podria cambiarlo y despues apropiarse de la cuenta con
+ * "olvide mi contrasena". Por eso se exige la contrasena **solo cuando el
+ * correo cambia**: para corregir el nombre no hace falta.
+ *
+ * @param {number} idUsuario
+ * @param {{nombre: string, correo: string, contrasena?: string}} datos
+ * @returns {Promise<object>} La cuenta como queda.
+ * @throws {Error} 401 si falta o falla la contrasena al cambiar el correo,
+ *   409 si el correo ya es de otra cuenta, 404 si la cuenta no existe.
+ */
+async function actualizarMisDatos(idUsuario, datos) {
+  const usuario = await authRepository.buscarPorIdConContrasena(idUsuario);
+
+  if (!usuario || usuario.estado !== 'activo') {
+    const error = new Error('Usuario no encontrado');
+    error.status = 404;
+    throw error;
+  }
+
+  const correoCambia = datos.correo.toLowerCase() !== usuario.correo.toLowerCase();
+
+  if (correoCambia) {
+    if (!datos.contrasena) {
+      const error = new Error('Confirme su contraseña para cambiar el correo');
+      error.status = 401;
+      throw error;
+    }
+
+    const valida = await bcrypt.compare(datos.contrasena, usuario.contrasena);
+
+    if (!valida) {
+      console.warn('Cambio de correo rechazado: la contrasena no coincide');
+
+      const error = new Error('La contraseña no es correcta');
+      error.status = 401;
+      throw error;
+    }
+
+    // RN-01: el correo es unico entre las cuentas activas
+    if (await usuarioRepository.correoUsadoPorOtro(datos.correo, idUsuario)) {
+      const error = new Error('Ese correo ya está registrado en otra cuenta');
+      error.status = 409;
+      throw error;
+    }
+  }
+
+  await usuarioRepository.actualizarDatosPropios(idUsuario, {
+    nombre: datos.nombre,
+    correo: datos.correo
+  });
+
+  console.log('Datos personales actualizados para el usuario', idUsuario);
+
+  return obtenerPerfil(idUsuario);
+}
+
+/**
+ * Preferencias de avisos de la cuenta (RF-12).
+ *
+ * Si nunca se guardaron, se devuelven los valores por defecto en lugar de un
+ * 404: la pantalla necesita algo que mostrar en los interruptores, y "no has
+ * cambiado nada" no es un error.
+ *
+ * @param {number} idUsuario
+ * @returns {Promise<{resumen: boolean, resenas: boolean, novedades: boolean}>}
+ */
+async function obtenerMisPreferencias(idUsuario) {
+  const fila = await usuarioRepository.buscarPreferencias(idUsuario);
+
+  if (!fila) {
+    return { resumen: true, resenas: true, novedades: false, guardadas: false };
+  }
+
+  return {
+    resumen: Boolean(fila.aviso_resumen),
+    resenas: Boolean(fila.aviso_resenas),
+    novedades: Boolean(fila.aviso_novedades),
+    guardadas: true
+  };
+}
+
+/**
+ * Guarda las preferencias de avisos.
+ *
+ * @param {number} idUsuario
+ * @param {object} prefs - Ya validadas.
+ */
+async function guardarMisPreferencias(idUsuario, prefs) {
+  await usuarioRepository.guardarPreferencias(idUsuario, prefs);
+
+  return obtenerMisPreferencias(idUsuario);
+}
+
 module.exports = {
   iniciarSesion,
   cerrarSesion,
   cambiarContrasena,
   eliminarMiCuenta,
+  actualizarMisDatos,
+  obtenerMisPreferencias,
+  guardarMisPreferencias,
   obtenerPerfil,
   registrar,
   solicitarRecuperacion,

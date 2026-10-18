@@ -163,10 +163,58 @@ async function eliminarMiCuenta(req, res, next) {
   }
 }
 
+/**
+ * PUT /api/usuarios/me — actualiza los datos personales (RF-12).
+ */
+async function actualizarMisDatos(req, res, next) {
+  try {
+    const usuario = await authService.actualizarMisDatos(req.usuario.id, req.body);
+
+    return res.status(200).json({
+      message: 'Datos actualizados correctamente',
+      data: usuario
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/usuarios/me/preferencias — avisos de la cuenta (RF-12).
+ */
+async function obtenerMisPreferencias(req, res, next) {
+  try {
+    const prefs = await authService.obtenerMisPreferencias(req.usuario.id);
+
+    return res.status(200).json({ data: prefs });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PUT /api/usuarios/me/preferencias — guarda los avisos de la cuenta.
+ */
+async function guardarMisPreferencias(req, res, next) {
+  try {
+    const prefs = await authService.guardarMisPreferencias(req.usuario.id, req.body);
+
+    return res.status(200).json({
+      message: 'Preferencias guardadas correctamente',
+      data: prefs
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   crearUsuario,
   obtenerMiPerfil,
   cambiarMiContrasena,
+  actualizarMisDatos,
+  obtenerMisPreferencias,
+  guardarMisPreferencias,
   eliminarMiCuenta,
   listarUsuarios,
   obtenerUsuario,

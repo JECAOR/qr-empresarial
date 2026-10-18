@@ -21,6 +21,11 @@ const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Se acepta con o sin la arroba delante.
 const FORMATO_INSTAGRAM = /^@?[A-Za-z0-9._]{1,30}$/;
 
+// Los tres temas que existen en el CSS. Un valor inventado dejaria la
+// pantalla sin colores, asi que se rechaza aqui aunque la base tambien lo
+// impida con su ENUM.
+const TEMAS = ['indigo', 'teal', 'terracota'];
+
 const LIMITES = {
   nombreNegocio: 150,
   categoria: 80,
@@ -106,6 +111,14 @@ function validarPerfil(req, res, next) {
     });
   }
 
+  const tema = textoDe('tema');
+
+  if (tema && !TEMAS.includes(tema)) {
+    return res.status(400).json({
+      message: `El tema debe ser uno de: ${TEMAS.join(', ')}`
+    });
+  }
+
   // El cuerpo queda normalizado para las capas siguientes
   req.body = {
     nombreNegocio,
@@ -116,7 +129,10 @@ function validarPerfil(req, res, next) {
     correoContacto: correoContacto || null,
     instagram: instagram || null,
     horario: textoDe('horario') || null,
-    imagen: imagen || null
+    imagen: imagen || null,
+    // Se deja en null a proposito cuando no llega: el repositorio conserva
+    // entonces el que ya tenia, y un perfil nuevo toma el de la base
+    tema: tema || null
   };
 
   next();
@@ -124,5 +140,6 @@ function validarPerfil(req, res, next) {
 
 module.exports = {
   validarPerfil,
-  esUrlValida
+  esUrlValida,
+  TEMAS
 };

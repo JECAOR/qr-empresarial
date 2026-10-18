@@ -16,7 +16,9 @@ const {
   validarActualizarUsuario,
   validarEstado,
   validarCambioContrasena,
-  validarEliminarMiCuenta
+  validarEliminarMiCuenta,
+  validarMisDatos,
+  validarPreferencias
 } = require('./usuario.validator');
 
 const router = express.Router();
@@ -28,6 +30,13 @@ router.use(autenticar);
 // Debe declararse ANTES de /:idUsuario, o Express interpretaria "me"
 // como un identificador y el validador responderia 400.
 router.get('/me', usuarioController.obtenerMiPerfil);
+
+// PUT /api/usuarios/me — actualiza los datos personales (RF-12)
+router.put('/me', validarMisDatos, usuarioController.actualizarMisDatos);
+
+// GET y PUT /api/usuarios/me/preferencias — avisos de la cuenta (RF-12)
+router.get('/me/preferencias', usuarioController.obtenerMisPreferencias);
+router.put('/me/preferencias', validarPreferencias, usuarioController.guardarMisPreferencias);
 
 // PUT /api/usuarios/me/contrasena — cambia la contrasena propia.
 // Tambien antes de /:idUsuario, por la misma razon.

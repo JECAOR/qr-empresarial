@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.6.0
+- **Versión:** v1.7.0
 
 ## Resumen
 
@@ -21,6 +21,9 @@ Documentación de los endpoints disponibles.
 | GET | `/auth/restablecer/:token` | Público | Comprobar el enlace |
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
+| PUT | `/usuarios/me` | Autenticado | Actualizar los datos personales |
+| GET | `/usuarios/me/preferencias` | Autenticado | Avisos de la cuenta |
+| PUT | `/usuarios/me/preferencias` | Autenticado | Guardar los avisos |
 | PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
@@ -324,6 +327,74 @@ Devuelve el perfil del usuario autenticado. El identificador sale del token, no 
 }
 ```
 
+### PUT /api/usuarios/me
+
+Actualiza los datos personales de la cuenta (RF-12). Antes no había forma de hacerlo: la
+pantalla de Configuración solo ofrecía cambiar la contraseña.
+
+**Cuerpo**
+
+```json
+{
+  "nombre": "Panadería La Espiga",
+  "correo": "contacto@laespiga.co",
+  "contrasena": "Clave123*"
+}
+```
+
+**La contraseña solo hace falta si el correo cambia.** Para corregir el nombre no se pide:
+no cambia nada con lo que se pueda entrar a la cuenta. El correo sí es el identificador con
+el que se inicia sesión y al que llega el enlace de recuperación, así que quien se hiciera
+con una sesión abierta podría cambiarlo y después apropiarse de la cuenta con «olvidé mi
+contraseña».
+
+**El rol no se puede cambiar por aquí**, aunque llegue en el cuerpo. La actualización
+administrativa (`PUT /api/usuarios/:idUsuario`) sí puede; esta no, o cualquiera se ascendería
+a administrador cambiando sus «datos personales».
+
+**Errores:** 400 (nombre de menos de 2 caracteres, correo con formato inválido), 401 (falta
+la contraseña al cambiar el correo, o no es correcta), 404 (la cuenta ya no existe), 409 (ese
+correo ya es de otra cuenta, RN-01).
+
+---
+
+### GET /api/usuarios/me/preferencias
+
+Los avisos que la cuenta quiere recibir (RF-12). Vivían solo en el navegador: quien entraba
+desde otro equipo los perdía.
+
+```json
+{
+  "data": {
+    "resumen": true,
+    "resenas": true,
+    "novedades": false,
+    "guardadas": false
+  }
+}
+```
+
+`guardadas: false` significa que esa cuenta nunca cambió nada y se están devolviendo los
+valores por defecto. **No es un 404**: la pantalla necesita algo que mostrar en los
+interruptores, y «no has cambiado nada» no es un error.
+
+---
+
+### PUT /api/usuarios/me/preferencias
+
+**Cuerpo:** `{ "resumen": false, "resenas": true, "novedades": true }`
+
+**Los tres son obligatorios.** La pantalla manda siempre los tres interruptores, y aceptar un
+cuerpo a medias dejaría los que faltan en su valor por defecto sin que nadie lo pidiera.
+
+La fila se crea la primera vez que se guarda, con un `INSERT ... ON DUPLICATE KEY UPDATE`: la
+columna `id_usuario` es única, así que la base decide si toca crear o actualizar y no hay
+hueco entre consultar y escribir.
+
+**Errores:** 400 (falta algún aviso o no es booleano), 401.
+
+---
+
 ### PUT /api/usuarios/me/contrasena
 
 Cambia la contraseña del usuario autenticado. El identificador sale del token, así que
@@ -581,6 +652,16 @@ seguridad. Los campos opcionales que lleguen vacíos se guardan como `NULL`, par
 teléfono» y «teléfono en blanco» no sean dos cosas distintas en la base.
 
 **El `slug` no se acepta en el cuerpo:** lo decide el servidor y no se puede cambiar.
+
+**El `tema`** (`indigo`, `teal` o `terracota`) es el color de marca del negocio, no una
+preferencia de quien lo mira: por eso vive aquí y no en la tabla de preferencias de la
+cuenta. **La vista pública lo aplica**, así que quien escanea el código ve los colores que
+eligió el negocio; antes esa pantalla usaba el tema guardado en el navegador del visitante y
+el color del negocio no llegaba nunca.
+
+Si no se envía, **se conserva el que ya tenía**. Importa porque el formulario de los datos
+del negocio no lo manda —se cambia con su propio selector—, y sin eso guardar el teléfono
+devolvería el color a `indigo` sin que nadie lo pidiera.
 
 **Errores:** 400 (falta el nombre; algún formato o largo inválido), 401 (sin token).
 
@@ -955,11 +1036,11 @@ sus eventos.
 
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 170 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 193 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
 | Endpoint | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Módulos Configuración y Administración | RF-12 a RF-15 | Pendientes |
+| Módulo Administración | RF-13 a RF-15 | Pendiente |

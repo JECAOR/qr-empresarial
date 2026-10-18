@@ -133,6 +133,92 @@ async function eliminarLogico(idUsuario) {
   return resultado.affectedRows;
 }
 
+/**
+ * Actualiza el nombre y el correo de una cuenta (RF-12).
+ *
+ * Es distinta de la actualizacion administrativa: esa tambien puede cambiar
+ * el rol, y aqui nadie debe poder ascenderse a administrador cambiando sus
+ * "datos personales".
+ *
+ * @param {number} idUsuario
+ * @param {{nombre: string, correo: string}} datos
+ * @returns {Promise<number>}
+ */
+async function actualizarDatosPropios(idUsuario, datos) {
+  const [resultado] = await pool.execute(
+    `UPDATE usuario
+     SET nombre = ?, correo = ?
+     WHERE id_usuario = ? AND deleted_at IS NULL`,
+    [datos.nombre, datos.correo, idUsuario]
+  );
+
+  return resultado.affectedRows;
+}
+
+/**
+ * Comprueba si otro usuario ya tiene ese correo (RN-01).
+ *
+ * Se excluye la propia cuenta: guardar el formulario sin cambiar el correo
+ * no deberia chocar consigo mismo.
+ *
+ * @param {string} correo
+ * @param {number} idUsuario
+ * @returns {Promise<boolean>}
+ */
+async function correoUsadoPorOtro(correo, idUsuario) {
+  const [filas] = await pool.execute(
+    `SELECT id_usuario FROM usuario
+     WHERE correo = ? AND id_usuario <> ? AND deleted_at IS NULL`,
+    [correo, idUsuario]
+  );
+
+  return filas.length > 0;
+}
+
+/**
+ * Preferencias de avisos de una cuenta (RF-12).
+ *
+ * Devuelve undefined si la cuenta nunca guardo ninguna: la fila se crea al
+ * guardar por primera vez, y hasta entonces valen los valores por defecto
+ * de la tabla.
+ *
+ * @param {number} idUsuario
+ * @returns {Promise<object|undefined>}
+ */
+async function buscarPreferencias(idUsuario) {
+  const [filas] = await pool.execute(
+    `SELECT aviso_resumen, aviso_resenas, aviso_novedades, fecha_actualizacion
+     FROM preferencia_usuario
+     WHERE id_usuario = ?`,
+    [idUsuario]
+  );
+
+  return filas[0];
+}
+
+/**
+ * Guarda las preferencias de avisos.
+ *
+ * Un solo INSERT ... ON DUPLICATE KEY UPDATE en lugar de consultar y luego
+ * decidir: la columna id_usuario es UNIQUE, asi que la base resuelve si toca
+ * crear o actualizar, y no hay hueco entre la consulta y la escritura.
+ *
+ * @param {number} idUsuario
+ * @param {{resumen: boolean, resenas: boolean, novedades: boolean}} prefs
+ */
+async function guardarPreferencias(idUsuario, prefs) {
+  await pool.execute(
+    `INSERT INTO preferencia_usuario
+       (id_usuario, aviso_resumen, aviso_resenas, aviso_novedades)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       aviso_resumen = VALUES(aviso_resumen),
+       aviso_resenas = VALUES(aviso_resenas),
+       aviso_novedades = VALUES(aviso_novedades)`,
+    [idUsuario, prefs.resumen ? 1 : 0, prefs.resenas ? 1 : 0, prefs.novedades ? 1 : 0]
+  );
+}
+
 module.exports = {
   buscarPorCorreo,
   crear,
@@ -140,5 +226,9 @@ module.exports = {
   buscarPorId,
   actualizar,
   actualizarEstado,
-  eliminarLogico
+  eliminarLogico,
+  actualizarDatosPropios,
+  correoUsadoPorOtro,
+  buscarPreferencias,
+  guardarPreferencias
 };

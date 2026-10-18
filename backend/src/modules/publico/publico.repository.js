@@ -29,7 +29,7 @@ async function buscarPerfilPublicable(slug) {
   const [filas] = await pool.execute(
     `SELECT p.id_perfil, p.nombre_negocio, p.categoria, p.descripcion,
             p.direccion, p.telefono, p.correo_contacto, p.instagram,
-            p.horario, p.imagen, p.slug, p.fecha_actualizacion,
+            p.horario, p.imagen, p.tema, p.slug, p.fecha_actualizacion,
             q.activo AS qr_activo
      FROM perfil_empresarial p
      JOIN usuario u ON u.id_usuario = p.id_usuario
