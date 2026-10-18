@@ -2,6 +2,7 @@
 // PUBLICO.CONTROLLER.JS — interaccion HTTP de la vista publica (RF-09)
 // ============================================
 
+const estadisticaService = require('../estadisticas/estadistica.service');
 const publicoService = require('./publico.service');
 
 /**
@@ -25,4 +26,25 @@ async function obtenerPerfilPublico(req, res, next) {
   }
 }
 
-module.exports = { obtenerPerfilPublico };
+/**
+ * POST /api/publico/:slug/eventos — registra un escaneo, una visita o un
+ * clic (RF-11). Sin autenticacion, igual que el resto de este modulo.
+ *
+ * Responde 204: quien informa el evento no necesita nada de vuelta, y asi la
+ * respuesta no gasta ancho de banda en un movil.
+ */
+async function registrarEvento(req, res, next) {
+  try {
+    await estadisticaService.registrarEvento(
+      req.params.slug,
+      req.body.tipo,
+      req.body.idEnlace || null
+    );
+
+    return res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { obtenerPerfilPublico, registrarEvento };

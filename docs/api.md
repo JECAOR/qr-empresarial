@@ -5,7 +5,7 @@ Documentación de los endpoints disponibles.
 - **Base:** `http://localhost:3000/api`
 - **Formato:** JSON en peticiones y respuestas
 - **Autenticación:** JWT en la cabecera `Authorization: Bearer <token>`
-- **Versión:** v1.5.0
+- **Versión:** v1.6.0
 
 ## Resumen
 
@@ -13,6 +13,7 @@ Documentación de los endpoints disponibles.
 |---|---|---|---|
 | GET | `/health` | Público | Comprobación del servidor |
 | GET | `/publico/:slug` | Público | Perfil y contenido visible |
+| POST | `/publico/:slug/eventos` | Público | Registra un escaneo, visita o clic |
 | POST | `/auth/registro` | Público | Registro de una empresa |
 | POST | `/auth/login` | Público | Iniciar sesión |
 | POST | `/auth/logout` | Autenticado | Cerrar la sesión actual |
@@ -35,6 +36,7 @@ Documentación de los endpoints disponibles.
 | POST | `/qr` | Autenticado | Generar el código QR |
 | GET | `/qr/imagen` | Autenticado | Descargar en PNG, SVG o PDF |
 | PATCH | `/qr/estado` | Autenticado | Activar o desactivar |
+| GET | `/estadisticas` | Autenticado | Escaneos, visitas, clics y serie diaria |
 | POST | `/usuarios` | Administrador | Crear usuario con cualquier rol |
 | GET | `/usuarios` | Administrador | Listar usuarios activos |
 | GET | `/usuarios/:idUsuario` | Administrador | Consultar un usuario |
@@ -863,13 +865,101 @@ verse.
 
 ---
 
+## Estadísticas
+
+El RF-11 pide tres medidas: **escaneos del QR, visitas al perfil y clics en enlaces**. Son
+los tres valores del ENUM `evento.tipo`, que ya venían en el esquema original.
+
+**Cómo se distingue un escaneo de una visita.** La imagen del código lleva `?qr=1`; el
+enlace que se comparte por WhatsApp o se copia desde el panel, no. La vista pública mira ese
+parámetro al cargar. La dirección guardada en `codigo_qr` no cambia: el parámetro solo marca
+el origen y no lleva a otro sitio, así que un código impreso seguiría funcionando si mañana
+se quitara.
+
+**No se identifica a quien visita.** No se guarda la IP ni nada equivalente, así que se
+cuentan visitas, no visitantes únicos. El panel mostraba una tarjeta de «visitantes únicos»
+que no se podía calcular con lo que se guarda, y ahora dice «visitas al perfil», que es lo
+que pide el requisito.
+
+### POST /api/publico/:slug/eventos
+
+Sin autenticación: lo informa la vista pública, que no tiene sesión.
+
+**Cuerpo**
+
+```json
+{ "tipo": "clic", "idEnlace": 12 }
+```
+
+`tipo` es `escaneo`, `visita` o `clic`. El `idEnlace` solo en los clics.
+
+**Responde 204, sin cuerpo.** Quien informa el evento no necesita nada de vuelta, y así la
+respuesta no gasta ancho de banda en un móvil. La pantalla lo envía con `sendBeacon`, que el
+navegador entrega aunque la página se esté yendo al enlace: con un `fetch` normal, la
+navegación cancelaría la petición y el clic no se contaría nunca.
+
+**Nada de lo que llega es de fiar**, porque viene de una pantalla abierta:
+
+- El perfil se resuelve por slug con la misma consulta que la vista pública. Si el perfil no
+  se puede mostrar —cuenta restringida, código desactivado—, tampoco se le cuentan visitas.
+- El enlace se comprueba contra ese perfil antes de guardar nada: con el identificador de
+  otro negocio, 400.
+- Hay un límite de 120 eventos por IP cada 15 minutos. Es un endpoint abierto que escribe en
+  la tabla que más crece del esquema; sin techo, cualquiera podría inflar las estadísticas de
+  un negocio con un bucle. El cupo es alto a propósito, porque una misma conexión puede traer
+  a varias personas.
+
+**Errores:** 400 (tipo inválido, clic sin enlace o con uno de otro perfil), 404 (el perfil no
+está disponible), 429 (se agotó el cupo).
+
+---
+
+### GET /api/estadisticas
+
+Lo que muestra el panel. Admite `?dias=7|30|90`; cualquier otro valor cae en 7, para que una
+petición no pueda poner a la base a recorrer la tabla entera.
+
+```json
+{
+  "data": {
+    "dias": 7,
+    "totales": { "escaneos": 248, "visitas": 96, "clics": 73, "conversion": 21.2 },
+    "serie": [
+      { "fecha": "2026-10-17", "etiqueta": "Sáb", "escaneos": 33, "visitas": 12, "clics": 10 }
+    ],
+    "enlacesMasPulsados": [
+      { "idEnlace": 1, "titulo": "Ver menú completo", "categoria": "Página Web", "clics": 41 }
+    ]
+  }
+}
+```
+
+**La `conversion`** es el porcentaje de quienes vieron el perfil y pulsaron algo
+(`clics / (visitas + escaneos)`). Es la medida que le dice al negocio si su contenido sirve de
+algo.
+
+**La serie trae todos los días del rango**, incluidos los que no tuvieron actividad: un
+martes sin escaneos aparece como cero y no desaparece del eje de la gráfica.
+
+**Las fechas se agrupan en la zona horaria local, no en UTC.** Al construir las claves con
+`toISOString()`, en Colombia —cinco horas por detrás— a partir de las 19:00 los eventos del
+día aparecían en el día anterior y el de hoy salía en cero. Es un fallo que solo se ve a
+ciertas horas, y por eso conviene tenerlo escrito.
+
+**Los enlaces eliminados no aparecen** en el ranking: al borrar contenido se borran también
+sus eventos.
+
+**Errores:** 401 (sin token), 404 (la cuenta no tiene perfil empresarial).
+
+---
+
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 152 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 170 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
 | Endpoint | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Módulos Estadísticas, Configuración y Administración | RF-11 a RF-15 | Pendientes |
+| Módulos Configuración y Administración | RF-12 a RF-15 | Pendientes |

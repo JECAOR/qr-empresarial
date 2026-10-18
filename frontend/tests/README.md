@@ -49,6 +49,7 @@ npm run test:ui
 | `perfil.spec.js` | Perfil empresarial: sincronización con el servidor, guardado y validación del RF-10 |
 | `publico.spec.js` | Vista pública: perfil y contenido sin sesión, contacto incompleto y escape de HTML |
 | `menu.spec.js` | Pantalla del menú: bloques de la sección, volver al perfil, estados vacíos y escape de HTML |
+| `estadisticas.spec.js` | Tarjetas y gráfica del panel con datos del servidor, y el registro de escaneos, visitas y clics |
 | `ayudas.js` | No es una prueba: es el apoyo compartido que simula la API |
 
 ## Por qué no hace falta el backend

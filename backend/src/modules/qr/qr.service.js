@@ -28,6 +28,25 @@ const TAMANO_POR_DEFECTO = 400;
 
 const COLOR_POR_DEFECTO = '#111827';
 
+// Marca que distingue un escaneo de una visita directa (RF-11).
+//
+// La imagen del codigo lleva este parametro; el enlace que se comparte por
+// WhatsApp o se copia, no. Asi la vista publica sabe por donde llego la
+// persona y puede contar "escaneos del QR" aparte de "visitas al perfil",
+// que son dos de las tres medidas que pide el RF-11.
+//
+// La direccion guardada en la base no cambia: sigue siendo la del perfil. El
+// parametro solo marca el origen, no lleva a otro sitio, asi que un codigo
+// impreso seguiria funcionando igual si manana se quitara.
+const MARCA_DE_ESCANEO = 'qr=1';
+
+/**
+ * Agrega la marca de escaneo a una direccion.
+ */
+function conMarcaDeEscaneo(url) {
+  return url.includes('?') ? `${url}&${MARCA_DE_ESCANEO}` : `${url}?${MARCA_DE_ESCANEO}`;
+}
+
 /**
  * Dirección pública que codifica el QR.
  *
@@ -217,8 +236,12 @@ async function generarImagen(idUsuario, consulta) {
 
   const nombre = `qr-${qr.slug}`;
 
+  // Lo que queda codificado lleva la marca; lo que se muestra y se comparte
+  // en la pantalla, no
+  const destino = conMarcaDeEscaneo(qr.url);
+
   if (formato === 'svg') {
-    const svg = await QRCode.toString(qr.url, { ...opciones, type: 'svg' });
+    const svg = await QRCode.toString(destino, { ...opciones, type: 'svg' });
 
     return {
       buffer: Buffer.from(svg, 'utf8'),
@@ -228,7 +251,7 @@ async function generarImagen(idUsuario, consulta) {
     };
   }
 
-  const png = await QRCode.toBuffer(qr.url, { ...opciones, type: 'png' });
+  const png = await QRCode.toBuffer(destino, { ...opciones, type: 'png' });
 
   if (formato === 'png') {
     return { buffer: png, tipo: 'image/png', extension: 'png', nombre };
@@ -287,5 +310,7 @@ module.exports = {
   cambiarEstadoMiQr,
   generarImagen,
   urlPublica,
-  FORMATOS
+  conMarcaDeEscaneo,
+  FORMATOS,
+  MARCA_DE_ESCANEO
 };

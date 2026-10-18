@@ -120,6 +120,34 @@
     {
       "key": "idOculto",
       "value": ""
+    },
+    {
+      "key": "tokenStats",
+      "value": ""
+    },
+    {
+      "key": "slugStats",
+      "value": ""
+    },
+    {
+      "key": "idEnlaceStats",
+      "value": ""
+    },
+    {
+      "key": "numEnlaceStats",
+      "value": ""
+    },
+    {
+      "key": "escaneosAntes",
+      "value": ""
+    },
+    {
+      "key": "visitasAntes",
+      "value": ""
+    },
+    {
+      "key": "clicsAntes",
+      "value": ""
     }
   ],
   "item": [
@@ -7105,6 +7133,835 @@
                 {
                   "key": "token",
                   "value": "{{tokenPublico}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia 6 - Estadisticas (RF-11)",
+      "item": [
+        {
+          "name": "148 Login de la empresa (prepara el escenario)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Las estadisticas son del panel y van autenticadas; el registro de eventos, no.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('tokenStats', json.data.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "149 Consultar el slug del perfil",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/perfiles/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "perfiles",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set('slugStats', d.slug);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "150 Agregar un enlace para medir sus clics (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"enlace\",\n  \"titulo\": \"Enlace medido\",\n  \"detalle\": \"https://laespiga.co/medido\",\n  \"idCategoria\": 4,\n  \"seccion\": \"menu\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('idEnlaceStats', json.data.id);",
+                  "// Al servidor se le manda solo el numero del identificador compuesto",
+                  "pm.collectionVariables.set('numEnlaceStats', json.data.id.split('-')[1]);",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "151 Estadisticas de partida (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/estadisticas",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "estadisticas"
+              ]
+            },
+            "description": "Guarda los totales de ahora para comprobar despues que subieron. La coleccion se puede repetir, asi que no se comparan con cero.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = pm.response.json().data.totales;",
+                  "pm.collectionVariables.set('escaneosAntes', t.escaneos);",
+                  "pm.collectionVariables.set('visitasAntes', t.visitas);",
+                  "pm.collectionVariables.set('clicsAntes', t.clics);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae las tres medidas del RF-11', () => {",
+                  "  pm.expect(t).to.have.property('escaneos');",
+                  "  pm.expect(t).to.have.property('visitas');",
+                  "  pm.expect(t).to.have.property('clics');",
+                  "});",
+                  "pm.test('La serie trae los siete dias', () => pm.expect(pm.response.json().data.serie).to.have.lengthOf(7));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "152 Registrar un escaneo SIN token (204)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugStats}}/eventos",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugStats}}",
+                "eventos"
+              ]
+            },
+            "description": "Lo informa la vista publica, que no tiene sesion. Responde 204 sin cuerpo: quien informa no necesita nada de vuelta.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"escaneo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "153 Registrar una visita (204)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugStats}}/eventos",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugStats}}",
+                "eventos"
+              ]
+            },
+            "description": "La imagen del codigo lleva ?qr=1 y el enlace que se comparte no: por eso la pantalla sabe distinguir un escaneo de una visita directa.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"visita\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "154 Registrar un clic (204)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugStats}}/eventos",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugStats}}",
+                "eventos"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"clic\",\n  \"idEnlace\": \"{{numEnlaceStats}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "155 Tipo de evento inventado (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugStats}}/eventos",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugStats}}",
+                "eventos"
+              ]
+            },
+            "description": "Los tipos son los tres del ENUM de la tabla: escaneo, visita y clic.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"loquesea\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "156 Clic sin indicar el enlace (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugStats}}/eventos",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugStats}}",
+                "eventos"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"clic\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "157 Clic con un enlace de otro perfil (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/publico/{{slugStats}}/eventos",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "{{slugStats}}",
+                "eventos"
+              ]
+            },
+            "description": "El identificador llega de una pantalla abierta, asi que se comprueba que el enlace sea de ese perfil antes de guardar nada.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"clic\",\n  \"idEnlace\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "158 Evento de un slug que no existe (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/publico/no-existe/eventos",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "no-existe",
+                "eventos"
+              ]
+            },
+            "description": "Un slug inventado no crea filas en la tabla.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"visita\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "159 Los totales subieron (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/estadisticas",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "estadisticas"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = pm.response.json().data.totales;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Un escaneo mas', () => pm.expect(t.escaneos).to.eql(Number(pm.collectionVariables.get('escaneosAntes')) + 1));",
+                  "pm.test('Una visita mas', () => pm.expect(t.visitas).to.eql(Number(pm.collectionVariables.get('visitasAntes')) + 1));",
+                  "pm.test('Un clic mas', () => pm.expect(t.clics).to.eql(Number(pm.collectionVariables.get('clicsAntes')) + 1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "160 El clic aparece en el ranking de enlaces (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/estadisticas",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "estadisticas"
+              ]
+            },
+            "description": "Se devuelve el titulo y no solo el identificador: al dueno del negocio le sirve saber que pulsaron 'Enlace medido', no que pulsaron el enlace 12.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const top = pm.response.json().data.enlacesMasPulsados;",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Esta el enlace medido', () => pm.expect(top.map(e => e.titulo)).to.include('Enlace medido'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "161 El evento de hoy cae en el dia de hoy (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/estadisticas",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "estadisticas"
+              ]
+            },
+            "description": "La serie se arma con la fecha local, no en UTC: con toISOString(), en Colombia a partir de las 19:00 los eventos aparecian en el dia anterior y hoy salia en cero.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const serie = pm.response.json().data.serie;",
+                  "const hoy = serie[serie.length - 1];",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Hoy tiene actividad', () => pm.expect(hoy.escaneos + hoy.visitas + hoy.clics).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "162 Ventana de 30 dias (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/estadisticas?dias=30",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "estadisticas"
+              ],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Se admiten 7, 30 y 90.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve 30 dias', () => pm.expect(pm.response.json().data.dias).to.eql(30));",
+                  "pm.test('Y 30 puntos en la serie', () => pm.expect(pm.response.json().data.serie).to.have.lengthOf(30));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "163 Ventana no permitida cae en 7 (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/estadisticas?dias=99999",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "estadisticas"
+              ],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "99999"
+                }
+              ]
+            },
+            "description": "Un rango absurdo no falla: se usa el de siete dias. Asi una peticion no puede poner a la base a recorrer la tabla entera, que es la que mas crece.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cae en 7', () => pm.expect(pm.response.json().data.dias).to.eql(7));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "164 Estadisticas sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/estadisticas",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "estadisticas"
+              ]
+            },
+            "description": "Cada cuenta solo ve las de su propio perfil.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "165 Limpiar el enlace de prueba (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido/{{idEnlaceStats}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido",
+                "{{idEnlaceStats}}"
+              ]
+            },
+            "description": "Al borrar el enlace se borran sus eventos, asi que el ranking queda como estaba.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenStats}}",
                   "type": "string"
                 }
               ]

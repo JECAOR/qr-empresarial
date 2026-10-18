@@ -21,6 +21,25 @@ const USUARIO = {
 
 const TOKEN = "token-de-prueba-sin-valor-real";
 
+// Estadisticas que devuelve la API simulada (RF-11)
+const ESTADISTICAS = {
+  dias: 7,
+  totales: { escaneos: 248, visitas: 96, clics: 73, conversion: 21.2 },
+  serie: [
+    { fecha: "2026-10-11", etiqueta: "Dom", escaneos: 20, visitas: 8, clics: 6 },
+    { fecha: "2026-10-12", etiqueta: "Lun", escaneos: 31, visitas: 12, clics: 9 },
+    { fecha: "2026-10-13", etiqueta: "Mar", escaneos: 28, visitas: 11, clics: 8 },
+    { fecha: "2026-10-14", etiqueta: "Mié", escaneos: 44, visitas: 17, clics: 13 },
+    { fecha: "2026-10-15", etiqueta: "Jue", escaneos: 52, visitas: 20, clics: 15 },
+    { fecha: "2026-10-16", etiqueta: "Vie", escaneos: 40, visitas: 16, clics: 12 },
+    { fecha: "2026-10-17", etiqueta: "Sáb", escaneos: 33, visitas: 12, clics: 10 }
+  ],
+  enlacesMasPulsados: [
+    { idEnlace: 1, titulo: "Ver menú completo", categoria: "Página Web", clics: 41 },
+    { idEnlace: 3, titulo: "WhatsApp directo", categoria: "WhatsApp", clics: 32 }
+  ]
+};
+
 // Codigo QR que devuelve la API simulada (RF-07)
 const QR = {
   idQr: 1,
@@ -121,7 +140,8 @@ async function simularApi(page, opciones = {}) {
     errorAlOrdenar = null,
     sinQr = false,
     errorAlGenerarQr = null,
-    perfilPublicoNoDisponible = false
+    perfilPublicoNoDisponible = false,
+    sinEstadisticas = false
   } = opciones;
 
   // El simulador recuerda el perfil y el contenido, como haría el servidor:
@@ -130,6 +150,10 @@ async function simularApi(page, opciones = {}) {
   let perfilActual = { ...PERFIL };
   let contenidoActual = contenidoInicial();
   let siguienteId = 100;
+
+  // Los eventos que informó la pantalla, para poder comprobarlos (RF-11)
+  const eventosInformados = [];
+  page.eventosInformados = eventosInformados;
 
   await page.route("**/api/**", async (route) => {
     const url = route.request().url();
@@ -169,6 +193,21 @@ async function simularApi(page, opciones = {}) {
       }
 
       return responder(200, { message: "El enlace es válido" });
+    }
+
+    if (url.includes("/estadisticas")) {
+      if (sinEstadisticas) {
+        return responder(404, { message: "Esta cuenta todavía no tiene un perfil empresarial" });
+      }
+
+      return responder(200, { data: ESTADISTICAS });
+    }
+
+    if (url.includes("/eventos")) {
+      // El registro de eventos responde 204 y sin cuerpo
+      eventosInformados.push(JSON.parse(route.request().postData() || "{}"));
+
+      return route.fulfill({ status: 204, body: "" });
     }
 
     if (url.includes("/publico/")) {
@@ -472,6 +511,6 @@ async function prepararSesion(page) {
 }
 
 module.exports = {
-  USUARIO, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS, QR,
+  USUARIO, TOKEN, TOKEN_NUEVO, PERFIL, CATEGORIAS, QR, ESTADISTICAS,
   simularApi, sembrarSesion, prepararSesion, simularImagenes
 };

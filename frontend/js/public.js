@@ -192,8 +192,12 @@ function pintarContenido(porSeccion) {
       const detalle = escapeHtml(item.detalle);
 
       if (item.tipo === "enlace") {
+        // El identificador va en el elemento para poder contar el clic
+        // (RF-11). Es de la forma "enlace-12"; al servidor se le manda solo
+        // el número.
         return `
-          <a class="profile-block" href="${escapeHtml(item.detalle)}" target="_blank" rel="noopener noreferrer">
+          <a class="profile-block" href="${escapeHtml(item.detalle)}" target="_blank" rel="noopener noreferrer"
+             data-id="${escapeHtml(item.id)}">
             <span class="profile-block-title">${titulo}</span>
             <span class="profile-block-detail">${escapeHtml(item.categoria)}</span>
           </a>`;
@@ -238,6 +242,44 @@ function prepararEnlaceDelMenu(slug, porSeccion) {
   boton.href = `/menu.html?slug=${encodeURIComponent(slug)}`;
 }
 
+/**
+ * Informa la visita, distinguiendo si llegó escaneando el código (RF-11).
+ *
+ * La imagen del QR lleva ?qr=1; el enlace que se comparte por WhatsApp o se
+ * copia, no. Son las dos primeras medidas que pide el requisito: "escaneos
+ * del QR" y "visitas al perfil".
+ */
+function informarVisita(slug) {
+  const vinoDelCodigo = new URLSearchParams(window.location.search).get("qr") === "1";
+
+  informarEvento(slug, { tipo: vinoDelCodigo ? "escaneo" : "visita" });
+}
+
+/**
+ * Cuenta los clics en los enlaces (RF-11).
+ *
+ * Se usa delegación sobre el contenedor porque los bloques se dibujan después
+ * de que llegue la respuesta. Y no se impide la navegación: el evento se
+ * manda con sendBeacon, que el navegador entrega aunque la página se vaya.
+ */
+function prepararConteoDeClics(slug) {
+  const contenedor = document.getElementById("public-content");
+
+  if (!contenedor) return;
+
+  contenedor.addEventListener("click", (e) => {
+    const bloque = e.target.closest("a.profile-block[data-id]");
+
+    if (!bloque) return;
+
+    const idEnlace = Number(String(bloque.dataset.id).split("-")[1]);
+
+    if (!Number.isInteger(idEnlace)) return;
+
+    informarEvento(slug, { tipo: "clic", idEnlace });
+  });
+}
+
 async function cargarPerfilPublico() {
   const slug = slugDeLaDireccion();
 
@@ -252,6 +294,11 @@ async function cargarPerfilPublico() {
     pintarPerfil(data.perfil);
     pintarContenido(data.porSeccion);
     prepararEnlaceDelMenu(slug, data.porSeccion);
+
+    // Se informa después de pintar: si el registro falla, la pantalla ya está
+    // en su sitio. Lo que importa es que la persona vea el perfil.
+    informarVisita(slug);
+    prepararConteoDeClics(slug);
   } catch (error) {
     // 404: no existe, la cuenta está restringida o el código fue desactivado.
     // El servidor responde lo mismo en los tres casos, a propósito.
