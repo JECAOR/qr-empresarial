@@ -82,6 +82,12 @@
   border-radius: 14px;
   padding: 12px 14px;
   border: 1px solid var(--slate-200);
+
+  /* Sin esto la columna no puede encogerse por debajo del ancho del lienzo
+     que dibuja Chart.js, y las cuatro tarjetas sumaban mas que la rejilla:
+     la de "Tasa de conversion" quedaba cortada contra el borde derecho en
+     pantallas de 1366 y 1440. Una rejilla da min-width:auto a sus hijos. */
+  min-width: 0;
 }
 
 .kpi-top-row {
@@ -118,6 +124,17 @@
 .kpi-spark {
   margin-top: 8px;
   height: 28px;
+
+  /* El lienzo se saca del flujo para que su ancho en pixeles no empuje a la
+     tarjeta. Chart.js lo redimensiona solo al de este contenedor. */
+  position: relative;
+}
+
+.kpi-spark canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* ---------- Gráfica principal + panel QR ---------- */

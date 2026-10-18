@@ -246,9 +246,27 @@ function renderMobileNav() {
  * Inicializa el layout compartido de las pantallas internas.
  * Uso en cada página: initLayout({ title: "Dashboard", subtitle: "..." });
  */
+/**
+ * El mes y el ano de hoy, como se leen en Colombia.
+ *
+ * El dashboard lo traia escrito a mano: decia "Jun 2026" pasara lo que
+ * pasara, y en octubre seguia diciendo junio.
+ *
+ * @returns {string} Por ejemplo "oct 2026".
+ */
+function mesActual() {
+  return new Date().toLocaleDateString("es-CO", { month: "short", year: "numeric" });
+}
+
+// El subtitulo de la pantalla, por si hay que recalcularlo cuando llegue el
+// perfil del servidor
+let subtituloDeLaPantalla = null;
+
 function initLayout({ title, subtitle, actionHtml }) {
+  subtituloDeLaPantalla = subtitle;
+
   renderSidebar();
-  renderTopBar(title, subtitle, actionHtml);
+  renderTopBar(title, typeof subtitle === "function" ? subtitle() : subtitle, actionHtml);
   renderMobileNav();
 }
 
@@ -262,4 +280,13 @@ function initLayout({ title, subtitle, actionHtml }) {
 // borraría esos listeners y dejaría botones que no responden.
 window.addEventListener("perfil:sincronizado", () => {
   renderSidebar();
+
+  // El subtitulo tambien puede depender del negocio. Se cambia solo su
+  // texto, no se vuelve a dibujar la barra entera: ahi cuelgan los botones
+  // de cada pantalla con sus propios listeners, y reconstruirla los borraria.
+  if (typeof subtituloDeLaPantalla !== "function") return;
+
+  const el = document.querySelector(".topbar-subtitle");
+
+  if (el) el.textContent = subtituloDeLaPantalla();
 });
