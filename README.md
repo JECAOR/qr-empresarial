@@ -204,7 +204,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (232 peticiones), Jest + Supertest (130) y Playwright + axe-core (382) | En uso |
+| Pruebas | Postman (232 peticiones), Jest + Supertest (130) y Playwright + axe-core (396) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -292,6 +292,18 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `013-sembrar-categorias.sql` | Las ocho categorías de enlace y las cinco de elemento, que no estaban versionadas |
 | `014-ultimo-acceso.sql` | Columna `ultimo_acceso` en `usuario`, para la actividad del RF-13 |
 
+## Evidencias
+
+[`docs/evidencias/`](docs/evidencias) reúne lo que el proyecto formativo pide
+entregar: catorce capturas de las pantallas funcionando con datos reales, la
+salida de las dos suites de pruebas y el historial de commits completo. Su
+propio [README](docs/evidencias/README.md) dice de dónde sale cada archivo.
+
+Las capturas no se toman a mano: las genera
+[`docs/evidencias/generar-capturas.js`](docs/evidencias/generar-capturas.js),
+que abre un navegador, entra con una cuenta y recorre la aplicación **contra el
+servidor real**, con los datos de `database/seed.sql`.
+
 ## Estructura de carpetas
 
 ```text
@@ -332,7 +344,8 @@ qr-empresarial/
 ├── docs/
 │   ├── api.md
 │   ├── control-versiones.md
-│   └── postman/                     # colección de pruebas
+│   ├── postman/                     # colección de pruebas
+│   └── evidencias/                  # capturas, salida de las suites e historial
 ├── .editorconfig
 ├── .gitignore
 └── README.md
@@ -396,11 +409,11 @@ npm run dev               # servidor con nodemon en http://localhost:3000
 # GET  http://localhost:3000/api/health  →  {"status":"ok"}
 # Abra http://localhost:3000/login.html  →  la aplicación completa
 
-# 4. Pruebas automaticas del backend (95, Jest + Supertest)
+# 4. Pruebas automaticas del backend (130, Jest + Supertest)
 # (se sigue en backend/, desde el paso 2)
 npm test                  # crea su propia base qr_empresarial_test; no toca la suya
 
-# 5. Pruebas del frontend (308, Playwright)
+# 5. Pruebas del frontend (396, Playwright)
 cd ../frontend
 npm install
 npx playwright install chromium

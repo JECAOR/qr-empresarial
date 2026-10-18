@@ -36,7 +36,9 @@
               <h2>Tu Código QR</h2>
               <!-- Decía siempre "En línea", pasara lo que pasara. Ahora es el
                    estado real del código, que se puede apagar más abajo. -->
-              <span class="pill-online" id="qr-estado">…</span>
+              <!-- Ocultos hasta que el servidor diga si la página está publicada:
+                   ver pintarVisibilidad() en js/qr.js -->
+              <span class="pill-online" id="qr-estado" hidden>…</span>
             </div>
 
             <div class="qr-body">
@@ -127,7 +129,7 @@
             <div class="qr-side-card">
               <h3>Visibilidad</h3>
               <p class="qr-visibilidad-texto" id="qr-visibilidad-texto"></p>
-              <button type="button" id="qr-visibilidad-btn" class="btn-secondary"></button>
+              <button type="button" id="qr-visibilidad-btn" class="btn-secondary" hidden></button>
             </div>
 
             <div class="qr-info-box">

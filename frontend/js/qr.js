@@ -251,7 +251,12 @@ function pintarVisibilidad() {
 }
 
 document.getElementById("qr-visibilidad-btn").addEventListener("click", () => {
-  const retirar = qrRegistrado && qrRegistrado.activo;
+  // Sin el código no se sabe qué ofrecer. El botón ya nace oculto en el HTML
+  // y solo aparece cuando llega la respuesta, pero la guarda se queda: si no
+  // estuviera, pulsarlo mientras cargaba publicaba una página ya publicada.
+  if (!qrRegistrado) return;
+
+  const retirar = qrRegistrado.activo;
 
   document.getElementById("qr-confirmar-titulo").textContent =
     retirar ? "Retirar tu página" : "Publicar tu página";

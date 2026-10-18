@@ -119,4 +119,4 @@ Las tres se complementan y ninguna sobra:
   para explorar la API.
 - **Jest + Supertest** (130) es la red de seguridad automática del backend: corre entera en
   medio minuto y avisa si un módulo nuevo rompe uno viejo.
-- **Playwright** (382) prueba las pantallas, con la API simulada.
+- **Playwright** (396) prueba las pantallas, con la API simulada.

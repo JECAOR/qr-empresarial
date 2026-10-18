@@ -195,6 +195,8 @@ async function simularApi(page, opciones = {}) {
     errorAlGuardarPerfil = null,
     errorAlOrdenar = null,
     sinQr = false,
+    // El codigo existe pero el dueno retiro su pagina (RF-09)
+    qrRetirado = false,
     errorAlGenerarQr = null,
     perfilPublicoNoDisponible = false,
     sinEstadisticas = false,
@@ -213,6 +215,13 @@ async function simularApi(page, opciones = {}) {
   let perfilActual = { ...PERFIL };
   let contenidoActual = sinContenidoActivo ? [] : contenidoInicial();
   let siguienteId = 100;
+
+  // Una COPIA del codigo, no el objeto del modulo. Las pruebas que lo
+  // retiran escribian sobre QR, que se comparte entre todas las de un mismo
+  // trabajador: la siguiente que abriera la pantalla encontraba la pagina
+  // retirada sin haberla tocado. Salia como prueba intermitente y costo
+  // encontrarlo, porque en solitario pasaban siempre.
+  let qrActual = { ...QR, activo: !qrRetirado };
 
   // Los eventos que informó la pantalla, para poder comprobarlos (RF-11)
   const eventosInformados = [];
@@ -369,7 +378,7 @@ async function simularApi(page, opciones = {}) {
         status: 200,
         contentType: tipos[formato] || "application/octet-stream",
         headers: {
-          "Content-Disposition": `attachment; filename="qr-${QR.slug}.${formato}"`,
+          "Content-Disposition": `attachment; filename="qr-${qrActual.slug}.${formato}"`,
           // Igual que el servidor: sin esto el navegador no deja leerla
           // desde otro origen y el archivo se guardaria con nombre generico
           "Access-Control-Expose-Headers": "Content-Disposition"
@@ -390,11 +399,11 @@ async function simularApi(page, opciones = {}) {
           });
         }
 
-        QR.activo = cuerpo.activo;
+        qrActual = { ...qrActual, activo: cuerpo.activo };
 
         return responder(200, {
-          message: QR.activo ? "Código QR activado" : "Código QR desactivado",
-          data: QR
+          message: qrActual.activo ? "Código QR activado" : "Código QR desactivado",
+          data: qrActual
         });
       }
 
@@ -403,14 +412,14 @@ async function simularApi(page, opciones = {}) {
           return responder(409, { message: errorAlGenerarQr });
         }
 
-        return responder(201, { message: "Código QR generado correctamente", data: QR });
+        return responder(201, { message: "Código QR generado correctamente", data: qrActual });
       }
 
       if (sinQr) {
         return responder(404, { message: "Este perfil todavía no tiene un código QR generado" });
       }
 
-      return responder(200, { data: QR });
+      return responder(200, { data: qrActual });
     }
 
     if (url.includes("/contenido/categorias")) {

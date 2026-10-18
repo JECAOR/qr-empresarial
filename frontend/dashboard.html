@@ -71,8 +71,12 @@
 
             <div class="qr-active-card">
               <div class="qr-active-header">
-                <span class="qr-active-title">QR Activo</span>
-                <span class="pill-online" style="font-size:9px;">● En línea</span>
+                <!-- El titulo y la etiqueta los pinta dashboard.js con lo que
+                     responde GET /api/qr. Estaban escritos aqui y no cambiaban
+                     nunca: quien retirara su pagina volvia al panel y seguia
+                     leyendo que estaba en linea. -->
+                <span class="qr-active-title" id="dash-qr-titulo">Tu código QR</span>
+                <span class="pill-online" style="font-size:9px;" id="dash-qr-estado" hidden></span>
               </div>
               <div class="qr-active-canvas-wrap">
                 <canvas id="qr-active-canvas"></canvas>
@@ -118,7 +122,13 @@
   <script src="js/guardia.js"></script>
   <script src="js/layout.js"></script>
   <script>
-    initLayout({ title: "Dashboard", subtitle: `${getBusinessData().name} · Jun 2026` });
+    // El subtitulo va como funcion y no como texto: el nombre del negocio
+    // sale de la cache del navegador, que en uno nuevo trae los datos de
+    // ejemplo. Asi se recalcula en cuanto la guardia trae el perfil real.
+    initLayout({
+      title: "Dashboard",
+      subtitle: () => `${getBusinessData().name} · ${mesActual()}`
+    });
   </script>
   <script src="js/dashboard.js"></script>
   <script>

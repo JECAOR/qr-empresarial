@@ -227,6 +227,32 @@ test.describe("Publicar y retirar la página", () => {
     await expect(page.locator("#qr-estado")).toHaveText("● Publicada");
   });
 
+  // La tarjeta traía el botón escrito en el HTML, sin texto y ya clicable, y
+  // la etiqueta traía la clase verde. Quien lo pulsara antes de que llegara
+  // la respuesta disparaba la acción contraria: el manejador leía un estado
+  // que todavía era null, así que ofrecía "Publicar" sobre una página que ya
+  // estaba publicada.
+  test("mientras no se sepa el estado, no hay botón que pulsar", async ({ page }) => {
+    let soltar;
+    const respuestaRetenida = new Promise((listo) => { soltar = listo; });
+
+    // Se registra despues del simulador: Playwright da prioridad al ultimo
+    await page.route("**/api/qr", async (ruta) => {
+      await respuestaRetenida;
+      await ruta.fallback();
+    });
+
+    await page.goto("/qr.html");
+
+    await expect(page.locator("#qr-visibilidad-btn")).toBeHidden();
+    await expect(page.locator("#qr-estado")).toBeHidden();
+
+    soltar();
+
+    await expect(page.locator("#qr-estado")).toHaveText("● Publicada");
+    await expect(page.locator("#qr-visibilidad-btn")).toHaveText("Retirar mi página");
+  });
+
   test("si el servidor rechaza publicarla, se avisa y no miente el estado", async ({ page }) => {
     await page.unroute("**/api/**");
     await simularApi(page, { sinContenidoActivo: true });

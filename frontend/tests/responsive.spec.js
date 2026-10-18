@@ -56,3 +56,26 @@ for (const pagina of PAGINAS_ADMIN) {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
   });
 }
+
+// La rejilla de las cuatro tarjetas del panel no desbordaba la página —nada
+// hacía scroll—, pero las tarjetas sumaban más ancho del que tenía la
+// rejilla y la última, «Tasa de conversión», quedaba cortada contra el borde
+// derecho. Chart.js fija el ancho del lienzo en píxeles, y en una rejilla eso
+// empuja a la columna a crecer. Lo destapó una captura de la evidencia.
+test.describe("El panel cabe en pantallas anchas", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("las cuatro tarjetas caben dentro de la rejilla [regresión]", async ({ page }) => {
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator(".kpi-card")).toHaveCount(4);
+    await page.waitForTimeout(300);
+
+    const { rejilla, ultima } = await page.evaluate(() => ({
+      rejilla: document.querySelector(".kpi-grid").getBoundingClientRect().right,
+      ultima: document.querySelectorAll(".kpi-card")[3].getBoundingClientRect().right
+    }));
+
+    expect(ultima).toBeLessThanOrEqual(rejilla + 1);
+  });
+});

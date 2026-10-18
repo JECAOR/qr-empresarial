@@ -167,3 +167,80 @@ test.describe("Enlaces más pulsados", () => {
     await expect(page.locator(".top-enlace")).toHaveCount(0);
   });
 });
+
+// La tarjeta del código decía «QR Activo · En línea» escrito en el HTML del
+// panel. Es la misma etiqueta que ya se había corregido en la pantalla de
+// Código QR, donde el dueño retira su página: hecho eso, volvía al panel y
+// seguía leyendo que estaba en línea, y el saludo le decía que su perfil
+// estaba activo. También lo destapó una captura para la evidencia.
+test.describe("El panel dice si la página está publicada", () => {
+  test("con la página publicada, la etiqueta lo dice", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator("#dash-qr-titulo")).toHaveText("QR Activo");
+    await expect(page.locator("#dash-qr-estado")).toHaveText("● En línea");
+    await expect(page.locator("#dash-qr-estado")).toHaveClass("pill-online");
+  });
+
+  test("con la página retirada, no dice «En línea» [regresión]", async ({ page }) => {
+    await simularApi(page, { qrRetirado: true });
+    await sembrarSesion(page);
+
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator("#dash-qr-titulo")).toHaveText("QR Retirado");
+    await expect(page.locator("#dash-qr-estado")).toHaveText("● Retirada");
+    await expect(page.locator("#dash-qr-estado")).toHaveClass("pill-offline");
+
+    // Y el saludo tampoco puede seguir diciendo que el perfil está activo
+    await expect(page.locator("#dash-banner-sub")).toContainText("retirada");
+    await expect(page.locator("#dash-banner-sub")).not.toContainText("Tu perfil está activo");
+  });
+
+  test("sin código generado todavía, no inventa un estado", async ({ page }) => {
+    await simularApi(page, { sinQr: true });
+    await sembrarSesion(page);
+
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator("#dash-qr-titulo")).toHaveText("Tu código QR");
+    await expect(page.locator("#dash-qr-estado")).toBeHidden();
+  });
+});
+
+// El encabezado del panel traía «Fonda La Cosecha · Jun 2026» escrito a
+// mano: el mes no lo calculaba nada —en octubre seguía diciendo junio— y el
+// nombre salía de la caché del navegador, que en uno nuevo trae los datos de
+// ejemplo. Lo destapó una captura de pantalla para la evidencia del proyecto.
+test.describe("El encabezado del panel dice la verdad", () => {
+  test("el mes es el de hoy, no uno fijo [regresión]", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/dashboard.html");
+
+    const esperado = new Date().toLocaleDateString("es-CO", { month: "short", year: "numeric" });
+
+    await expect(page.locator(".topbar-subtitle")).toContainText(esperado);
+    await expect(page.locator(".topbar-subtitle")).not.toContainText("Jun 2026");
+  });
+
+  test("el negocio es el de la cuenta, no el de ejemplo [regresión]", async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto("/dashboard.html");
+
+    // El perfil simulado se llama igual que el valor por defecto del
+    // navegador, así que con esos datos la prueba no distinguiría nada:
+    // pasaria tanto si lee el servidor como si lee la caché. Se le pone un
+    // nombre distinto a proposito.
+    await page.evaluate(() => Api.guardarMiPerfilEmpresarial({
+      nombreNegocio: "Reposteria de Prueba"
+    }));
+
+    // Y se vacia la cache, para reproducir a quien entra por primera vez
+    await page.evaluate(() => localStorage.removeItem("qre-business"));
+    await page.reload();
+
+    await expect(page.locator(".topbar-subtitle")).toContainText("Reposteria de Prueba");
+    await expect(page.locator(".topbar-subtitle")).not.toContainText("Fonda La Cosecha");
+  });
+});

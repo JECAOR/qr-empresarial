@@ -178,6 +178,55 @@ function renderBusinessInfo() {
   document.getElementById("dash-qr-url").textContent = getQrUrl(biz).replace(/^https?:\/\//, "");
 }
 
+// --- Estado real del código (RF-07 y RF-09) ---
+//
+// La misma etiqueta que se corrigió en la pantalla de Código QR tenía aquí
+// una segunda copia, y esta seguía escrita a mano en el HTML.
+let qrDelPerfil = null;
+
+/** Pinta el título y la etiqueta con lo que respondió el servidor. */
+function pintarEstadoQr() {
+  const titulo = document.getElementById("dash-qr-titulo");
+  const etiqueta = document.getElementById("dash-qr-estado");
+
+  if (!qrDelPerfil) {
+    // Todavía no hay código generado, o no hay perfil
+    titulo.textContent = "Tu código QR";
+    etiqueta.hidden = true;
+    return;
+  }
+
+  const publicada = qrDelPerfil.activo;
+
+  titulo.textContent = publicada ? "QR Activo" : "QR Retirado";
+
+  etiqueta.hidden = false;
+  etiqueta.textContent = publicada ? "● En línea" : "● Retirada";
+  etiqueta.className = publicada ? "pill-online" : "pill-offline";
+}
+
+/**
+ * Pregunta por el código del perfil.
+ *
+ * No lo genera si no existe: eso es cosa de la pantalla de Código QR, que
+ * además puede explicar por qué no se puede. Aquí basta con no mentir.
+ */
+async function cargarEstadoQr() {
+  try {
+    qrDelPerfil = (await Api.miQr()).data;
+  } catch (error) {
+    // 404: la cuenta no tiene perfil todavía, o no ha generado el código
+    if (error.status !== 404) {
+      console.warn("No se pudo consultar el código QR:", error.message);
+    }
+
+    qrDelPerfil = null;
+  }
+
+  pintarEstadoQr();
+  renderBanner();
+}
+
 // --- QR activo (mismo generador real de la Fase 5) ---
 function renderActiveQR() {
   const biz = getBusinessData();
@@ -199,13 +248,20 @@ document.getElementById("qr-active-share").addEventListener("click", () => {
  * El saludo del panel.
  *
  * Decía "2.847 escaneos este mes" escrito en el HTML. Ahora cuenta los de
- * verdad, y mientras no haya ninguno no inventa un número: dice que el perfil
- * está activo y se queda ahí.
+ * verdad, y mientras no haya ninguno no inventa un número.
+ *
+ * Tampoco afirma ya que el perfil está activo sin haberlo preguntado: si el
+ * dueño retiró su página, lo que toca decirle es eso.
  */
 function renderBanner() {
   const sub = document.getElementById("dash-banner-sub");
 
   if (!sub) return;
+
+  if (qrDelPerfil && !qrDelPerfil.activo) {
+    sub.textContent = "Tu página está retirada: quien escanee el código no encontrará nada.";
+    return;
+  }
 
   const escaneos = estadisticas.totales.escaneos;
   const dias = estadisticas.dias || 7;
@@ -302,8 +358,10 @@ async function cargarEstadisticas() {
 renderBusinessInfo();
 dibujarTodo();
 renderActiveQR();
+pintarEstadoQr();
 
 cargarEstadisticas();
+cargarEstadoQr();
 
 // Cuando la guardia trae el perfil, el nombre y la URL del QR pueden cambiar
 window.addEventListener("perfil:sincronizado", renderBusinessInfo);
