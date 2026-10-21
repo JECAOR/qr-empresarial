@@ -48,7 +48,14 @@ function perfilPublico(fila) {
 function contenidoPublico(fila) {
   return {
     id: `${fila.clase}-${fila.id}`,
-    tipo: fila.clase === 'enlace' ? 'enlace' : (fila.categoria === 'Botón' ? 'boton' : 'texto'),
+
+    // El tipo NO se decide comparando el nombre de la categoria. "Boton"
+    // lleva tilde, y basto con que la base se cargara desde una consola de
+    // Windows para que lo guardado dejara de coincidir con el literal de
+    // aqui: la comparacion fallaba en silencio y un boton se dibujaba como
+    // texto en la vista publica. El icono es ASCII y no cambia con el
+    // idioma ni con la codificacion.
+    tipo: fila.clase === 'enlace' ? 'enlace' : (fila.icono === 'button' ? 'boton' : 'texto'),
     seccion: fila.seccion,
     titulo: fila.titulo,
     detalle: fila.detalle,

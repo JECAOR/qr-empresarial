@@ -195,6 +195,7 @@ módulo 8 (RF-13 a RF-15).
 | Backend | Node.js 22 LTS + Express 5 | En uso |
 | Base de datos | MySQL 8.0 con `mysql2` y consultas parametrizadas | En uso |
 | Frontend | HTML5, CSS3 y JavaScript ES2022, sin framework (PWA) | En uso |
+| Frontend (segundo cliente) | React 19 + Vite 8, en `frontend-react/` | En construcción |
 | Seguridad | `bcrypt` (contraseñas) | En uso |
 | Seguridad | `jsonwebtoken` (JWT y middlewares de rol) | En uso |
 | Seguridad | `express-rate-limit` (límite de intentos, RN-03) | En uso |
@@ -204,7 +205,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (232 peticiones), Jest + Supertest (130) y Playwright + axe-core (396) | En uso |
+| Pruebas | Postman (232 peticiones), Jest + Supertest (132) y Playwright + axe-core (396) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -292,6 +293,21 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 | `013-sembrar-categorias.sql` | Las ocho categorías de enlace y las cinco de elemento, que no estaban versionadas |
 | `014-ultimo-acceso.sql` | Columna `ultimo_acceso` en `usuario`, para la actividad del RF-13 |
 
+## El segundo frontend, en React
+
+[`frontend-react/`](frontend-react) es un **segundo cliente de la misma API**,
+construido con React 19 y Vite 8 para la Guía Frontend N.º 1 del programa. No
+sustituye al frontend original ni lo modifica: los dos consumen el mismo backend,
+y el de React cubre por ahora una sola pantalla, la vista pública del perfil.
+
+La vista pública que sirve Express en `/p/:slug` **se queda donde está**, porque
+inyecta las etiquetas Open Graph y Schema.org desde el servidor y los rastreadores
+no ejecutan JavaScript. El cliente de React es para el panel, que va detrás de un
+inicio de sesión.
+
+Su propio [README](frontend-react/README.md) explica cómo levantarlo y qué hubo
+que adaptar del ejemplo de la guía.
+
 ## Estructura de carpetas
 
 ```text
@@ -326,6 +342,8 @@ qr-empresarial/
 │   ├── js/api.js                    # cliente de la API y manejo de la sesion
 │   ├── js/guardia.js                # protege las pantallas privadas
 │   └── restablecer.html             # pantalla del enlace de recuperacion
+├── frontend-react/                  # segundo cliente de la misma API (Guia 01)
+│   └── src/                         # components/, pages/, services/, styles/
 ├── database/
 │   ├── schema.sql
 │   └── migrations/
@@ -373,18 +391,24 @@ Route → Validator → Controller → Service → Repository → MySQL
 
 ```bash
 # 1. Base de datos
-mysql -u root -p < database/schema.sql
+#
+# La opcion --default-character-set=utf8mb4 no es opcional en Windows: sin
+# ella el cliente envia los acentos en la pagina de codigos de la consola y
+# las categorias quedan guardadas con basura ("Boton" con tilde se convierte
+# en otra cosa). Los archivos ya lo declaran con SET NAMES, asi que esto es
+# un segundo cinturon.
+mysql -u root -p --default-character-set=utf8mb4 < database/schema.sql
 
 # Las migraciones, en orden. Se listan solas para que este bloque no se
 # quede atras cada vez que se agrega una.
 for f in database/migrations/*.sql; do
-  mysql -u root -p qr_empresarial < "$f"
+  mysql -u root -p --default-character-set=utf8mb4 qr_empresarial < "$f"
 done
 
 # Datos de demostracion: dos cuentas, un perfil con contenido, su codigo QR
 # y la actividad de los ultimos siete dias. Sin esto la aplicacion arranca
 # vacia y la coleccion de Postman no tiene con que entrar.
-mysql -u root -p qr_empresarial < database/seed.sql
+mysql -u root -p --default-character-set=utf8mb4 qr_empresarial < database/seed.sql
 
 # 2. Backend
 cd backend
@@ -396,7 +420,7 @@ npm run dev               # servidor con nodemon en http://localhost:3000
 # GET  http://localhost:3000/api/health  →  {"status":"ok"}
 # Abra http://localhost:3000/login.html  →  la aplicación completa
 
-# 4. Pruebas automaticas del backend (130, Jest + Supertest)
+# 4. Pruebas automaticas del backend (132, Jest + Supertest)
 # (se sigue en backend/, desde el paso 2)
 npm test                  # crea su propia base qr_empresarial_test; no toca la suya
 
