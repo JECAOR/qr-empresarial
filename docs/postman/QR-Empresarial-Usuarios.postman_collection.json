@@ -180,6 +180,14 @@
     {
       "key": "busquedaLarga",
       "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "key": "tokenDemo",
+      "value": ""
+    },
+    {
+      "key": "bloquesPublicos",
+      "value": ""
     }
   ],
   "item": [
@@ -11047,6 +11055,166 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia React - Frontend N.1 (datos de demostracion)",
+      "description": "Las tres peticiones de la Guia Frontend N.1, contra el negocio de demostracion que siembra database/seed.sql.\n\nLas demas guias crean sus propias cuentas de prueba y guardan el slug en una variable. Estas van fijas a panaderia-la-espiga a proposito: asi las capturas de Postman, las de MySQL Workbench y las de la pantalla de React hablan del mismo negocio y las cifras cuadran entre si.\n\nLo que demuestran juntas: la base guarda 6 bloques, el dueno ve 6 y quien escanea el codigo ve 5. La diferencia es \"Promocion de Semana Santa\", que esta desactivada.\n\nSe pueden ejecutar en cualquier momento y en este orden. Necesitan el backend encendido y el seed cargado.",
+      "item": [
+        {
+          "name": "228 La vista publica, sin token (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/publico/panaderia-la-espiga",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "publico",
+                "panaderia-la-espiga"
+              ]
+            },
+            "description": "El unico modulo abierto de la API: quien escanea el codigo QR no tiene cuenta. Es el GET que consume la pantalla de React.\n\nDevuelve {data: {perfil, contenido, porSeccion}}. No hay campo \"success\" -el codigo HTTP ya lo dice- y \"data\" es un objeto: el arreglo esta en data.contenido.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No expone datos de la cuenta', () => {",
+                  "  const cuerpo = pm.response.text();",
+                  "  pm.expect(cuerpo).to.not.include('idUsuario');",
+                  "  pm.expect(cuerpo).to.not.include('contrasena');",
+                  "});",
+                  "pm.test('Trae el perfil del negocio', () => pm.expect(d.perfil.nombreNegocio).to.be.a('string').and.not.empty);",
+                  "pm.test('data.contenido es un arreglo', () => pm.expect(d.contenido).to.be.an('array'));",
+                  "pm.test('Solo el contenido activo: 5 bloques', () => pm.expect(d.contenido).to.have.lengthOf(5));",
+                  "pm.test('No aparece lo desactivado', () => {",
+                  "  const titulos = d.contenido.map((b) => b.titulo);",
+                  "  pm.expect(titulos).to.not.include('Promocion de Semana Santa');",
+                  "});",
+                  "pm.test('El boton se publica como boton, no como texto', () => {",
+                  "  const boton = d.contenido.find((b) => b.titulo === 'Encargar una torta');",
+                  "  pm.expect(boton.tipo).to.eql('boton');",
+                  "});",
+                  "",
+                  "// Para la peticion siguiente",
+                  "pm.collectionVariables.set('bloquesPublicos', d.contenido.length);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "229 Entrar con la cuenta de demostracion (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "La empresa que siembra seed.sql. Guarda su token para la peticion siguiente.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un token', () => pm.expect(d.token).to.be.a('string').and.not.empty);",
+                  "",
+                  "pm.collectionVariables.set('tokenDemo', d.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "230 Lo que ve el dueno, con token (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/contenido",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "contenido"
+              ]
+            },
+            "description": "La misma informacion desde el otro lado. El dueno ve tambien lo que tiene desactivado; el publico, no.\n\nEs el paralelo de la \"ruta interna del analista\" del punto 6 de la guia: en SICE, /api/vacancies frente a /api/vacancies/manage.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenDemo}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const bloques = pm.response.json().data;",
+                  "const publicos = Number(pm.collectionVariables.get('bloquesPublicos'));",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El dueno ve 6 bloques', () => pm.expect(bloques).to.have.lengthOf(6));",
+                  "pm.test('Uno de ellos esta desactivado', () => {",
+                  "  const apagado = bloques.find((b) => b.titulo === 'Promocion de Semana Santa');",
+                  "  pm.expect(apagado.activo).to.eql(false);",
+                  "});",
+                  "pm.test('Ve uno mas que el publico', () => pm.expect(bloques.length).to.eql(publicos + 1));"
                 ]
               }
             }
