@@ -1,0 +1,34 @@
+/* ============================================
+   GLOBAL.CSS — estilos comunes
+
+   Los colores son los mismos del frontend original (css/theme.css), para que
+   las dos versiones se vean como el mismo producto.
+   ============================================ */
+
+:root {
+  --color-primary: #4F46E5;
+  --color-primary-dark: #4338CA;
+  --color-primary-light: #EEF2FF;
+  --color-primary-mid: #A5B4FC;
+
+  --slate-900: #1E293B;
+  --slate-600: #475569;
+  --slate-500: #556880;
+  --slate-300: #CBD5E1;
+  --slate-200: #E2E8F0;
+  --slate-50: #F8FAFC;
+  --white: #FFFFFF;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--slate-50);
+  color: var(--slate-900);
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+}
