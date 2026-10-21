@@ -60,6 +60,124 @@ src/
 
 Cada componente lleva su CSS al lado, como pide la guía.
 
+## Cómo funciona
+
+### Los componentes
+
+**`Encabezado`** dibuja la barra superior. No lleva ningún texto escrito
+dentro: lo recibe por **props** —`titulo` y `subtitulo`— desde `App.jsx`. Por
+eso el mismo componente serviría en otra pantalla con otro texto, sin tocarlo.
+
+**`FichaNegocio`** recibe un solo prop, `perfil`, que es el objeto que devolvió
+la API. Dibuja la dirección, el teléfono y el horario **solo si el negocio los
+llenó**: `{perfil.telefono && …}`. Sin esa condición aparecerían etiquetas
+vacías —«Teléfono:» sin número—, que es peor que no mostrar nada.
+
+**`TarjetaContenido`** recibe cuatro props y decide con una condición cómo
+dibujarse: si el bloque es un enlace o un botón lo pinta como `<a>`, porque
+lleva a otro sitio y tiene que poder pulsarse; si es un texto, como `<p>`.
+
+### El servicio HTTP
+
+`services/perfilPublicoService.js` es la **única parte que sabe que existe
+`fetch`**. La pantalla le pide `obtenerPerfilPublico(slug)` y recibe datos ya
+comprobados, o una excepción con un mensaje que se puede mostrar tal cual.
+
+Esa separación es la que permite que la pantalla no se entere del contrato de
+la API. Si mañana el backend cambiara la forma de la respuesta, se tocaría este
+archivo y nada más.
+
+El servicio comprueba tres cosas antes de devolver: que el código HTTP sea
+correcto —y si no, usa el mensaje que explica el servidor en lugar del
+número—, que venga un perfil, y que `data.contenido` sea de verdad un arreglo.
+Esa última es la que evita el `contenido.map is not a function`.
+
+### `useState`
+
+`useState` guarda los valores que **cambian mientras la pantalla está abierta**
+y le avisa a React de que tiene que volver a dibujar cuando cambian. Una
+variable normal no serviría: cambiaría su valor, pero la pantalla seguiría
+mostrando lo de antes.
+
+`PerfilPublicoPage` tiene cinco:
+
+| Estado | Qué guarda |
+|---|---|
+| `slug` | El negocio que se está consultando ahora |
+| `escrito` | Lo que hay tecleado en la caja, que no es lo mismo |
+| `datos` | La respuesta de la API: perfil y contenido |
+| `cargando` | Si se está esperando al servidor |
+| `error` | El mensaje, cuando algo salió mal |
+
+`slug` y `escrito` están separados a propósito. Si fueran uno solo, cada tecla
+que se escribe dispararía una consulta al servidor. Así, `escrito` cambia
+mientras se teclea y `slug` solo cuando se pulsa **Consultar**.
+
+### `useEffect`
+
+`useEffect` sirve para lo que hay que hacer **fuera de dibujar**: aquí, pedirle
+los datos al servidor. No se puede llamar a la API en medio del renderizado,
+porque React dibuja muchas veces y se dispararían peticiones sin control.
+
+Lleva una lista de dependencias, `[slug]`, que significa: ejecútate al montar
+la pantalla, y otra vez **solo si cambia el slug**. Con la lista vacía `[]` se
+ejecutaría una única vez; sin lista, en cada renderizado —que es la forma
+clásica de provocar un bucle infinito—.
+
+Devuelve además una función de limpieza:
+
+```js
+return () => { vigente = false; };
+```
+
+React la llama antes de volver a ejecutar el efecto. Sirve para que una
+respuesta vieja no pise a una nueva: si se consulta un negocio y, antes de que
+llegue, se consulta otro, la primera respuesta se descarta en lugar de
+sobrescribir la segunda.
+
+**Dos peticiones al abrir, y no es un error.** `StrictMode` ejecuta los efectos
+dos veces en desarrollo, a propósito, para que salte a la vista un efecto que
+no sabe limpiarse. En producción se ejecuta una sola vez.
+
+## Verificación
+
+El punto 5.6 de la guía pide contrastar lo que responde la API, lo que hay en
+MySQL y lo que ve el navegador. La parte automatizable está en
+[`verificar.js`](verificar.js), que no tiene dependencias:
+
+```bash
+cd backend && npm run dev     # en una terminal
+node frontend-react/verificar.js
+```
+
+Comprueba cuatro cosas e imprime la consulta SQL para la quinta:
+
+1. El GET público responde 200 con el origen de Vite, y devuelve la cabecera
+   `Access-Control-Allow-Origin: http://localhost:5173`.
+2. Un slug inexistente responde 404 con su mensaje.
+3. **La ruta pública frente a la del dueño.** Es el equivalente de la
+   «extensión orientativa» del punto 6: con `GET /api/contenido` y un token, el
+   dueño ve **6 bloques**; el público, por `GET /api/publico/:slug`, ve **5**.
+   La diferencia es exactamente «Promoción de Semana Santa», que está
+   desactivada.
+4. La consulta para MySQL Workbench, que devuelve esas mismas 6 filas con su
+   columna `activo`.
+
+Esa comparación es la que la guía subraya en su nota de atención: **una tabla
+con registros no implica que el GET público los devuelva**. Aquí hacen falta
+además dos condiciones: que la cuenta esté activa y que el código QR esté
+encendido. Si falta cualquiera, la respuesta correcta es 404.
+
+### Sobre el estado «sin resultados»
+
+La pantalla lo contempla, pero **no se puede provocar** en esta aplicación. Dos
+reglas de negocio lo impiden: el código QR no se enciende sobre un perfil sin
+bloques activos, y no se deja desactivar el último bloque mientras el código
+esté encendido. Si un perfil es visible, siempre tiene al menos un bloque.
+
+El `if` se queda como defensa ante una respuesta inesperada, no como un caso
+que se vaya a dar.
+
 ## Lo que hubo que adaptar
 
 **El contrato JSON no es el del ejemplo.** La guía usa `{success, message, data: []}`.
