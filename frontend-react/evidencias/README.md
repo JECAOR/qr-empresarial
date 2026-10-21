@@ -47,8 +47,23 @@ explicado en el [README](../README.md#useeffect).
 Postman no sirve para esta: CORS es una restricción del navegador, no del
 servidor, y Postman no la aplica.
 
-**04 y 05.** La pantalla cargada, y luego escribiendo `negocio-que-no-existe`
-en el campo para provocar el 404.
+**04 y 05.** No se toman a mano: las genera
+[`generar-capturas.js`](generar-capturas.js), que abre la aplicación contra el
+servidor de verdad y guarda sus dos estados.
+
+```bash
+cd backend && npm run dev            # en una terminal
+cd frontend-react && npm run dev     # en otra
+node frontend-react/evidencias/generar-capturas.js
+```
+
+Comprueba de paso que haya cinco bloques; si hay otro número, avisa en lugar
+de guardar una captura equivocada —casi siempre significa que falta cargar
+`database/seed.sql`—.
+
+En la 04 se ve el último bloque, «Encargar una torta», con su etiqueta
+**BOTÓN** y dibujado como enlace pulsable. Es la prueba visual del defecto que
+corrigió la `v2.3.0`: antes salía como un párrafo de texto.
 
 **06.** La salida de `npm run dev`, con la dirección `http://localhost:5173`.
 
