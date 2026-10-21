@@ -7,6 +7,7 @@
 // ============================================
 
 const { app, request, crearCuenta, agregarBloque, como } = require('./ayudas');
+const pool = require('../src/config/database');
 
 /** Una cuenta con contenido y codigo QR ya generado. */
 async function cuentaPublicada(nombreNegocio = 'Negocio Publicado') {
@@ -111,6 +112,66 @@ describe('Vista publica (RF-09)', () => {
     const publico = await request(app).get(`/api/publico/${slug}`);
 
     expect(publico.body.data.contenido.map((i) => i.titulo)).not.toContain('Promo apagada');
+  });
+
+  test('un boton se publica como boton, no como texto', async () => {
+    const { token, slug } = await cuentaPublicada();
+
+    await agregarBloque(token, {
+      tipo: 'boton',
+      titulo: 'Encargar una torta',
+      detalle: 'https://wa.me/573012223344',
+      // 2 es Botón; 1 es Texto. Los fija la migracion 013
+      idCategoria: 2
+    });
+
+    const publico = await request(app).get(`/api/publico/${slug}`);
+    const boton = publico.body.data.contenido.find((i) => i.titulo === 'Encargar una torta');
+
+    expect(boton.tipo).toBe('boton');
+    expect(boton.categoria).toBe('Botón');
+  });
+
+  // El tipo se decidia comparando el nombre de la categoria con el literal
+  // 'Botón'. Basto cargar la base desde una consola de Windows -que envia los
+  // acentos en su propia pagina de codigos- para que lo guardado dejara de
+  // coincidir: la comparacion fallaba en silencio y el boton salia como texto
+  // en la vista publica. Lo destapo la pantalla de React de la Guia 01.
+  //
+  // Esta prueba NO puede reproducir aquella corrupcion: la base de pruebas se
+  // construye con mysql2, que si habla utf8mb4, asi que aqui el nombre
+  // siempre llega entero. Lo que comprueba es la causa de fondo -que el tipo
+  // dependiera de un texto en castellano con tilde- renombrando la categoria
+  // a mano. Con el codigo anterior falla.
+  test('el tipo no depende de como se llame la categoria [regresion]', async () => {
+    const { token, slug } = await cuentaPublicada();
+
+    await agregarBloque(token, {
+      tipo: 'boton',
+      titulo: 'Pedir por WhatsApp',
+      detalle: 'https://wa.me/573012223344',
+      idCategoria: 2
+    });
+
+    const [[original]] = await pool.query(
+      'SELECT nombre FROM categoria_elemento WHERE id_categoria_elemento = 2');
+
+    try {
+      // Lo mismo que dejaba el cliente de la consola: los bytes de la tilde
+      // leidos como si fueran de otra pagina de codigos
+      await pool.execute(
+        'UPDATE categoria_elemento SET nombre = ? WHERE id_categoria_elemento = 2',
+        ['Bot├│n']);
+
+      const publico = await request(app).get(`/api/publico/${slug}`);
+      const boton = publico.body.data.contenido.find((i) => i.titulo === 'Pedir por WhatsApp');
+
+      expect(boton.tipo).toBe('boton');
+    } finally {
+      await pool.execute(
+        'UPDATE categoria_elemento SET nombre = ? WHERE id_categoria_elemento = 2',
+        [original.nombre]);
+    }
   });
 
   test('lleva el tema del negocio, no el de quien mira', async () => {

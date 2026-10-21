@@ -25,6 +25,12 @@ const RAIZ = path.join(__dirname, '..', '..', '..', 'database');
  * `tema`, en la migracion 011—. Partir por las bravas lo rompia por la mitad
  * y daba un error de sintaxis que parecia de la migracion y era de aqui.
  *
+ * Tampoco dentro de un comentario: la cabecera de `seed.sql` lleva uno
+ * —«...contacto@laespiga.co; sin este archivo...»— que partia el archivo por
+ * la mitad y dejaba media frase en castellano donde MySQL esperaba una
+ * sentencia. Los comentarios se descartan, que es lo unico que se puede
+ * hacer con ellos aqui.
+ *
  * @param {string} sql
  * @returns {string[]}
  */
@@ -36,6 +42,27 @@ function trocear(sql) {
 
   for (let i = 0; i < sql.length; i += 1) {
     const caracter = sql[i];
+
+    // Comentarios, solo cuando no se esta dentro de una cadena. MySQL exige
+    // un espacio despues de `--`, de modo que `5--3` sigue siendo una resta.
+    if (!comilla) {
+      const dosGuiones = caracter === '-' && sql[i + 1] === '-'
+        && (sql[i + 2] === undefined || ' \t\r\n'.includes(sql[i + 2]));
+
+      if (dosGuiones || caracter === '#') {
+        const fin = sql.indexOf('\n', i);
+
+        i = fin === -1 ? sql.length : fin;
+        continue;
+      }
+
+      if (caracter === '/' && sql[i + 1] === '*') {
+        const fin = sql.indexOf('*/', i + 2);
+
+        i = fin === -1 ? sql.length : fin + 1;
+        continue;
+      }
+    }
 
     if (comilla) {
       actual += caracter;

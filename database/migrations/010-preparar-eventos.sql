@@ -1,3 +1,11 @@
+-- El cliente mysql de la linea de ordenes envia los bytes en la pagina de
+-- codigos de la consola si no se le dice otra cosa. En Windows eso convertia
+-- 'Boton' con tilde en 'Bot(basura)' dentro de la base, aunque este archivo
+-- estuviera bien en UTF-8 y la base declarara utf8mb4. Esta linea le dice al
+-- servidor como interpretar lo que recibe, sin depender de con que opciones
+-- se ejecute mysql.
+SET NAMES utf8mb4;
+
 -- Migracion 010: eventos para las estadisticas (RF-11, modulo 6).
 --
 -- La tabla evento ya venia bien pensada: el tipo es un ENUM con 'escaneo',
