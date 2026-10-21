@@ -6,12 +6,11 @@ criterio de su lista de verificación.
 | Archivo | Qué debe verse | Criterio |
 |---|---|---|
 | `01-mysql-workbench.png` | La consulta y sus 6 filas, con la columna `activo` | Persistencia en MySQL |
-| `02-postman-publico.png` | `GET /api/publico/panaderia-la-espiga`, 200 OK, sin `Authorization` | GET desde el backend |
-| `03-postman-dueno.png` | `GET /api/contenido` con token: 6 bloques | Extensión del punto 6 |
-| `04-devtools-cors.png` | Network → Headers → `Access-Control-Allow-Origin` | CORS habilitado |
-| `05-pantalla-perfil.png` | `localhost:5173` con la ficha y los 5 bloques | React consumiendo la API |
-| `06-pantalla-error.png` | «Este perfil no está disponible» | Manejo de error |
-| `07-vite.png` | El servidor de Vite arrancado | Proyecto React con Vite |
+| `02-postman-runner.png` | Las 13 pruebas de la carpeta «Guia React» en verde | GET desde el backend y extensión del punto 6 |
+| `03-devtools-cors.png` | Network → Headers → `Access-Control-Allow-Origin` | CORS habilitado |
+| `04-pantalla-perfil.png` | `localhost:5173` con la ficha y los 5 bloques | React consumiendo la API |
+| `05-pantalla-error.png` | «Este perfil no está disponible» | Manejo de error |
+| `06-vite.png` | El servidor de Vite arrancado | Proyecto React con Vite |
 
 ## Cómo se obtiene cada una
 
@@ -24,21 +23,34 @@ Deben salir **6 filas**: 5 con `activo = 1` y «Promocion de Semana Santa» con
 `activo = 0`. Las tildes de «Botón» y «Página Web» tienen que leerse bien; si
 aparecen como `Bot├│n`, la base se cargó sin `--default-character-set=utf8mb4`.
 
-**02 y 03 — Postman.** Las dos peticiones ya existen en la colección
-`docs/postman/`, en las guías 6 y 5. La segunda necesita el token que guarda
-el inicio de sesión de la guía 1.
+**02 — Postman.** La colección `docs/postman/` trae la carpeta **«Guia React —
+Frontend N.1»** con tres peticiones, fijadas al negocio de demostración para
+que las cifras cuadren con la captura de Workbench:
 
-**04 — DevTools.** Con el backend y Vite corriendo: abrir `localhost:5173`,
+| | | |
+|---|---|---|
+| 228 | `GET /publico/panaderia-la-espiga` | Sin token · 5 bloques |
+| 229 | `POST /auth/login` | Guarda `{{tokenDemo}}` |
+| 230 | `GET /contenido` | Con token · 6 bloques |
+
+Se ejecutan con el **Runner** sobre la carpeta, que las corre en orden y
+resume las 13 pruebas en una sola pantalla. Despliegue las tres peticiones
+para que se lean los nombres de las pruebas y no solo los contadores.
+
+**03 — DevTools.** Con el backend y Vite corriendo: abrir `localhost:5173`,
 `F12`, pestaña **Network**, filtro **Fetch/XHR**, recargar, hacer clic en la
 petición y buscar en **Response Headers**.
 
 Aparecen **dos** peticiones iguales. Es `StrictMode`, no un error; está
 explicado en el [README](../README.md#useeffect).
 
-**05 y 06.** La pantalla cargada, y luego escribiendo `negocio-que-no-existe`
+Postman no sirve para esta: CORS es una restricción del navegador, no del
+servidor, y Postman no la aplica.
+
+**04 y 05.** La pantalla cargada, y luego escribiendo `negocio-que-no-existe`
 en el campo para provocar el 404.
 
-**07.** La salida de `npm run dev`, con la dirección `http://localhost:5173`.
+**06.** La salida de `npm run dev`, con la dirección `http://localhost:5173`.
 
 ## La comprobación automática
 
