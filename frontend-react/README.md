@@ -61,6 +61,20 @@ estado y eliminar, más `GET /usuarios/me` para restaurar la sesión.
 
 **`/acceso-denegado`** — a donde va a parar quien entra con un rol que no basta.
 
+**`/registro`** — alta de una cuenta nueva (RF-01). El negocio es opcional: si
+se llena, la cuenta y su perfil empresarial se crean en una misma transacción,
+de modo que nunca queda una cuenta sin perfil. El registro **no devuelve token**,
+así que al terminar se inicia sesión con lo que se acaba de escribir en lugar de
+pedirlo otra vez.
+
+**`/recuperar` y `/restablecer`** — el enlace para poner una contraseña nueva
+(RF-03). Fuera de producción el servidor devuelve además el enlace, para poder
+seguir la prueba sin un buzón de correo.
+
+**`*`** — cualquier otra dirección da una pantalla que lo dice. Antes el router
+mandaba a la portada sin avisar, y quien escribía mal una dirección creía haber
+llegado donde quería.
+
 ## Estructura
 
 ```text
@@ -78,11 +92,14 @@ src/
   pages/
     PerfilPublico/            La portada pública
     Login/                    La entrada
+    Cuenta/                   Registro, recuperar y restablecer
     Usuarios/                 La gestión, con los siete endpoints
     AccesoDenegado/           Rol insuficiente
+    NoEncontrada/             Una dirección que no existe
   services/
     apiClient.js              Única puerta de salida hacia la API
     authService.js            Entrar, salir, consultar el perfil
+    cuentaService.js          Registro y recuperación de contraseña
     perfilPublicoService.js   El GET público
     usuarioService.js         Los siete endpoints de usuarios
   styles/global.css           Colores y tipografía, los del frontend original
@@ -309,6 +326,24 @@ La [matriz de pruebas](evidencias/guia-02/matriz-de-pruebas.md) recoge los 23
 casos ejecutados contra el servidor real, con su resultado esperado, el obtenido
 y la evidencia. Dos fallaron a la primera y están documentados con su
 corrección.
+
+## El módulo 1, completo
+
+Fuera de las guías, el módulo de autenticación quedó entero: a las dos pantallas
+que traía la Guía 02 —entrar y salir— se sumaron el registro público, la
+recuperación de contraseña en sus dos pasos y la pantalla de dirección no
+encontrada.
+
+**El enlace del correo no apunta aquí.** El backend lo arma con `APP_URL` y
+señala a `/restablecer.html`, que es la pantalla del frontend original —el que
+está desplegado—. No es un error, es la consecuencia de tener dos clientes de la
+misma API. Mientras tanto, la pantalla de recuperación saca el token de ese
+enlace y ofrece seguir dentro de React. Para que el correo apuntara a esta
+aplicación habría que cambiar `APP_URL` y la ruta en `auth.service.js`.
+
+Recorrido comprobado de extremo a extremo: registrar, entrar, pedir el enlace,
+ponerle contraseña nueva y entrar con ella. Después, la contraseña vieja responde
+401 y el enlace usado responde 400, porque solo sirve una vez.
 
 ## Lo que viene
 

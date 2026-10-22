@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import "./LoginPage.css";
@@ -20,6 +20,9 @@ export default function LoginPage() {
   const { usuario, cargando, entrar } = useAuth();
   const navegar = useNavigate();
   const ubicacion = useLocation();
+
+  // Lo deja RestablecerPage al terminar, para no perder el hilo
+  const avisoDeOtraPantalla = ubicacion.state?.aviso;
 
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
@@ -75,11 +78,23 @@ export default function LoginPage() {
           onChange={(evento) => setContrasena(evento.target.value)}
         />
 
+        {avisoDeOtraPantalla && !error && (
+          <p className="login__aviso" role="status">{avisoDeOtraPantalla}</p>
+        )}
+
         {error && <p className="login__error" role="alert">{error}</p>}
 
         <button className="login__boton" type="submit" disabled={enviando}>
           {enviando ? "Entrando…" : "Entrar"}
         </button>
+
+        <p className="login__pie">
+          <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
+        </p>
+
+        <p className="login__pie">
+          ¿No tienes cuenta? <Link to="/registro">Crear una</Link>
+        </p>
       </form>
     </main>
   );

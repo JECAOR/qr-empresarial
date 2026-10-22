@@ -1,0 +1,107 @@
+/* Las cuatro pantallas de cuenta comparten la misma tarjeta centrada. El
+   login ya tenia la suya de la Guia 02 y se respeta; esto es para las que
+   llegaron despues. */
+
+.cuenta {
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.cuenta__tarjeta {
+  width: 100%;
+  max-width: 440px;
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.cuenta__titulo {
+  margin: 0;
+  font-size: 21px;
+  color: var(--slate-900);
+}
+
+.cuenta__sub {
+  margin: 6px 0 22px;
+  font-size: 13px;
+  color: var(--slate-600);
+  line-height: 1.5;
+}
+
+.cuenta__seccion {
+  margin: 22px 0 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--slate-200);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+}
+
+.cuenta__boton {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 10px;
+  background: var(--color-primary);
+  color: var(--white);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.cuenta__boton:hover:enabled {
+  background: var(--color-primary-dark);
+}
+
+.cuenta__boton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cuenta__pie {
+  margin: 18px 0 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--slate-600);
+}
+
+.cuenta__pie a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Gris y no rojo de alarma: casi siempre es un dato mal escrito */
+.cuenta__aviso {
+  margin: 0 0 16px;
+  padding: 11px 13px;
+  border: 1px solid var(--color-primary-mid);
+  border-radius: 10px;
+  background: var(--color-primary-light);
+  font-size: 13px;
+  color: var(--slate-900);
+  line-height: 1.5;
+}
+
+.cuenta__aviso--ok {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.cuenta__enlace-dev {
+  display: block;
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--white);
+  border: 1px dashed var(--slate-300);
+  font-size: 11px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  color: var(--color-primary);
+  word-break: break-all;
+}

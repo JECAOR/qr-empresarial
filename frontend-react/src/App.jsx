@@ -1,9 +1,13 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import Layout from "./components/Layout/Layout";
 import RutaProtegida from "./components/RutaProtegida/RutaProtegida";
 import PerfilPublicoPage from "./pages/PerfilPublico/PerfilPublicoPage";
 import LoginPage from "./pages/Login/LoginPage";
+import RegistroPage from "./pages/Cuenta/RegistroPage";
+import RecuperarPage from "./pages/Cuenta/RecuperarPage";
+import RestablecerPage from "./pages/Cuenta/RestablecerPage";
+import NoEncontradaPage from "./pages/NoEncontrada/NoEncontradaPage";
 import UsuariosPage from "./pages/Usuarios/UsuariosPage";
 import AccesoDenegadoPage from "./pages/AccesoDenegado/AccesoDenegadoPage";
 
@@ -17,8 +21,12 @@ import AccesoDenegadoPage from "./pages/AccesoDenegado/AccesoDenegadoPage";
 export default function App() {
   return (
     <Routes>
-      {/* Fuera de Layout: la pantalla de entrada no lleva barra de navegacion */}
+      {/* Fuera de Layout: las pantallas de cuenta no llevan barra de
+          navegacion. Quien no ha entrado no tiene donde navegar. */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/registro" element={<RegistroPage />} />
+      <Route path="/recuperar" element={<RecuperarPage />} />
+      <Route path="/restablecer" element={<RestablecerPage />} />
 
       <Route element={<Layout />}>
         <Route path="/" element={<PerfilPublicoPage />} />
@@ -27,9 +35,11 @@ export default function App() {
         <Route element={<RutaProtegida rolesPermitidos={["administrador"]} />}>
           <Route path="/usuarios" element={<UsuariosPage />} />
         </Route>
-      </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Una direccion que no existe se dice, no se disimula mandando
+            a la portada como si nada */}
+        <Route path="*" element={<NoEncontradaPage />} />
+      </Route>
     </Routes>
   );
 }
