@@ -1,0 +1,35 @@
+.campo {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+
+.campo__etiqueta {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+  margin-bottom: 6px;
+}
+
+.campo__input {
+  padding: 10px 12px;
+  border: 1px solid var(--slate-300);
+  border-radius: 10px;
+  font: inherit;
+  color: var(--slate-900);
+  background: var(--white);
+}
+
+.campo__input:focus {
+  outline: 2px solid var(--color-primary-mid);
+  outline-offset: 1px;
+  border-color: var(--color-primary);
+}
+
+.campo__ayuda {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--slate-500);
+}
