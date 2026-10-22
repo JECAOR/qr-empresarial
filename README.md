@@ -195,7 +195,7 @@ módulo 8 (RF-13 a RF-15).
 | Backend | Node.js 22 LTS + Express 5 | En uso |
 | Base de datos | MySQL 8.0 con `mysql2` y consultas parametrizadas | En uso |
 | Frontend | HTML5, CSS3 y JavaScript ES2022, sin framework (PWA) | En uso |
-| Frontend (segundo cliente) | React 19 + Vite 8, en `frontend-react/` | En construcción |
+| Frontend (segundo cliente) | React 19 + Vite 8 + React Router 7, en `frontend-react/` | En construcción |
 | Seguridad | `bcrypt` (contraseñas) | En uso |
 | Seguridad | `jsonwebtoken` (JWT y middlewares de rol) | En uso |
 | Seguridad | `express-rate-limit` (límite de intentos, RN-03) | En uso |
@@ -205,7 +205,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (235 peticiones), Jest + Supertest (132) y Playwright + axe-core (396) | En uso |
+| Pruebas | Postman (235 peticiones), Jest + Supertest (133) y Playwright + axe-core (396) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -298,7 +298,8 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 [`frontend-react/`](frontend-react) es un **segundo cliente de la misma API**,
 construido con React 19 y Vite 8 para la Guía Frontend N.º 1 del programa. No
 sustituye al frontend original ni lo modifica: los dos consumen el mismo backend,
-y el de React cubre por ahora una sola pantalla, la vista pública del perfil.
+y el de React cubre la vista pública del perfil, el inicio de sesión con JWT y
+la gestión de usuarios, con sus rutas protegidas por rol.
 
 La vista pública que sirve Express en `/p/:slug` **se queda donde está**, porque
 inyecta las etiquetas Open Graph y Schema.org desde el servidor y los rastreadores
@@ -420,7 +421,7 @@ npm run dev               # servidor con nodemon en http://localhost:3000
 # GET  http://localhost:3000/api/health  →  {"status":"ok"}
 # Abra http://localhost:3000/login.html  →  la aplicación completa
 
-# 4. Pruebas automaticas del backend (132, Jest + Supertest)
+# 4. Pruebas automaticas del backend (133, Jest + Supertest)
 # (se sigue en backend/, desde el paso 2)
 npm test                  # crea su propia base qr_empresarial_test; no toca la suya
 

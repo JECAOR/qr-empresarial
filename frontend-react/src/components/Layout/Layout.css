@@ -1,0 +1,95 @@
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 14px 24px;
+  background: var(--color-primary);
+  color: var(--white);
+}
+
+.barra__marca {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--white);
+  text-decoration: none;
+}
+
+.barra__nav {
+  display: flex;
+  gap: 18px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.barra__nav a {
+  color: var(--white);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  opacity: 0.8;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.barra__nav a:hover {
+  opacity: 1;
+}
+
+/* react-router marca con .active el enlace de la pantalla actual */
+.barra__nav a.active {
+  opacity: 1;
+  border-bottom-color: var(--white);
+}
+
+.barra__sesion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.barra__quien {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.barra__rol {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.barra__salir,
+.barra__entrar {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--white);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.barra__salir:hover,
+.barra__entrar:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+@media (max-width: 560px) {
+  .barra {
+    gap: 12px;
+  }
+
+  .barra__nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
