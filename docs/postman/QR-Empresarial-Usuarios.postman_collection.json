@@ -188,6 +188,18 @@
     {
       "key": "bloquesPublicos",
       "value": ""
+    },
+    {
+      "key": "tokenGuia2",
+      "value": ""
+    },
+    {
+      "key": "tokenEmpresaGuia2",
+      "value": ""
+    },
+    {
+      "key": "idUsuarioGuia2",
+      "value": ""
     }
   ],
   "item": [
@@ -11215,6 +11227,751 @@
                   "  pm.expect(apagado.activo).to.eql(false);",
                   "});",
                   "pm.test('Ve uno mas que el publico', () => pm.expect(bloques.length).to.eql(publicos + 1));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Guia React - Frontend N.2 (sesion y usuarios)",
+      "description": "Los siete endpoints del modulo de usuarios, en el orden en que los usa la pantalla de React de la Guia 02, mas los casos negativos y el contraste de permisos entre un administrador y una empresa.\n\nSe ejecutan en orden con el Runner. Crean su propia cuenta de prueba y la eliminan al terminar, asi que dejan la base como la encontraron. Necesitan el backend encendido y los datos de seed.sql.\n\nLas pruebas comprueban ademas lo que la guia insiste en no suponer: que el login y GET /usuarios/me NO devuelven el mismo JSON, que el rol es una cadena y no un objeto, y que el estado es una palabra y no un numero.",
+      "item": [
+        {
+          "name": "231 Entrar como administrador (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Guarda el token con el que trabajan las demas peticiones de esta carpeta. Es el mismo cuerpo que envia el formulario de React: {correo, contrasena}, no {email, password}.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"admin@caferaices.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un token', () => pm.expect(d.token).to.be.a('string').and.not.empty);",
+                  "pm.test('El rol es una cadena, no un objeto', () => pm.expect(d.usuario.rol).to.eql('administrador'));",
+                  "pm.test('La contrasena no viaja de vuelta', () => pm.expect(pm.response.text()).to.not.include('contrasena'));",
+                  "",
+                  "pm.collectionVariables.set('tokenGuia2', d.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "232 Mi perfil, para restaurar la sesion (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/me",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Lo que consulta AuthContext al abrir la aplicacion: no se confia en el usuario guardado en el navegador, se le pregunta al servidor. Asi se detecta un token caducado o revocado.\n\nOjo: devuelve {data} a secas, mientras que el login devuelve {data: {usuario}}. No son el mismo JSON.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae idUsuario, nombre, correo, rol y estado', () => {",
+                  "  pm.expect(d).to.include.keys('idUsuario', 'nombre', 'correo', 'rol', 'estado');",
+                  "});",
+                  "pm.test('Aqui el usuario viene en data, no en data.usuario', () => {",
+                  "  pm.expect(d.usuario).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "233 Listar las cuentas (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "La tabla de la pantalla de React.\n\nDesde la v2.5.0 responde en camelCase. Antes devolvia las filas tal como salen de MySQL -id_usuario, fecha_registro-, con el resto de la API en camelCase.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data es un arreglo', () => pm.expect(d).to.be.an('array'));",
+                  "pm.test('Los campos van en camelCase', () => {",
+                  "  pm.expect(d[0]).to.include.keys('idUsuario', 'fechaRegistro');",
+                  "  pm.expect(d[0]).to.not.have.property('id_usuario');",
+                  "  pm.expect(d[0]).to.not.have.property('fecha_registro');",
+                  "});",
+                  "pm.test('Ninguna cuenta expone su contrasena', () => {",
+                  "  pm.expect(pm.response.text()).to.not.include('contrasena');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "234 Crear una cuenta (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "El formulario de alta. Los campos son los que exige usuario.validator.js: nombre, correo, contrasena y rol. Los roles validos son dos: empresa y administrador.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta De Postman\",\n  \"correo\": \"guia2.postman@ejemplo.co\",\n  \"contrasena\": \"Postman2026*\",\n  \"rol\": \"empresa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Devuelve el identificador', () => pm.expect(d.idUsuario).to.be.a('number'));",
+                  "",
+                  "pm.collectionVariables.set('idUsuarioGuia2', d.idUsuario);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "235 Crear con una contrasena debil (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "RN-02: minimo ocho caracteres, con mayuscula, numero y simbolo. El formulario lo anuncia, pero quien manda es el validador.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Debil\",\n  \"correo\": \"guia2.debil@ejemplo.co\",\n  \"contrasena\": \"123\",\n  \"rol\": \"empresa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica el motivo', () => pm.expect(pm.response.json().message).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "236 Crear con un correo ya registrado (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "RN-01: el correo es unico. La pantalla deja el formulario abierto con lo que se habia escrito y muestra este mensaje.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta Repetida\",\n  \"correo\": \"guia2.postman@ejemplo.co\",\n  \"contrasena\": \"Postman2026*\",\n  \"rol\": \"empresa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Dice que el correo ya existe', () => {",
+                  "  pm.expect(pm.response.json().message.toLowerCase()).to.include('correo');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "237 Consultar esa cuenta (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/{{idUsuarioGuia2}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idUsuarioGuia2}}"
+              ]
+            },
+            "description": "El panel de detalle de la pantalla, y lo que precarga el formulario de edicion.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es la cuenta pedida', () => {",
+                  "  pm.expect(String(d.idUsuario)).to.eql(String(pm.collectionVariables.get('idUsuarioGuia2')));",
+                  "});",
+                  "pm.test('Tambien en camelCase', () => pm.expect(d).to.not.have.property('id_usuario'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "238 Actualizar sus datos (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/{{idUsuarioGuia2}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idUsuarioGuia2}}"
+              ]
+            },
+            "description": "PUT no toca la contrasena: por eso el formulario no la pide ni la precarga al editar.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta De Postman S.A.S.\",\n  \"correo\": \"guia2.postman@ejemplo.co\",\n  \"rol\": \"empresa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve el nombre nuevo', () => pm.expect(d.nombre).to.eql('Cuenta De Postman S.A.S.'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "239 Restringirla (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/{{idUsuarioGuia2}}/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idUsuarioGuia2}}",
+                "estado"
+              ]
+            },
+            "description": "La ruta es /estado y no /status, y el estado es una palabra: \"activo\" o \"restringido\". No un 1 o un 0.\n\nRN-23: una cuenta restringida no puede entrar, y los tokens que ya tuviera dejan de servir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"restringido\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El estado es una palabra', () => pm.expect(d.estado).to.eql('restringido'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "240 Un estado inventado se rechaza (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/{{idUsuarioGuia2}}/estado",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idUsuarioGuia2}}",
+                "estado"
+              ]
+            },
+            "description": "Solo valen los dos del ENUM de la tabla.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"suspendido\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "241 Eliminarla (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/{{idUsuarioGuia2}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idUsuarioGuia2}}"
+              ]
+            },
+            "description": "Eliminacion LOGICA: la fila se queda en la tabla con deleted_at puesto y deja de aparecer. React no ejecuta ningun DELETE de SQL; llama al endpoint y es el backend quien decide que significa eliminar.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "242 Consultarla despues (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios/{{idUsuarioGuia2}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idUsuarioGuia2}}"
+              ]
+            },
+            "description": "Deja de estar disponible aunque la fila siga en la base. Se comprueba en MySQL con la consulta que acompana a las evidencias.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGuia2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "243 Entrar como empresa (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Para el contraste de permisos de las dos peticiones siguientes.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"contacto@laespiga.co\",\n  \"contrasena\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Su rol es empresa', () => pm.expect(d.usuario.rol).to.eql('empresa'));",
+                  "",
+                  "pm.collectionVariables.set('tokenEmpresaGuia2', d.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "244 Una empresa no administra cuentas (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "RN-22. Esto es lo que de verdad protege la pantalla: RutaProtegida solo evita ensenar una puerta que va a dar 403. Quien escriba la direccion a mano o llame a la API con curl llega hasta aqui, y aqui se le para.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenEmpresaGuia2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "245 Sin token no se pasa (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/usuarios",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "Y sin sesion, ni eso.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
                 ]
               }
             }

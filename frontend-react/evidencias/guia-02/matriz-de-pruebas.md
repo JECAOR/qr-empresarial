@@ -80,6 +80,22 @@ El estado **«sin usuarios»** está implementado pero no se puede provocar: par
 llegar al listado hace falta ser administrador, y entonces hay al menos una
 cuenta, la propia. El `if` se queda como defensa ante una respuesta inesperada.
 
+## Los mismos endpoints desde Postman
+
+La guía pide probarlos **desde Postman y desde React**. La colección
+`docs/postman/` trae la carpeta **«Guia React — Frontend N.2»** con quince
+peticiones: los siete endpoints en el orden en que los usa la pantalla, los
+casos negativos y el contraste de permisos.
+
+| | Peticiones | Pruebas |
+|---|---|---|
+| Sesión | 231, 232, 243 | 9 |
+| Los siete endpoints | 233, 234, 237, 238, 239, 241, 242 | 13 |
+| Casos negativos | 235, 236, 240, 244, 245 | 9 |
+
+Ejecutadas con el Runner sobre la carpeta: **31 pruebas, 0 fallos**. Crean su
+propia cuenta de prueba y la eliminan al terminar.
+
 ## Cómo repetirlo
 
 ```bash
