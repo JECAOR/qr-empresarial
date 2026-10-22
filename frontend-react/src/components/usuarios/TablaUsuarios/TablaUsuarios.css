@@ -1,0 +1,138 @@
+.tabla-scroll {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 18px;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.tabla th,
+.tabla td {
+  text-align: left;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--slate-200);
+  font-size: 14px;
+}
+
+.tabla th {
+  background: var(--slate-50);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+}
+
+.tabla tbody tr:hover {
+  background: var(--slate-50);
+}
+
+.tabla__tu {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+}
+
+.pastilla {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  color: var(--slate-500);
+  background: var(--slate-100);
+}
+
+.pastilla--activa {
+  color: #047c57;
+  background: #d1fae5;
+}
+
+.tabla__acciones {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tabla__acciones button {
+  border: 1px solid var(--slate-300);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--slate-900);
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.tabla__acciones button:hover:enabled {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.tabla__acciones button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tabla__acciones .peligro:hover:enabled {
+  border-color: #b42318;
+  color: #b42318;
+}
+
+/* En movil la tabla no cabe: cada fila pasa a ser una ficha, con el nombre
+   de la columna delante de su valor. Es el mismo patron de la pantalla de
+   Administracion del frontend original, donde la tabla obligaba a desplazar
+   la pantalla a lo ancho para alcanzar los botones. */
+@media (max-width: 780px) {
+  .tabla-scroll {
+    overflow-x: visible;
+  }
+
+  .tabla {
+    min-width: 0;
+  }
+
+  .tabla thead {
+    display: none;
+  }
+
+  .tabla tr {
+    display: block;
+    border: 1px solid var(--slate-200);
+    border-radius: 12px;
+    padding: 6px 12px;
+    margin-bottom: 10px;
+    background: var(--white);
+  }
+
+  .tabla td {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--slate-100);
+    padding: 9px 0;
+  }
+
+  .tabla tr td:last-child {
+    border-bottom: none;
+  }
+
+  .tabla td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--slate-500);
+  }
+}

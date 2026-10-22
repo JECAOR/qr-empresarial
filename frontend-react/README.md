@@ -1,8 +1,13 @@
-# Frontend React — Guía Frontend N.º 1
+# Frontend React
 
 Segundo frontend del proyecto, construido con **React + Vite**, que consume la
-misma API REST que el original. Corresponde a la Guía Frontend N.º 1 del SENA
-(ADSO), cuyo proyecto orientador es SICE; aquí está adaptada a QR Empresarial.
+misma API REST que el original. Corresponde a las Guías Frontend del SENA
+(ADSO), cuyo proyecto orientador es SICE; aquí están adaptadas a QR Empresarial.
+
+| Guía | Qué añadió |
+|---|---|
+| 01 | Vite, componentes, props, `useState`/`useEffect` y el primer GET público |
+| 02 | Inicio de sesión con JWT, rutas protegidas por rol y la gestión de usuarios |
 
 El frontend original, en HTML/CSS/JS sin framework, sigue en [`../frontend`](../frontend)
 y no se toca. Son dos clientes del mismo backend.
@@ -30,9 +35,11 @@ La base de datos debe tener los datos de demostración
 
 ## Qué hace
 
-Una pantalla: **el perfil público de un negocio**, que es lo que ve quien
-escanea el código QR. Pide los datos a `GET /api/publico/:slug` y distingue los
-tres estados que exige la guía.
+Tres pantallas y un guardia.
+
+**`/` — el perfil público de un negocio**, que es lo que ve quien escanea el
+código QR. No pide sesión. Pide los datos a `GET /api/publico/:slug` y distingue
+los tres estados que exige la guía.
 
 | Estado | Cuándo | Qué muestra |
 |---|---|---|
@@ -43,22 +50,48 @@ tres estados que exige la guía.
 El campo de texto permite consultar cualquier otro negocio, y sirve para
 provocar el error sin tocar el código.
 
+**`/login` — la entrada.** Guarda el token y el usuario en `sessionStorage`, de
+modo que la sesión muere al cerrar la pestaña. Al entrar manda a cada quien
+donde tiene algo que hacer: un administrador a la gestión de usuarios, una
+empresa al perfil público.
+
+**`/usuarios` — la gestión de cuentas**, solo para administradores. Integra los
+siete endpoints del módulo: listar, consultar, crear, actualizar, cambiar de
+estado y eliminar, más `GET /usuarios/me` para restaurar la sesión.
+
+**`/acceso-denegado`** — a donde va a parar quien entra con un rol que no basta.
+
 ## Estructura
 
 ```text
 src/
+  context/
+    AuthContext.jsx           La sesión: quién eres, entrar y salir
   components/
-    Encabezado/            Barra superior. Recibe el texto por props
-    FichaNegocio/          Datos del negocio; omite los campos vacíos
-    TarjetaContenido/      Un bloque. Enlace o texto, según su tipo
+    Layout/                   Barra de navegación común
+    RutaProtegida/            Exige sesión y, si hace falta, un rol
+    FichaNegocio/             Datos del negocio; omite los campos vacíos
+    TarjetaContenido/         Un bloque. Enlace o texto, según su tipo
+    usuarios/
+      TablaUsuarios/          El listado, que en móvil se vuelve fichas
+      FormularioUsuario/      Alta y edición
   pages/
-    PerfilPublico/         La pantalla: estado, efecto y lista
+    PerfilPublico/            La portada pública
+    Login/                    La entrada
+    Usuarios/                 La gestión, con los siete endpoints
+    AccesoDenegado/           Rol insuficiente
   services/
-    perfilPublicoService.js   Única capa que habla con la API
-  styles/global.css        Colores y tipografía, los del frontend original
+    apiClient.js              Única puerta de salida hacia la API
+    authService.js            Entrar, salir, consultar el perfil
+    perfilPublicoService.js   El GET público
+    usuarioService.js         Los siete endpoints de usuarios
+  styles/global.css           Colores y tipografía, los del frontend original
 ```
 
 Cada componente lleva su CSS al lado, como pide la guía.
+
+El `Encabezado` de la Guía 01 desapareció: lo sustituyó `Layout`, que además de
+dar título lleva la navegación y la sesión.
 
 ## Cómo funciona
 
@@ -222,7 +255,61 @@ ASCII—. Hay una prueba de regresión en
 Las 130 pruebas del backend no lo veían, y no podían: construyen su base con
 `mysql2`, que sí habla utf8mb4, así que el nombre siempre les llegaba entero.
 
+## La Guía 02
+
+### Lo que hubo que adaptar, otra vez
+
+El ejemplo de la guía da por confirmada la respuesta de SICE:
+
+```json
+{ "success": true, "data": { "token": "…", "expiresIn": "…",
+  "user": { "id": 1, "name": "…", "role": { "id": 1, "name": "SYSTEM_ADMIN" } } } }
+```
+
+La de esta API es distinta en cinco cosas, y todas rompen el código de ejemplo:
+
+```json
+{ "message": "Inicio de sesión correcto", "data": { "token": "…",
+  "usuario": { "idUsuario": 4, "nombre": "…", "correo": "…", "rol": "administrador" } } }
+```
+
+1. **No hay campo `success`.** `apiClient` no puede comprobarlo: manda el código
+   HTTP. Fiarse de un `success` que no existe haría que todo pareciera correcto.
+2. **`usuario`, no `user`**, y no viene `expiresIn`.
+3. **`rol` es una cadena**, no un objeto `{id, name}`. Eso cambia
+   `normalizarPerfil`, `RutaProtegida` y la barra de navegación enteras.
+4. **El cuerpo del login es `{correo, contrasena}`**, no `{email, password}`.
+5. **Dos roles**, `administrador` y `empresa`, no los cuatro del ejemplo.
+
+Y en la gestión de usuarios, tres más:
+
+6. **La ruta es `/usuarios/:id/estado`**, no `/status`.
+7. **El estado es una palabra** —`"activo"` o `"restringido"`—, no `1` o `0`. El
+   ejemplo compara con `1`; aquí diría siempre «Inactivo».
+8. **Todo el CRUD exige el rol administrador**, que es justo lo que la guía
+   quiere demostrar con `rolesPermitidos`.
+
+### Lo que la guía no pide y conviene
+
+El servidor impide que un administrador **se restrinja o se elimine a sí
+mismo**: perdería el acceso en la misma petición y, si fuera el único, nadie
+podría volver a administrar el sistema. La tabla deshabilita esos dos botones en
+la propia fila y dice el motivo. No sustituye la regla —el servidor sigue
+mandando— pero evita ofrecer un botón que solo puede dar error.
+
+### Qué protege de verdad cada cosa
+
+`RutaProtegida` **no es seguridad**: quien escriba la dirección a mano o llame a
+la API con `curl` se la salta entera. La seguridad la aplica Express en cada
+endpoint. Lo que hace el guardia es no enseñar puertas que van a dar 403.
+
+### Pruebas
+
+La [matriz de pruebas](evidencias/guia-02/matriz-de-pruebas.md) recoge los 23
+casos ejecutados contra el servidor real, con su resultado esperado, el obtenido
+y la evidencia. Dos fallaron a la primera y están documentados con su
+corrección.
+
 ## Lo que viene
 
-La Guía 02 añade inicio de sesión con JWT, rutas protegidas, permisos por rol,
-CRUD y pruebas de integración.
+La Guía 03, cuando llegue.

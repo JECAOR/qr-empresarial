@@ -32,3 +32,41 @@ body {
   font-size: 15px;
   line-height: 1.4;
 }
+
+/* Para lectores de pantalla: texto que se oye pero no se ve. Lo usa el
+   <caption> de la tabla de usuarios, que explica de que es la tabla. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Avisos de pantalla completa: "Verificando sesion", acceso denegado */
+.aviso,
+.aviso-pagina {
+  max-width: 640px;
+  margin: 40px auto;
+  padding: 0 16px;
+  color: var(--slate-600);
+}
+
+.aviso-pagina h1 {
+  color: var(--slate-900);
+}
+
+.aviso-pagina code {
+  background: var(--slate-100);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.aviso-pagina a {
+  color: var(--color-primary);
+}
