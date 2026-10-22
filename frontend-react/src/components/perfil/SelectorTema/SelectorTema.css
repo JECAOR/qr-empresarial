@@ -1,0 +1,42 @@
+.temas {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tema {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--slate-300);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--slate-900);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.tema:hover:enabled {
+  border-color: var(--color-primary);
+}
+
+.tema--elegido {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.tema:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.tema__color {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

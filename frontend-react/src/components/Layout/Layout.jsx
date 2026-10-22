@@ -26,7 +26,8 @@ export default function Layout() {
         <Link className="barra__marca" to="/">QR Empresarial</Link>
 
         <nav className="barra__nav">
-          <NavLink to="/">Perfil público</NavLink>
+          <NavLink to="/" end>Perfil público</NavLink>
+          {usuario && <NavLink to="/perfil">Mi negocio</NavLink>}
           {usuario?.rol === "administrador" && <NavLink to="/usuarios">Usuarios</NavLink>}
         </nav>
 

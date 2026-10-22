@@ -8,6 +8,7 @@ import RegistroPage from "./pages/Cuenta/RegistroPage";
 import RecuperarPage from "./pages/Cuenta/RecuperarPage";
 import RestablecerPage from "./pages/Cuenta/RestablecerPage";
 import NoEncontradaPage from "./pages/NoEncontrada/NoEncontradaPage";
+import PerfilPage from "./pages/Perfil/PerfilPage";
 import UsuariosPage from "./pages/Usuarios/UsuariosPage";
 import AccesoDenegadoPage from "./pages/AccesoDenegado/AccesoDenegadoPage";
 
@@ -31,6 +32,11 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<PerfilPublicoPage />} />
         <Route path="/acceso-denegado" element={<AccesoDenegadoPage />} />
+
+        {/* Basta con tener sesion: el perfil es el de quien entra */}
+        <Route element={<RutaProtegida />}>
+          <Route path="/perfil" element={<PerfilPage />} />
+        </Route>
 
         <Route element={<RutaProtegida rolesPermitidos={["administrador"]} />}>
           <Route path="/usuarios" element={<UsuariosPage />} />
