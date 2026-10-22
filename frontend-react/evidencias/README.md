@@ -67,16 +67,24 @@ USE qr_empresarial;
 
 SELECT id_usuario, nombre, correo, estado, deleted_at
   FROM usuario
- WHERE correo IN ('guia2.postman@ejemplo.co',
-                  'admin@caferaices.co',
-                  'contacto@laespiga.co')
+ WHERE correo LIKE '%guia2.postman%'
+    OR correo IN ('admin@caferaices.co', 'contacto@laespiga.co')
  ORDER BY id_usuario;
 ```
 
-`guia2.postman@ejemplo.co` aparece con `deleted_at` puesto y las otras dos con
-`NULL`. Eso es el borrado lógico: la fila no se va, se marca. React nunca
-ejecuta un `DELETE` de SQL; llama al endpoint y es el backend quien decide qué
-significa eliminar.
+Salen tres filas: las dos de demostración con `deleted_at` en `NULL`, y la que
+Postman creó y eliminó con la fecha puesta.
+
+**Por qué `LIKE` y no el correo exacto.** El borrado lógico hace tres cosas a la
+vez: marca `deleted_at`, pone el estado en `restringido` y **renombra el
+correo** a `eliminado_<id>_<correo>`. Así es como se libera la dirección para
+que pueda volver a registrarse, que es lo que comprueba la petición 19 de la
+Guía 3. Buscando el correo original no aparece nada, y parece que la fila se
+borró cuando sigue ahí.
+
+Eso es el borrado lógico: la fila no se va, se marca. React nunca ejecuta un
+`DELETE` de SQL; llama al endpoint y es el backend quien decide qué significa
+eliminar.
 
 Las nueve las genera [`guia-02/generar-capturas.js`](guia-02/generar-capturas.js),
 que entra con las cuentas de demostración y recorre el CRUD completo: crea una
