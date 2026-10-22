@@ -71,6 +71,10 @@ pedirlo otra vez.
 (RF-03). Fuera de producción el servidor devuelve además el enlace, para poder
 seguir la prueba sin un buzón de correo.
 
+**`/perfil`** — el perfil del negocio (RF-04 y RF-10): los nueve campos, el
+color de marca y la dirección pública. Pide sesión, sin exigir rol: el perfil es
+el de quien entra.
+
 **`*`** — cualquier otra dirección da una pantalla que lo dice. Antes el router
 mandaba a la portada sin avisar, y quien escribía mal una dirección creía haber
 llegado donde quería.
@@ -93,6 +97,7 @@ src/
     PerfilPublico/            La portada pública
     Login/                    La entrada
     Cuenta/                   Registro, recuperar y restablecer
+    Perfil/                   El perfil del negocio
     Usuarios/                 La gestión, con los siete endpoints
     AccesoDenegado/           Rol insuficiente
     NoEncontrada/             Una dirección que no existe
@@ -100,6 +105,7 @@ src/
     apiClient.js              Única puerta de salida hacia la API
     authService.js            Entrar, salir, consultar el perfil
     cuentaService.js          Registro y recuperación de contraseña
+    perfilService.js          El perfil empresarial propio
     perfilPublicoService.js   El GET público
     usuarioService.js         Los siete endpoints de usuarios
   styles/global.css           Colores y tipografía, los del frontend original
@@ -344,6 +350,37 @@ aplicación habría que cambiar `APP_URL` y la ruta en `auth.service.js`.
 Recorrido comprobado de extremo a extremo: registrar, entrar, pedir el enlace,
 ponerle contraseña nueva y entrar con ella. Después, la contraseña vieja responde
 401 y el enlace usado responde 400, porque solo sirve una vez.
+
+## El módulo 2: el perfil del negocio
+
+Los nueve campos del perfil, el color de marca y la dirección pública, en tres
+bloques.
+
+**Se envían todos los campos al guardar, también los vacíos.** `PUT` reemplaza
+el perfil entero: mandar solo lo que se tocó borraría el resto. Los campos vacíos
+llegan como cadena vacía y el backend los guarda como `NULL`, porque «sin
+teléfono» y «teléfono igual a nada» no deberían ser dos cosas distintas.
+
+**El color tiene su propia ruta.** `PATCH /perfiles/me/tema` se guarda al
+instante, sin pasar por el botón de guardar. Elegir un color es una decisión de
+un clic, y obligar a confirmarla aparte sería raro; además así no se arriesga a
+pisar nada del formulario.
+
+**Los límites de cada campo se repiten en la pantalla** —150 para el nombre, 2000
+para la descripción— para que el navegador avise antes de gastar una petición. No
+sustituyen al validador: quien envíe el formulario por otra vía se encuentra con
+la misma regla y recibe un 400.
+
+**La dirección pública no se puede editar.** El `slug` se fija al crear el perfil
+y no sigue al nombre. Si cambiara, los códigos QR ya impresos dejarían de
+funcionar, que es justo lo que el RF-09 debe evitar.
+
+### Un fallo de usabilidad, corregido
+
+El mensaje de error sale arriba del panel y el botón de guardar está abajo del
+todo. Al probarlo en una pantalla de 600 px, el aviso quedaba **281 píxeles por
+encima** de lo visible: se pulsaba Guardar, el formulario respondía, y no se veía
+nada. Ahora el mensaje se desplaza a la vista cuando aparece.
 
 ## Lo que viene
 
