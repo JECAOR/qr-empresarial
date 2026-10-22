@@ -1,80 +1,69 @@
-# Evidencias — Guía Frontend N.º 1
+# Evidencias del frontend en React
 
-Capturas que piden los entregables de la guía. Cada una corresponde a un
-criterio de su lista de verificación.
+Una carpeta por guía. Cada una tiene sus capturas y el guion que las genera.
 
-| Archivo | Qué debe verse | Criterio |
+| | |
+|---|---|
+| [`guia-01/`](guia-01) | Fundamentos de React y el primer GET contra la API |
+| [`guia-02/`](guia-02) | Autenticación JWT, rutas protegidas y gestión de usuarios |
+
+## Guía 01 — seis capturas
+
+| Archivo | Qué se ve | Criterio |
 |---|---|---|
 | `01-mysql-workbench.png` | La consulta y sus 6 filas, con la columna `activo` | Persistencia en MySQL |
 | `02-postman-runner.png` | Las 13 pruebas de la carpeta «Guia React» en verde | GET desde el backend y extensión del punto 6 |
 | `03-devtools-cors.png` | Network → Headers → `Access-Control-Allow-Origin` | CORS habilitado |
-| `04-pantalla-perfil.png` | `localhost:5173` con la ficha y los 5 bloques | React consumiendo la API |
+| `04-pantalla-perfil.png` | El perfil con sus cinco bloques | React consumiendo la API |
 | `05-pantalla-error.png` | «Este perfil no está disponible» | Manejo de error |
 | `06-vite.png` | El servidor de Vite arrancado | Proyecto React con Vite |
 
-## Cómo se obtiene cada una
+Las dos de la pantalla las genera [`guia-01/generar-capturas.js`](guia-01/generar-capturas.js).
+Las otras cuatro son de MySQL Workbench, Postman, DevTools y la terminal.
 
-**01 — MySQL Workbench.** La consulta está en
-[`../verificar.js`](../verificar.js), que la imprime al final, y en el
-[README](../README.md#verificación). Empiece por `USE qr_empresarial;` y
-ejecute el script completo con `Ctrl` + `Shift` + `Enter`.
+## Guía 02 — nueve capturas y la matriz de pruebas
 
-Deben salir **6 filas**: 5 con `activo = 1` y «Promocion de Semana Santa» con
-`activo = 0`. Las tildes de «Botón» y «Página Web» tienen que leerse bien; si
-aparecen como `Bot├│n`, la base se cargó sin `--default-character-set=utf8mb4`.
+| Archivo | Qué se ve |
+|---|---|
+| `01-login.png` | La pantalla de entrada |
+| `02-login-credenciales-invalidas.png` | El mensaje del servidor ante una contraseña equivocada |
+| `03-usuarios-listado.png` | La tabla, con los botones de la propia cuenta deshabilitados |
+| `04-usuarios-detalle.png` | `GET /usuarios/:id` |
+| `05-usuarios-formulario-alta.png` | El formulario de alta |
+| `06-usuarios-cuenta-creada.png` | La cuenta creada y la tabla al día |
+| `07-usuarios-cuenta-restringida.png` | El cambio de estado |
+| `08-usuarios-movil.png` | La tabla convertida en fichas a 390 px |
+| `09-acceso-denegado.png` | Una cuenta de empresa intentando entrar a `/usuarios` |
 
-**02 — Postman.** La colección `docs/postman/` trae la carpeta **«Guia React —
-Frontend N.1»** con tres peticiones, fijadas al negocio de demostración para
-que las cifras cuadren con la captura de Workbench:
+La [matriz de pruebas](guia-02/matriz-de-pruebas.md) recoge los 23 casos
+ejecutados, con su resultado esperado, el obtenido y la evidencia. Incluye los
+dos que fallaron la primera vez y cómo se corrigieron.
 
-| | | |
-|---|---|---|
-| 228 | `GET /publico/panaderia-la-espiga` | Sin token · 5 bloques |
-| 229 | `POST /auth/login` | Guarda `{{tokenDemo}}` |
-| 230 | `GET /contenido` | Con token · 6 bloques |
+Las nueve las genera [`guia-02/generar-capturas.js`](guia-02/generar-capturas.js),
+que entra con las cuentas de demostración y recorre el CRUD completo: crea una
+cuenta de prueba, la edita, la restringe y la elimina, de modo que deja la base
+como la encontró.
 
-Se ejecutan con el **Runner** sobre la carpeta, que las corre en orden y
-resume las 13 pruebas en una sola pantalla. Despliegue las tres peticiones
-para que se lean los nombres de las pruebas y no solo los contadores.
+## Cómo regenerarlas
 
-**03 — DevTools.** Con el backend y Vite corriendo: abrir `localhost:5173`,
-`F12`, pestaña **Network**, filtro **Fetch/XHR**, recargar, hacer clic en la
-petición y buscar en **Response Headers**.
-
-Aparecen **dos** peticiones iguales. Es `StrictMode`, no un error; está
-explicado en el [README](../README.md#useeffect).
-
-Postman no sirve para esta: CORS es una restricción del navegador, no del
-servidor, y Postman no la aplica.
-
-**04 y 05.** No se toman a mano: las genera
-[`generar-capturas.js`](generar-capturas.js), que abre la aplicación contra el
-servidor de verdad y guarda sus dos estados.
+Hace falta el backend y Vite corriendo, y la base con los datos de
+demostración:
 
 ```bash
-cd backend && npm run dev            # en una terminal
-cd frontend-react && npm run dev     # en otra
-node frontend-react/evidencias/generar-capturas.js
+mysql -u root -p --default-character-set=utf8mb4 qr_empresarial < database/seed.sql
 ```
-
-Comprueba de paso que haya cinco bloques; si hay otro número, avisa en lugar
-de guardar una captura equivocada —casi siempre significa que falta cargar
-`database/seed.sql`—.
-
-En la 04 se ve el último bloque, «Encargar una torta», con su etiqueta
-**BOTÓN** y dibujado como enlace pulsable. Es la prueba visual del defecto que
-corrigió la `v2.3.0`: antes salía como un párrafo de texto.
-
-**06.** La salida de `npm run dev`, con la dirección `http://localhost:5173`.
-
-## La comprobación automática
-
-Lo que no necesita captura está en [`../verificar.js`](../verificar.js):
 
 ```bash
-cd backend && npm run dev          # en una terminal
-node frontend-react/verificar.js   # en otra
+cd backend && npm run dev
 ```
 
-Comprueba el código HTTP, la cabecera de CORS, el contrato JSON, el 404 y la
-diferencia entre lo que ve el público (5 bloques) y lo que ve el dueño (6).
+```bash
+cd frontend-react && npm run dev
+```
+
+Y entonces:
+
+```bash
+node frontend-react/evidencias/guia-01/generar-capturas.js
+node frontend-react/evidencias/guia-02/generar-capturas.js
+```
