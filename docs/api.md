@@ -558,18 +558,23 @@ Lista los usuarios no eliminados. Solo administrador.
 {
   "data": [
     {
-      "id_usuario": 4,
+      "idUsuario": 4,
       "nombre": "Cafe Raices S.A.",
       "correo": "admin@caferaices.co",
       "rol": "administrador",
       "estado": "activo",
-      "fecha_registro": "2026-10-07"
+      "fechaRegistro": "2026-10-07T05:00:00.000Z"
     }
   ]
 }
 ```
 
 La contraseña nunca aparece en las respuestas.
+
+Los campos van en camelCase, igual que en el inicio de sesión y en
+`GET /api/usuarios/me`. Hasta la `v2.5.0` estas dos rutas devolvían las filas
+tal como salen de MySQL —`id_usuario`, `fecha_registro`—, de modo que la misma
+entidad llegaba al cliente con dos nombres distintos según por dónde se pidiera.
 
 ### GET /api/usuarios/:idUsuario
 

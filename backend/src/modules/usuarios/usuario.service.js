@@ -50,11 +50,40 @@ async function crearUsuario(datosUsuario, conexion) {
 }
 
 /**
+ * Da forma de respuesta a una fila de la tabla.
+ *
+ * El modulo devolvia las filas tal como salen de MySQL -id_usuario,
+ * fecha_registro-, mientras que el inicio de sesion y GET /usuarios/me ya
+ * respondian en camelCase. La misma entidad llegaba al cliente con dos
+ * nombres distintos segun por donde se pidiera.
+ *
+ * Se enumera campo por campo a proposito, igual que en la vista publica: si
+ * manana se agrega una columna a la tabla, no se filtra sola.
+ *
+ * @param {object|undefined} fila
+ * @returns {object|undefined}
+ */
+function aRespuesta(fila) {
+  if (!fila) return fila;
+
+  return {
+    idUsuario: fila.id_usuario,
+    nombre: fila.nombre,
+    correo: fila.correo,
+    rol: fila.rol,
+    estado: fila.estado,
+    fechaRegistro: fila.fecha_registro
+  };
+}
+
+/**
  * Devuelve todos los usuarios activos.
  * @returns {Promise<object[]>}
  */
 async function listarUsuarios() {
-  return usuarioRepository.listar();
+  const filas = await usuarioRepository.listar();
+
+  return filas.map(aRespuesta);
 }
 
 /**
@@ -72,7 +101,7 @@ async function obtenerUsuarioPorId(idUsuario) {
     throw error;
   }
 
-  return usuario;
+  return aRespuesta(usuario);
 }
 
 /**
@@ -102,7 +131,7 @@ async function actualizarUsuario(idUsuario, datosUsuario) {
 
   await usuarioRepository.actualizar(idUsuario, datosUsuario);
 
-  return usuarioRepository.buscarPorId(idUsuario);
+  return aRespuesta(await usuarioRepository.buscarPorId(idUsuario));
 }
 
 /**
@@ -122,7 +151,7 @@ async function cambiarEstadoUsuario(idUsuario, estado, idSolicitante) {
 
   await usuarioRepository.actualizarEstado(idUsuario, estado);
 
-  return usuarioRepository.buscarPorId(idUsuario);
+  return aRespuesta(await usuarioRepository.buscarPorId(idUsuario));
 }
 
 /**

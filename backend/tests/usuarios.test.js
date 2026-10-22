@@ -244,6 +244,40 @@ describe('RN-22: la administracion es solo del rol administrador', () => {
     expect((await como(empresa.token).get('/api/usuarios/me')).status).toBe(401);
   });
 
+  // Este modulo devolvia las filas tal como salen de MySQL -id_usuario,
+  // fecha_registro-, mientras que el inicio de sesion y GET /usuarios/me ya
+  // respondian en camelCase. La misma entidad llegaba al cliente con dos
+  // nombres distintos segun por donde se pidiera, y nadie lo notaba porque
+  // el frontend original no llama a estas rutas: aparecio al escribir la
+  // tabla de usuarios en React.
+  test('las respuestas no llevan nombres de columnas de la base [regresion]', async () => {
+    const empresa = await crearCuenta();
+    const jefe = await crearCuenta();
+
+    const tokenAdmin = await hacerAdministrador(jefe.correo);
+
+    const respuestas = [
+      (await como(tokenAdmin).get('/api/usuarios')).body.data[0],
+      (await como(tokenAdmin).get(`/api/usuarios/${empresa.id}`)).body.data,
+      (await como(tokenAdmin).put(`/api/usuarios/${empresa.id}`)
+        .send({ nombre: 'Nombre Nuevo', correo: empresa.correo, rol: 'empresa' })).body.data,
+      (await como(tokenAdmin).patch(`/api/usuarios/${empresa.id}/estado`)
+        .send({ estado: 'restringido' })).body.data
+    ];
+
+    for (const usuario of respuestas) {
+      expect(usuario).toHaveProperty('idUsuario');
+      expect(usuario).toHaveProperty('fechaRegistro');
+
+      expect(usuario).not.toHaveProperty('id_usuario');
+      expect(usuario).not.toHaveProperty('fecha_registro');
+
+      // Y lo de siempre: la contrasena no sale de la base
+      expect(usuario).not.toHaveProperty('contrasena');
+      expect(usuario).not.toHaveProperty('deleted_at');
+    }
+  });
+
   test('un administrador no puede eliminarse a si mismo', async () => {
     const jefe = await crearCuenta();
     const tokenAdmin = await hacerAdministrador(jefe.correo);
