@@ -34,10 +34,49 @@ Las otras cuatro son de MySQL Workbench, Postman, DevTools y la terminal.
 | `07-usuarios-cuenta-restringida.png` | El cambio de estado |
 | `08-usuarios-movil.png` | La tabla convertida en fichas a 390 px |
 | `09-acceso-denegado.png` | Una cuenta de empresa intentando entrar a `/usuarios` |
+| `10-postman-runner.png` | Las 31 pruebas de la carpeta «Guia React N.2» en verde |
+| `11-devtools-authorization.png` | Network → Headers: el método, la URL, el código y la cabecera `Authorization` |
+| `12-mysql-borrado-logico.png` | La cuenta eliminada, que sigue en la tabla con `deleted_at` |
 
 La [matriz de pruebas](guia-02/matriz-de-pruebas.md) recoge los 23 casos
 ejecutados, con su resultado esperado, el obtenido y la evidencia. Incluye los
 dos que fallaron la primera vez y cómo se corrigieron.
+
+### Las tres que no se automatizan
+
+**10 — Postman.** La colección trae la carpeta **«Guia React — Frontend N.2»**:
+quince peticiones que recorren los siete endpoints en el mismo orden que la
+pantalla, más los casos negativos (400, 401, 403, 404, 409) y el contraste de
+permisos entre un administrador y una empresa. Se ejecutan con el **Runner**
+sobre la carpeta; son 31 pruebas. Crean su propia cuenta y la eliminan al
+terminar.
+
+**11 — DevTools.** Con sesión de administrador en `/usuarios`: `F12` →
+**Network** → **Fetch/XHR** → recargar → clic en `usuarios` → **Headers**. Ahí
+se ven el método, la URL, el código HTTP y la cabecera `Authorization`.
+
+> **Recorte el valor del token antes de guardar la imagen.** La guía pide no
+> exponer el JWT en capturas, y esa cabecera lo muestra entero. Lo que hay que
+> demostrar es que la cabecera viaja, no cuál es su contenido.
+
+**12 — MySQL.** Después de ejecutar la carpeta de Postman, la cuenta que creó y
+eliminó sigue en la tabla:
+
+```sql
+USE qr_empresarial;
+
+SELECT id_usuario, nombre, correo, estado, deleted_at
+  FROM usuario
+ WHERE correo IN ('guia2.postman@ejemplo.co',
+                  'admin@caferaices.co',
+                  'contacto@laespiga.co')
+ ORDER BY id_usuario;
+```
+
+`guia2.postman@ejemplo.co` aparece con `deleted_at` puesto y las otras dos con
+`NULL`. Eso es el borrado lógico: la fila no se va, se marca. React nunca
+ejecuta un `DELETE` de SQL; llama al endpoint y es el backend quien decide qué
+significa eliminar.
 
 Las nueve las genera [`guia-02/generar-capturas.js`](guia-02/generar-capturas.js),
 que entra con las cuentas de demostración y recorre el CRUD completo: crea una

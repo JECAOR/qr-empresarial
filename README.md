@@ -205,7 +205,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (235 peticiones), Jest + Supertest (133) y Playwright + axe-core (396) | En uso |
+| Pruebas | Postman (250 peticiones), Jest + Supertest (133) y Playwright + axe-core (396) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |

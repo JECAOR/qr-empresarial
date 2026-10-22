@@ -1288,7 +1288,7 @@ no la página que estaba viendo.
 
 ## Pruebas
 
-La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 235 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
+La colección de Postman `docs/postman/QR-Empresarial-Usuarios.postman_collection.json` contiene 250 peticiones organizadas por guía, con verificación automática del código de respuesta. Se importa en Postman y se ejecuta con **Run collection**; los dos inicios de sesión de la primera carpeta guardan los tokens que usan las demás.
 
 ## Pendiente
 
