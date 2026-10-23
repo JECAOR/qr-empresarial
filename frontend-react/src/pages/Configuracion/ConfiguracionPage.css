@@ -1,0 +1,77 @@
+.configuracion {
+  max-width: 680px;
+  margin: 26px auto;
+  padding: 0 16px;
+}
+
+.panel--peligro {
+  border-color: #fca5a5;
+}
+
+.avisos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.interruptor {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.interruptor input {
+  margin-top: 3px;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.interruptor span {
+  display: grid;
+  gap: 2px;
+}
+
+.interruptor strong {
+  font-size: 14px;
+  color: var(--slate-900);
+}
+
+.interruptor small {
+  font-size: 12px;
+  color: var(--slate-500);
+  line-height: 1.45;
+}
+
+.avisos__nota {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--slate-500);
+}
+
+.boton-peligro {
+  border: 1px solid #b42318;
+  border-radius: 10px;
+  background: var(--white);
+  color: #b42318;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 11px 20px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.boton-peligro:hover:enabled {
+  background: #b42318;
+  color: var(--white);
+}
+
+.boton-peligro:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
