@@ -81,6 +81,9 @@ alta y edición, activar y desactivar, eliminar y reordenar.
 **`/codigo-qr`** — el código (RF-07, RF-08 y RF-09): vista previa, color,
 tamaño, descarga en tres formatos y el interruptor de visibilidad.
 
+**`/actividad`** — las estadísticas (RF-11): cuatro medidas, la gráfica
+diaria y los enlaces más pulsados, en 7, 30 o 90 días.
+
 **`*`** — cualquier otra dirección da una pantalla que lo dice. Antes el router
 mandaba a la portada sin avisar, y quien escribía mal una dirección creía haber
 llegado donde quería.
@@ -106,6 +109,7 @@ src/
     Perfil/                   El perfil del negocio
     Contenido/                Los bloques, en sus tres secciones
     CodigoQr/                 El código: vista previa, descarga y visibilidad
+    Estadisticas/             La actividad del perfil
     Usuarios/                 La gestión, con los siete endpoints
     AccesoDenegado/           Rol insuficiente
     NoEncontrada/             Una dirección que no existe
@@ -114,6 +118,7 @@ src/
     authService.js            Entrar, salir, consultar el perfil
     cuentaService.js          Registro y recuperación de contraseña
     contenidoService.js       Los siete endpoints de contenido
+    estadisticaService.js     La actividad del perfil
     qrService.js              El código QR y su descarga
     perfilService.js          El perfil empresarial propio
     perfilPublicoService.js   El GET público
@@ -474,6 +479,40 @@ conserva y se puede volver a publicar cuando se quiera.
 
 Comprobado de extremo a extremo: al retirarla, `GET /api/publico/:slug`
 responde 404; al publicarla de nuevo, 200 con sus cinco bloques.
+
+## El módulo 6: la actividad
+
+Cuatro medidas, la gráfica día a día y los enlaces más pulsados, en los tres
+rangos que acepta el servidor: 7, 30 y 90 días.
+
+**La gráfica se dibuja a mano en SVG**, sin librería. Son dos series de entre
+siete y noventa puntos; Chart.js con su envoltorio para React pesa más que todo
+el resto de esta aplicación junta. El `<title>` de cada punto da la información
+al pasar el cursor, que es cosa del navegador y no cuesta nada.
+
+El lienzo usa coordenadas propias y el SVG lo escala al ancho disponible, así
+que no hay que medir el contenedor ni volver a dibujar al cambiar el tamaño de
+la ventana.
+
+**Los rangos son tres y no cualquiera.** El servidor acepta 7, 30 y 90; con
+cualquier otro valor devuelve 7 **sin avisar**. Una pantalla que ofreciera 14
+días enseñaría siete diciendo que son catorce. Por eso la lista de rangos vive
+en el servicio, al lado de la llamada.
+
+**Las fechas del eje cambian con el rango.** A siete días el nombre del día se
+lee mejor; a treinta o noventa se repite —«Dom» cinco veces— y deja de decir
+nada, así que ahí va el día y el mes.
+
+La fecha se parte a mano en lugar de pasarla por `Date`. Con `new Date("2026-07-26")`
+el navegador la interpreta en UTC y en Colombia enseñaría el 25.
+
+### Un error que atrapó el linter
+
+Al escribir esa función, una comilla invertida mal escapada dejó
+`new Date()` sin argumento: habría puesto la fecha de hoy en los noventa
+puntos. Lo señaló `oxlint` antes que ninguna prueba —«Cannot call impure
+function during render»— porque llamar a `Date` en medio del dibujado es además
+impuro.
 
 ## Lo que viene
 
