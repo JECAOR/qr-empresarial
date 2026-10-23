@@ -28,6 +28,7 @@ export default function Layout() {
         <nav className="barra__nav">
           <NavLink to="/" end>Perfil público</NavLink>
           {usuario && <NavLink to="/perfil">Mi negocio</NavLink>}
+          {usuario && <NavLink to="/contenido">Contenido</NavLink>}
           {usuario?.rol === "administrador" && <NavLink to="/usuarios">Usuarios</NavLink>}
         </nav>
 
