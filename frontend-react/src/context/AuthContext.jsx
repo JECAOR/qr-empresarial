@@ -79,8 +79,21 @@ export function ProveedorAuth({ children }) {
     setUsuario(null);
   }
 
+  /**
+   * Vuelve a preguntar quién eres.
+   *
+   * Lo llama Configuración después de cambiar el nombre o el correo. Sin
+   * esto, la barra de navegación seguiría enseñando el nombre viejo hasta
+   * recargar la página: es el mismo defecto que tuvo el encabezado del panel
+   * en el frontend original, donde el nombre salía de una caché que nadie
+   * refrescaba.
+   */
+  async function refrescar() {
+    setUsuario(normalizarPerfil(await consultarMiPerfil()));
+  }
+
   return (
-    <ContextoAuth.Provider value={{ usuario, cargando, entrar, salir }}>
+    <ContextoAuth.Provider value={{ usuario, cargando, entrar, salir, refrescar }}>
       {children}
     </ContextoAuth.Provider>
   );

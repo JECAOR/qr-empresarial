@@ -84,6 +84,9 @@ tamaño, descarga en tres formatos y el interruptor de visibilidad.
 **`/actividad`** — las estadísticas (RF-11): cuatro medidas, la gráfica
 diaria y los enlaces más pulsados, en 7, 30 o 90 días.
 
+**`/configuracion`** — la cuenta (RF-12): datos, contraseña, avisos y la
+baja.
+
 **`*`** — cualquier otra dirección da una pantalla que lo dice. Antes el router
 mandaba a la portada sin avisar, y quien escribía mal una dirección creía haber
 llegado donde quería.
@@ -110,6 +113,7 @@ src/
     Contenido/                Los bloques, en sus tres secciones
     CodigoQr/                 El código: vista previa, descarga y visibilidad
     Estadisticas/             La actividad del perfil
+    Configuracion/            La cuenta: datos, contraseña, avisos y baja
     Usuarios/                 La gestión, con los siete endpoints
     AccesoDenegado/           Rol insuficiente
     NoEncontrada/             Una dirección que no existe
@@ -118,6 +122,7 @@ src/
     authService.js            Entrar, salir, consultar el perfil
     cuentaService.js          Registro y recuperación de contraseña
     contenidoService.js       Los siete endpoints de contenido
+    cuentaPropiaService.js    Datos, contraseña, avisos y baja
     estadisticaService.js     La actividad del perfil
     qrService.js              El código QR y su descarga
     perfilService.js          El perfil empresarial propio
@@ -513,6 +518,39 @@ Al escribir esa función, una comilla invertida mal escapada dejó
 puntos. Lo señaló `oxlint` antes que ninguna prueba —«Cannot call impure
 function during render»— porque llamar a `Date` en medio del dibujado es además
 impuro.
+
+## El módulo 7: la cuenta
+
+Datos personales, contraseña, avisos por correo y la baja.
+
+**Cambiar la contraseña devuelve un token nuevo, y hay que guardarlo.** El
+servidor cierra todas las demás sesiones y firma una nueva para esta. Con el
+token viejo, la siguiente petición respondería 401 y la pantalla echaría fuera
+a quien acaba de cambiar su clave.
+
+**La contraseña solo se pide si cambia el correo.** El campo aparece cuando el
+correo deja de ser el de la cuenta, y explica por qué: es con el que se entra y
+al que llega el enlace de recuperación, de modo que quien se hiciera con una
+sesión abierta podría cambiarlo y después apropiarse de la cuenta. Pedirla para
+cambiar solo el nombre sería pedirla por nada.
+
+**Los avisos se guardan pero no se envían.** El sistema no tiene todavía la
+tarea que los manda, y la pantalla lo dice. Prometer correos que no llegan es
+peor que no ofrecerlos.
+
+### Dos defectos corregidos durante la prueba
+
+**La barra de navegación se quedaba con el nombre viejo.** Al cambiar el nombre,
+la cuenta se guardaba pero la barra seguía mostrando el anterior hasta recargar.
+Es exactamente el defecto que tuvo el encabezado del panel en el frontend
+original. `AuthContext` gana un `refrescar()` que vuelve a preguntar por
+`GET /usuarios/me`, y Configuración lo llama al guardar.
+
+**El aviso «estos son los valores de fábrica» mentía después de guardar.** La
+pantalla actualizaba sus interruptores adivinando el resultado en vez de leer la
+respuesta, y el servidor es el único que sabe que la preferencia ya dejó de ser
+la de fábrica. Ahora se pinta de inmediato para que el interruptor responda al
+dedo, pero lo que queda es lo que contesta el servidor.
 
 ## Lo que viene
 
