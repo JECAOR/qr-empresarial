@@ -1,0 +1,152 @@
+.bloques {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.bloque {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: start;
+  border: 1px solid var(--slate-200);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--white);
+}
+
+.bloque[draggable="true"] {
+  cursor: grab;
+}
+
+/* Un bloque desactivado se queda a la vista, apagado: desactivar no es
+   borrar, y el dueno tiene que poder encenderlo de nuevo. */
+.bloque--apagado {
+  background: var(--slate-50);
+  border-style: dashed;
+}
+
+.bloque--apagado .bloque__titulo,
+.bloque--apagado .bloque__detalle {
+  color: var(--slate-500);
+}
+
+.bloque__orden {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.bloque__orden button {
+  border: 1px solid var(--slate-300);
+  border-radius: 7px;
+  background: var(--white);
+  color: var(--slate-600);
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 7px;
+  cursor: pointer;
+}
+
+.bloque__orden button:hover:enabled {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.bloque__orden button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.bloque__numero {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--slate-500);
+}
+
+.bloque__cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bloque__titulo {
+  margin: 0;
+  font-size: 15px;
+  color: var(--slate-900);
+}
+
+.bloque__etiqueta {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.bloque__apagado {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+  background: var(--slate-100);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.bloque__detalle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--slate-600);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.bloque__acciones {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bloque__acciones button {
+  border: 1px solid var(--slate-300);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--slate-900);
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.bloque__acciones button:hover:enabled {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.bloque__acciones button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bloque__acciones .peligro:hover:enabled {
+  border-color: #b42318;
+  color: #b42318;
+}
+
+@media (max-width: 700px) {
+  .bloque {
+    grid-template-columns: auto 1fr;
+  }
+
+  .bloque__acciones {
+    grid-column: 1 / -1;
+  }
+}

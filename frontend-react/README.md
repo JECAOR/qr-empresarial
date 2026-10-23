@@ -75,6 +75,9 @@ seguir la prueba sin un buzón de correo.
 color de marca y la dirección pública. Pide sesión, sin exigir rol: el perfil es
 el de quien entra.
 
+**`/contenido`** — los bloques del perfil (RF-05 y RF-06): tres secciones,
+alta y edición, activar y desactivar, eliminar y reordenar.
+
 **`*`** — cualquier otra dirección da una pantalla que lo dice. Antes el router
 mandaba a la portada sin avisar, y quien escribía mal una dirección creía haber
 llegado donde quería.
@@ -98,6 +101,7 @@ src/
     Login/                    La entrada
     Cuenta/                   Registro, recuperar y restablecer
     Perfil/                   El perfil del negocio
+    Contenido/                Los bloques, en sus tres secciones
     Usuarios/                 La gestión, con los siete endpoints
     AccesoDenegado/           Rol insuficiente
     NoEncontrada/             Una dirección que no existe
@@ -105,6 +109,7 @@ src/
     apiClient.js              Única puerta de salida hacia la API
     authService.js            Entrar, salir, consultar el perfil
     cuentaService.js          Registro y recuperación de contraseña
+    contenidoService.js       Los siete endpoints de contenido
     perfilService.js          El perfil empresarial propio
     perfilPublicoService.js   El GET público
     usuarioService.js         Los siete endpoints de usuarios
@@ -381,6 +386,48 @@ El mensaje de error sale arriba del panel y el botón de guardar está abajo del
 todo. Al probarlo en una pantalla de 600 px, el aviso quedaba **281 píxeles por
 encima** de lo visible: se pulsaba Guardar, el formulario respondía, y no se veía
 nada. Ahora el mensaje se desplaza a la vista cuando aparece.
+
+## El módulo 3: el contenido
+
+Los bloques que ve quien escanea el código, en las mismas tres secciones que el
+frontend original —Menú principal, Promociones y Reservaciones— para que un
+perfil se vea igual en las dos aplicaciones.
+
+**Se reordena de dos maneras, a propósito.** Arrastrar es lo cómodo con ratón,
+pero el arrastre de HTML no funciona con el dedo: en un móvil la lista se
+quedaría sin forma de reordenarse. Las flechas funcionan en los dos sitios y
+además se manejan con el teclado.
+
+El índice del bloque que se arrastra va en una **ref**, no en estado. Los tres
+eventos del arrastre pueden ocurrir en el mismo tic y el estado de React no se
+habría aplicado cuando llega el `drop`. Con estado parecía funcionar al
+arrastrar despacio y fallaba al hacerlo rápido, que es la peor clase de error.
+
+**El tipo no se puede cambiar al editar.** Cada tipo vive en una tabla distinta
+—los enlaces en `enlace`, los textos y botones en `elemento`—, así que cambiarlo
+sería mover la fila de tabla. El formulario lo muestra deshabilitado y lo dice,
+en lugar de dejar intentarlo y responder con un error.
+
+**La categoría depende del tipo.** Un enlace usa las ocho de enlace —WhatsApp,
+Instagram, Google Maps…— y un texto o un botón las cinco de elemento. Al cambiar
+de tipo se descarta la categoría elegida en vez de mandar un id que daría 400.
+
+**WhatsApp acepta un teléfono.** Si la categoría es WhatsApp, el destino puede
+ser `320 555 7788` y el servidor arma `https://wa.me/3205557788`. La pantalla
+cambia el marcador y la ayuda para decirlo.
+
+### La regla que más se nota
+
+Con el código QR encendido, el servidor no deja desactivar ni borrar el último
+bloque activo:
+
+> «Es el último bloque activo y el perfil ya tiene un código QR. Agregue otro
+> antes de quitarlo, o quien escanee el código no encontrará nada»
+
+Comprobado con una cuenta desechable: sin código se puede; con el código
+encendido responde 409 tanto al desactivar como al borrar; y después de retirar
+la página vuelve a permitirse. Esa es la salida, y está en la pantalla de Código
+QR —que es del módulo 4 y todavía no existe aquí—.
 
 ## Lo que viene
 

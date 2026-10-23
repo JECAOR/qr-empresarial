@@ -1,0 +1,61 @@
+.contenido {
+  max-width: 860px;
+  margin: 26px auto;
+  padding: 0 16px;
+}
+
+.pestanas {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.pestana {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--slate-500);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.pestana:hover {
+  color: var(--slate-900);
+}
+
+.pestana--activa {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.pestana__cuenta {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--slate-500);
+  background: var(--slate-100);
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+
+.pestana--activa .pestana__cuenta {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.vacio {
+  margin: 0;
+  padding: 28px 20px;
+  border: 1px dashed var(--slate-300);
+  border-radius: 14px;
+  text-align: center;
+  color: var(--slate-600);
+  line-height: 1.5;
+}
