@@ -51,4 +51,49 @@ export async function peticion(ruta, opciones = {}) {
   return cuerpo;
 }
 
+/**
+ * El origen del backend, deducido de VITE_API_URL.
+ *
+ * Hace falta para componer la direccion publica completa: la API devuelve el
+ * codigo QR con una ruta relativa, "/p/mi-negocio", y quien lo escanea
+ * necesita el enlace entero.
+ */
+export function origenDelBackend() {
+  return API_URL.replace(/\/api\/?$/, "");
+}
+
+/**
+ * Pide un archivo en lugar de JSON.
+ *
+ * La descarga del codigo (RF-08) no se puede hacer con un <a href> normal:
+ * la ruta exige el token y una etiqueta de enlace no manda cabeceras. Se trae
+ * el archivo como blob y se dispara la descarga desde el navegador.
+ *
+ * El nombre sale de Content-Disposition, que el servidor expone a proposito
+ * con Access-Control-Expose-Headers; sin eso el navegador no deja leerla
+ * desde otro origen y el archivo se guardaria con un nombre generico.
+ *
+ * @returns {Promise<{blob: Blob, nombre: string}>}
+ */
+export async function descargar(ruta) {
+  const token = sessionStorage.getItem(CLAVE_TOKEN);
+
+  const respuesta = await fetch(`${API_URL}${ruta}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+
+  if (!respuesta.ok) {
+    const cuerpo = await respuesta.json().catch(() => null);
+    const error = new Error(cuerpo?.message || `Error HTTP ${respuesta.status}`);
+
+    error.status = respuesta.status;
+    throw error;
+  }
+
+  const disposicion = respuesta.headers.get("content-disposition") ?? "";
+  const nombre = disposicion.match(/filename="?([^"]+)"?/)?.[1] ?? "codigo-qr";
+
+  return { blob: await respuesta.blob(), nombre };
+}
+
 export { CLAVE_TOKEN, CLAVE_USUARIO };
