@@ -78,6 +78,9 @@ el de quien entra.
 **`/contenido`** — los bloques del perfil (RF-05 y RF-06): tres secciones,
 alta y edición, activar y desactivar, eliminar y reordenar.
 
+**`/codigo-qr`** — el código (RF-07, RF-08 y RF-09): vista previa, color,
+tamaño, descarga en tres formatos y el interruptor de visibilidad.
+
 **`*`** — cualquier otra dirección da una pantalla que lo dice. Antes el router
 mandaba a la portada sin avisar, y quien escribía mal una dirección creía haber
 llegado donde quería.
@@ -102,6 +105,7 @@ src/
     Cuenta/                   Registro, recuperar y restablecer
     Perfil/                   El perfil del negocio
     Contenido/                Los bloques, en sus tres secciones
+    CodigoQr/                 El código: vista previa, descarga y visibilidad
     Usuarios/                 La gestión, con los siete endpoints
     AccesoDenegado/           Rol insuficiente
     NoEncontrada/             Una dirección que no existe
@@ -110,6 +114,7 @@ src/
     authService.js            Entrar, salir, consultar el perfil
     cuentaService.js          Registro y recuperación de contraseña
     contenidoService.js       Los siete endpoints de contenido
+    qrService.js              El código QR y su descarga
     perfilService.js          El perfil empresarial propio
     perfilPublicoService.js   El GET público
     usuarioService.js         Los siete endpoints de usuarios
@@ -428,6 +433,47 @@ Comprobado con una cuenta desechable: sin código se puede; con el código
 encendido responde 409 tanto al desactivar como al borrar; y después de retirar
 la página vuelve a permitirse. Esa es la salida, y está en la pantalla de Código
 QR —que es del módulo 4 y todavía no existe aquí—.
+
+## El módulo 4: el código QR
+
+Vista previa, color, tamaño, descarga en PNG, SVG y PDF, y el interruptor que
+publica o retira la página.
+
+**La vista previa la dibuja el servidor, no el navegador.** Se pide el mismo
+`GET /qr/imagen` que usa la descarga y se muestra el resultado. Así lo que se ve
+en pantalla es exactamente el archivo que se va a bajar, sin un segundo
+generador que pueda discrepar. El frontend original dibuja su propia vista
+previa con una librería y descarga la del servidor: son dos códigos distintos
+que casualmente coinciden.
+
+El precio es una petición por cada cambio de color o de tamaño, y por eso se
+espera un cuarto de segundo a que el deslizador deje de moverse. Cada imagen
+anterior se libera con `revokeObjectURL`; sin eso el navegador se queda con una
+copia de cada paso del deslizador.
+
+**La descarga no puede ser un enlace normal.** La ruta exige el token y una
+etiqueta `<a href>` no manda cabeceras. Se trae el archivo como blob y se
+dispara la descarga desde el navegador. El nombre sale de `Content-Disposition`,
+que el servidor expone a propósito con `Access-Control-Expose-Headers`: sin eso
+el navegador no deja leer esa cabecera desde otro origen y el archivo se
+guardaría con un nombre genérico.
+
+**Los tres estados del código**, comprobados con una cuenta desechable:
+
+| | |
+|---|---|
+| Sin generar | `GET /qr` responde 404. La pantalla ofrece generarlo, no muestra un error |
+| Perfil vacío | `POST /qr` responde 409: «Agregue al menos un bloque de contenido activo antes de generar el código QR» |
+| Ya generado | `POST /qr` responde 200 con el mismo. La dirección no cambia, y de eso depende que un código impreso siga sirviendo |
+
+### La salida del módulo 3
+
+Esta es la pantalla a la que apunta el mensaje que impide quitar el último
+bloque activo. Retirar la página apaga el código sin borrarlo: la dirección se
+conserva y se puede volver a publicar cuando se quiera.
+
+Comprobado de extremo a extremo: al retirarla, `GET /api/publico/:slug`
+responde 404; al publicarla de nuevo, 200 con sus cinco bloques.
 
 ## Lo que viene
 
