@@ -11,6 +11,7 @@ import NoEncontradaPage from "./pages/NoEncontrada/NoEncontradaPage";
 import PerfilPage from "./pages/Perfil/PerfilPage";
 import ContenidoPage from "./pages/Contenido/ContenidoPage";
 import CodigoQrPage from "./pages/CodigoQr/CodigoQrPage";
+import EstadisticasPage from "./pages/Estadisticas/EstadisticasPage";
 import UsuariosPage from "./pages/Usuarios/UsuariosPage";
 import AccesoDenegadoPage from "./pages/AccesoDenegado/AccesoDenegadoPage";
 
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/contenido" element={<ContenidoPage />} />
           <Route path="/codigo-qr" element={<CodigoQrPage />} />
+          <Route path="/actividad" element={<EstadisticasPage />} />
         </Route>
 
         <Route element={<RutaProtegida rolesPermitidos={["administrador"]} />}>

@@ -1,0 +1,159 @@
+.estadisticas {
+  max-width: 900px;
+  margin: 26px auto;
+  padding: 0 16px;
+}
+
+.rangos {
+  display: flex;
+  gap: 6px;
+}
+
+.rango {
+  border: 1px solid var(--slate-300);
+  border-radius: 9px;
+  background: var(--white);
+  color: var(--slate-600);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.rango:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.rango--elegido {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.medidas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.medida {
+  border: 1px solid var(--slate-200);
+  border-radius: 14px;
+  padding: 14px 16px;
+  /* Sin esto una tarjeta no puede encogerse por debajo de su contenido y la
+     cuarta se sale de la rejilla. Paso en el frontend original. */
+  min-width: 0;
+}
+
+.medida__nombre {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+}
+
+.medida__valor {
+  margin: 8px 0 4px;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--slate-900);
+  line-height: 1;
+}
+
+.medida__ayuda {
+  margin: 0;
+  font-size: 11px;
+  color: var(--slate-500);
+  line-height: 1.4;
+}
+
+.enlaces {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.enlace {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 120px auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.enlace__puesto {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--slate-100);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--slate-500);
+}
+
+.enlace__texto {
+  display: grid;
+  min-width: 0;
+}
+
+.enlace__texto strong {
+  font-size: 14px;
+  color: var(--slate-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.enlace__texto small {
+  font-size: 11px;
+  color: var(--slate-500);
+}
+
+.enlace__barra {
+  height: 6px;
+  border-radius: 20px;
+  background: var(--slate-100);
+  overflow: hidden;
+}
+
+.enlace__barra span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 20px;
+}
+
+.enlace__clics {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate-600);
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .medidas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .enlace {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .enlace__barra {
+    display: none;
+  }
+}
+
+@media (max-width: 460px) {
+  .medidas {
+    grid-template-columns: 1fr;
+  }
+}

@@ -30,6 +30,7 @@ export default function Layout() {
           {usuario && <NavLink to="/perfil">Mi negocio</NavLink>}
           {usuario && <NavLink to="/contenido">Contenido</NavLink>}
           {usuario && <NavLink to="/codigo-qr">Código QR</NavLink>}
+          {usuario && <NavLink to="/actividad">Actividad</NavLink>}
           {usuario?.rol === "administrador" && <NavLink to="/usuarios">Usuarios</NavLink>}
         </nav>
 

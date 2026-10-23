@@ -1,0 +1,60 @@
+.grafica {
+  margin: 0;
+}
+
+.grafica__leyenda {
+  display: flex;
+  gap: 18px;
+  justify-content: flex-end;
+  font-size: 12px;
+  color: var(--slate-600);
+  margin-bottom: 8px;
+}
+
+.grafica__leyenda span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grafica__leyenda i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.grafica__lienzo {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.grafica__guia {
+  stroke: var(--slate-200);
+  stroke-width: 1;
+}
+
+.grafica__linea {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.grafica__numero {
+  font-size: 11px;
+  fill: var(--slate-500);
+  text-anchor: end;
+}
+
+.grafica__fecha {
+  font-size: 11px;
+  fill: var(--slate-500);
+  text-anchor: middle;
+}
+
+.grafica__punto {
+  /* El <title> de cada punto es la informacion al pasar el cursor: lo da el
+     navegador, sin JavaScript ni una libreria de graficas. */
+  cursor: default;
+}
