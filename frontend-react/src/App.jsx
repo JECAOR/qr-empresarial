@@ -14,6 +14,7 @@ import CodigoQrPage from "./pages/CodigoQr/CodigoQrPage";
 import EstadisticasPage from "./pages/Estadisticas/EstadisticasPage";
 import ConfiguracionPage from "./pages/Configuracion/ConfiguracionPage";
 import UsuariosPage from "./pages/Usuarios/UsuariosPage";
+import AdministracionPage from "./pages/Administracion/AdministracionPage";
 import AccesoDenegadoPage from "./pages/AccesoDenegado/AccesoDenegadoPage";
 
 /**
@@ -48,6 +49,7 @@ export default function App() {
 
         <Route element={<RutaProtegida rolesPermitidos={["administrador"]} />}>
           <Route path="/usuarios" element={<UsuariosPage />} />
+          <Route path="/administracion" element={<AdministracionPage />} />
         </Route>
 
         {/* Una direccion que no existe se dice, no se disimula mandando
