@@ -87,6 +87,10 @@ diaria y los enlaces más pulsados, en 7, 30 o 90 días.
 **`/configuracion`** — la cuenta (RF-12): datos, contraseña, avisos y la
 baja.
 
+**`/administracion`** — el panel (RF-13 a RF-15): cifras, filtros, la tabla
+con su paginación, el detalle de cada cuenta y el reporte en CSV. Solo
+administradores.
+
 **`*`** — cualquier otra dirección da una pantalla que lo dice. Antes el router
 mandaba a la portada sin avisar, y quien escribía mal una dirección creía haber
 llegado donde quería.
@@ -114,6 +118,7 @@ src/
     CodigoQr/                 El código: vista previa, descarga y visibilidad
     Estadisticas/             La actividad del perfil
     Configuracion/            La cuenta: datos, contraseña, avisos y baja
+    Administracion/           El panel: cifras, filtros, detalle y reporte
     Usuarios/                 La gestión, con los siete endpoints
     AccesoDenegado/           Rol insuficiente
     NoEncontrada/             Una dirección que no existe
@@ -122,6 +127,7 @@ src/
     authService.js            Entrar, salir, consultar el perfil
     cuentaService.js          Registro y recuperación de contraseña
     contenidoService.js       Los siete endpoints de contenido
+    adminService.js           El panel de administración
     cuentaPropiaService.js    Datos, contraseña, avisos y baja
     estadisticaService.js     La actividad del perfil
     qrService.js              El código QR y su descarga
@@ -551,6 +557,43 @@ pantalla actualizaba sus interruptores adivinando el resultado en vez de leer la
 respuesta, y el servidor es el único que sabe que la preferencia ya dejó de ser
 la de fábrica. Ahora se pinta de inmediato para que el interruptor responda al
 dedo, pero lo que queda es lo que contesta el servidor.
+
+## El módulo 8: la administración
+
+Seis cifras, filtros con búsqueda, la tabla con paginación, el detalle de cada
+cuenta y el reporte en CSV.
+
+**No es la misma pantalla que `/usuarios`.** Aquella, de la Guía 02, es el CRUD
+del módulo de usuarios: crear, editar, cambiar estado y eliminar. Esta es de
+solo lectura y añade lo que el CRUD no tiene —la actividad de cada cuenta, su
+perfil, su código— porque usa `/api/admin`, que es otro módulo del backend.
+
+**El reporte respeta los filtros, y no lleva la paginación.** Lo que se descarga
+es lo que se está viendo, pero completo: si hay tres páginas, el CSV trae las
+tres. Comprobado: sin filtro salen 3 cuentas; con `rol=administrador`, una.
+
+El archivo empieza por **BOM UTF-8** —`EF BB BF`, verificado en bytes— para que
+Excel no rompa las tildes al abrirlo.
+
+**Un filtro inválido no da error.** El backend lo ignora y usa el valor por
+defecto, porque responder 400 porque alguien editó la URL dejaría la pantalla
+en blanco por algo que no importa. La lista de valores válidos vive en el
+servicio, al lado de la llamada.
+
+### El diálogo que se cerraba solo
+
+El detalle va en un `<dialog>` para que el navegador se encargue del foco, de
+`Escape` y de bloquear lo de detrás. La primera versión lo cerraba en la
+limpieza del efecto, que parecía lo correcto.
+
+No lo era. `close()` dispara el evento `close`, que llama a `onCerrar`, que
+borra el estado de quien dibuja el diálogo. Y `StrictMode` ejecuta cada efecto
+dos veces —efecto, limpieza, efecto—, así que **el diálogo se cerraba solo una
+fracción de segundo después de abrirse**. Al desmontarse, el navegador lo quita
+de la capa superior sin ayuda: la limpieza sobraba.
+
+`showModal()` lleva además una guarda: llamarlo sobre un diálogo ya abierto
+lanza `InvalidStateError`, y con `StrictMode` se llama dos veces.
 
 ## Lo que viene
 
