@@ -77,6 +77,9 @@ export default function AdministracionPage() {
   useEffect(() => {
     let vigente = true;
 
+    // El dato viene de la red: no se puede derivar durante el dibujado, y al
+    // cambiar el filtro hay que volver a decir que se esta cargando.
+    // eslint-disable-next-line react/set-state-in-effect
     setCargando(true);
 
     listarUsuarios(filtros)

@@ -99,6 +99,9 @@ export function ProveedorAuth({ children }) {
   );
 }
 
+// El hook va con su proveedor, que es como se usa el Context API. Separarlos
+// en dos archivos solo para la recarga en caliente seria ruido.
+// eslint-disable-next-line react/only-export-components
 export function useAuth() {
   const contexto = useContext(ContextoAuth);
 

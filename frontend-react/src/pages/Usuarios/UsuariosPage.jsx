@@ -39,6 +39,9 @@ export default function UsuariosPage() {
   useEffect(() => {
     let vigente = true;
 
+    // cargar() guarda lo que responde la API, y eso pasa despues del await,
+    // no mientras se dibuja. El analisis estatico no lo distingue.
+    // eslint-disable-next-line react/set-state-in-effect
     cargar()
       .catch((fallo) => {
         if (vigente) setError(fallo.message);
