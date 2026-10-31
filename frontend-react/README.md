@@ -9,8 +9,14 @@ misma API REST que el original. Corresponde a las Guías Frontend del SENA
 | 01 | Vite, componentes, props, `useState`/`useEffect` y el primer GET público |
 | 02 | Inicio de sesión con JWT, rutas protegidas por rol y la gestión de usuarios |
 
-El frontend original, en HTML/CSS/JS sin framework, sigue en [`../frontend`](../frontend)
-y no se toca. Son dos clientes del mismo backend.
+Desde `v3.3.0` **es el frontend que publica el servidor**: abrir
+`http://localhost:3000` entrega esta aplicación, y los códigos QR llevan a su
+página `/p/:slug`. Hay que compilarla antes con `npm run build`, porque lo que
+se sirve es `dist/`.
+
+El original, en HTML/CSS/JS sin framework, sigue en [`../frontend`](../frontend)
+y no se toca: se publica con `FRONTEND=clasico` y sus 396 pruebas de Playwright
+pasan igual, porque levantan su propio servidor.
 
 ## Puesta en marcha
 
@@ -113,7 +119,8 @@ src/
     preparar.js               Lo que se monta antes de cada prueba
     ayudas.jsx                Lo que repiten las pruebas
   pages/
-    PerfilPublico/            La portada pública
+    PerfilPublico/            La portada pública, con buscador
+    PaginaEscaneada/          /p/:slug — lo que ve quien escanea el código
     Login/                    La entrada
     Cuenta/                   Registro, recuperar y restablecer
     Perfil/                   El perfil del negocio
@@ -226,7 +233,7 @@ no sabe limpiarse. En producción se ejecuta una sola vez.
 
 ## Las pruebas
 
-**417 pruebas en 25 archivos**, con [Vitest](https://vitest.dev) y
+**439 pruebas en 26 archivos**, con [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com) sobre jsdom. No necesitan ni
 base de datos ni servidor:
 
@@ -238,16 +245,16 @@ npm test
 npm run coverage
 ```
 
-Cubren **el 99,4 % de las líneas y el 96,3 % de las ramas**. Cada archivo
+Cubren **el 99,4 % de las líneas y el 96,4 % de las ramas**. Cada archivo
 `.test.jsx` vive al lado de lo que prueba, no en una carpeta aparte: así se ve
 de un vistazo qué tiene pruebas y qué no.
 
 | Qué se prueba | Pruebas |
 |---|---:|
-| Las catorce pantallas | 179 |
+| Las quince pantallas | 194 |
 | Los doce componentes | 108 |
-| Los once servicios | 84 |
-| El mapa de rutas | 27 |
+| Los once servicios | 90 |
+| El mapa de rutas | 28 |
 | El contexto de sesión | 11 |
 | El guardia de rutas | 8 |
 
@@ -435,12 +442,16 @@ que traía la Guía 02 —entrar y salir— se sumaron el registro público, la
 recuperación de contraseña en sus dos pasos y la pantalla de dirección no
 encontrada.
 
-**El enlace del correo no apunta aquí.** El backend lo arma con `APP_URL` y
-señala a `/restablecer.html`, que es la pantalla del frontend original —el que
-está desplegado—. No es un error, es la consecuencia de tener dos clientes de la
-misma API. Mientras tanto, la pantalla de recuperación saca el token de ese
-enlace y ofrece seguir dentro de React. Para que el correo apuntara a esta
-aplicación habría que cambiar `APP_URL` y la ruta en `auth.service.js`.
+**El enlace del correo apunta aquí desde `v3.3.0`.** Antes señalaba a
+`/restablecer.html`, la pantalla del frontend original, porque era el que estaba
+publicado. Ahora la dirección sale de `backend/src/config/frontend.js` y sigue a
+la variable `FRONTEND`: `/restablecer` con React y `/restablecer.html` con el
+original. Escribirla en `auth.service.js` la habría dejado desfasada en cuanto
+alguien cambiara la variable.
+
+La pantalla de recuperación conserva de todos modos lo de sacar el token del
+enlace de desarrollo y ofrecer seguir aquí: sirve si el correo se generó con la
+otra configuración.
 
 Recorrido comprobado de extremo a extremo: registrar, entrar, pedir el enlace,
 ponerle contraseña nueva y entrar con ella. Después, la contraseña vieja responde

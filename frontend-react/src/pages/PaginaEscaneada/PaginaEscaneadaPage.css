@@ -1,0 +1,13 @@
+/* La pagina que llega por el codigo QR. Mas estrecha que la portada: se lee
+   casi siempre en un telefono, recien sacada la camara. */
+.escaneada {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.escaneada__bloques {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}

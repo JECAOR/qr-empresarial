@@ -169,18 +169,22 @@ function construirEtiquetas(perfil, origen) {
 const INICIO = '<!-- METADATOS:INICIO -->';
 const FIN = '<!-- METADATOS:FIN -->';
 
-let plantilla = null;
+// Una por archivo. Antes era una sola variable, y servía: solo se pedía
+// public.html. Desde que el frontend en React trae su propio index.html con
+// las mismas marcas, hay dos pantallas posibles, y una caché compartida
+// devolvería la del primer archivo que se hubiera pedido.
+const plantillas = new Map();
 
 /**
- * Lee public.html una sola vez y lo parte por las marcas.
+ * Lee la pantalla pública una sola vez y la parte por las marcas.
  *
- * Se cachea porque la pantalla no cambia mientras el servidor corre, y leer
- * el archivo en cada escaneo sería una lectura de disco por visita.
+ * Se cachea porque no cambia mientras el servidor corre, y leer el archivo en
+ * cada escaneo sería una lectura de disco por visita.
  *
- * @param {string} ruta
+ * @param {string} ruta - public.html o el index.html del frontend en React.
  */
 async function cargarPlantilla(ruta) {
-  if (plantilla) return plantilla;
+  if (plantillas.has(ruta)) return plantillas.get(ruta);
 
   const html = await fs.readFile(ruta, 'utf8');
 
@@ -188,12 +192,14 @@ async function cargarPlantilla(ruta) {
   const hasta = html.indexOf(FIN);
 
   if (desde === -1 || hasta === -1) {
-    throw new Error(`No se encontraron las marcas ${INICIO} / ${FIN} en public.html`);
+    throw new Error(`No se encontraron las marcas ${INICIO} / ${FIN} en ${ruta}`);
   }
 
-  plantilla = { antes: html.slice(0, desde), despues: html.slice(hasta + FIN.length) };
+  const partida = { antes: html.slice(0, desde), despues: html.slice(hasta + FIN.length) };
 
-  return plantilla;
+  plantillas.set(ruta, partida);
+
+  return partida;
 }
 
 /**

@@ -64,6 +64,14 @@ describe("las rutas abiertas", () => {
       .toBeInTheDocument();
   });
 
+  // La direccion que llevan codificada los codigos QR. Va fuera de Layout:
+  // quien escanea no viene a navegar por la aplicacion.
+  it("/p/:slug entrega la pagina del negocio, sin barra de navegacion", async () => {
+    montar("/p/panaderia-la-espiga");
+
+    await waitFor(() => expect(screen.queryByText("Perfil público")).not.toBeInTheDocument());
+  });
+
   it.each([
     ["/login", "Iniciar sesión"],
     ["/registro", "Crear una cuenta"],
@@ -155,7 +163,7 @@ describe("una direccion que no existe", () => {
 });
 
 describe("NoEncontradaPage", () => {
-  it("explica que los perfiles los sirve el servidor, no esta aplicacion", () => {
+  it("recuerda la forma que tiene la direccion de un negocio", () => {
     render(<MemoryRouter><NoEncontradaPage /></MemoryRouter>);
 
     expect(screen.getByText("/p/nombre-del-negocio")).toBeInTheDocument();

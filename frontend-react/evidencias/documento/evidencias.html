@@ -207,7 +207,7 @@
     <tr><td>Ficha</td><td>3336250</td></tr>
     <tr><td>Guías</td><td>Frontend N.º 1 y N.º 2, más los ocho módulos del proyecto</td></tr>
     <tr><td>Repositorio</td><td>github.com/JECAOR/qr-empresarial</td></tr>
-    <tr><td>Versión</td><td>v3.2.0</td></tr>
+    <tr><td>Versión</td><td>v3.3.0</td></tr>
     <tr><td>Fecha</td><td>31 de octubre de 2026</td></tr>
   </table>
   <p class="portada__pie">Todas las capturas de este documento se tomaron contra el servidor real,<br>
@@ -342,7 +342,8 @@ carpeta aparte: asi se ve de un vistazo que tiene pruebas y que no.</pre>
 </section>
 <section>
   <h2>3. Evidencia de integración con la API</h2>
-  <p>El frontend consume <strong>38 de los 40 endpoints</strong> de la API REST del proyecto. Los dos restantes son <code>GET /api/health</code>, que solo comprueba que el servidor responde, y <code>POST /api/publico/:slug/eventos</code>, que registra los escaneos y las visitas: lo llama la vista pública que sirve Express, no esta aplicación, porque si lo hiciera inflaría las estadísticas cada vez que el dueño abriera su propio panel.</p>
+  <p>El frontend consume <strong>39 de los 40 endpoints</strong> de la API REST del proyecto. El que falta es <code>GET /api/health</code>, que solo comprueba que el servidor responde.</p>
+  <p><code>POST /api/publico/:slug/eventos</code> —el que cuenta escaneos, visitas y clics— lo llama <strong>solo</strong> la página del código QR, <code>/p/:slug</code>. El panel del dueño no, o inflaría sus propias estadísticas cada vez que abriera su perfil. La diferencia no se ve en pantalla: equivocarse ahí no rompe nada, solo deja las cifras mintiendo, y por eso tiene pruebas propias.</p>
   <h3>3.1 Endpoints por módulo</h3>
   <table class="datos">
     <tr>
@@ -382,8 +383,8 @@ carpeta aparte: asi se ve de un vistazo que tiene pruebas y que no.</pre>
     </tr>
     <tr>
       <td>Vista pública</td>
-      <td>/publico/:slug</td>
-      <td>Perfil público</td>
+      <td>/publico/:slug, /:slug/eventos</td>
+      <td>Perfil público, página del QR</td>
     </tr>
     <tr>
       <td>Estadísticas</td>
@@ -601,7 +602,7 @@ cd frontend-react &amp;&amp; npm run coverage  # con el informe de cobertura</pr
     </tr>
   </table>
   <h3>5.4 Las pruebas automáticas</h3>
-  <p><strong>417 pruebas en 25 archivos</strong>, que tardan medio minuto. Se ejecutan con <code>npm test</code> dentro de <code>frontend-react/</code>. El motor es <strong>Vitest</strong>, que usa la misma configuración que Vite, con <strong>Testing Library</strong> sobre <strong>jsdom</strong>: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS.</p>
+  <p><strong>439 pruebas en 26 archivos</strong>, que tardan medio minuto. Se ejecutan con <code>npm test</code> dentro de <code>frontend-react/</code>. El motor es <strong>Vitest</strong>, que usa la misma configuración que Vite, con <strong>Testing Library</strong> sobre <strong>jsdom</strong>: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS.</p>
   <table class="datos">
     <tr>
       <th style="width:40%">Qué se prueba</th>
@@ -609,8 +610,8 @@ cd frontend-react &amp;&amp; npm run coverage  # con el informe de cobertura</pr
       <th>Lo que se comprueba</th>
     </tr>
     <tr>
-      <td>Las catorce pantallas</td>
-      <td>179</td>
+      <td>Las quince pantallas</td>
+      <td>194</td>
       <td>El recorrido entero: cargar, escribir, guardar, fallar y reintentar</td>
     </tr>
     <tr>
@@ -620,12 +621,12 @@ cd frontend-react &amp;&amp; npm run coverage  # con el informe de cobertura</pr
     </tr>
     <tr>
       <td>Los once servicios</td>
-      <td>84</td>
+      <td>90</td>
       <td>La ruta, el método y el cuerpo de cada llamada, y qué pasa con cada error</td>
     </tr>
     <tr>
       <td>El mapa de rutas</td>
-      <td>27</td>
+      <td>28</td>
       <td>Que cada dirección lleve a su pantalla y que las protegidas lo estén</td>
     </tr>
     <tr>
@@ -639,7 +640,7 @@ cd frontend-react &amp;&amp; npm run coverage  # con el informe de cobertura</pr
       <td>Quién pasa, a dónde se le manda y que no se enseñe nada mientras comprueba</td>
     </tr>
   </table>
-  <p><strong>Cobertura: 99,4 % de las líneas y 96,3 % de las ramas</strong> (<code>npm run coverage</code>). Ninguna prueba llega a la red: <code>.env.test</code> apunta a un servidor que no existe, de modo que una que se escapara fallaría en lugar de tocar la base de datos de desarrollo.</p>
+  <p><strong>Cobertura: 99,4 % de las líneas y 96,4 % de las ramas</strong> (<code>npm run coverage</code>). Ninguna prueba llega a la red: <code>.env.test</code> apunta a un servidor que no existe, de modo que una que se escapara fallaría en lugar de tocar la base de datos de desarrollo.</p>
   <h3>5.5 Cada prueba se falsificó</h3>
   <p>Una prueba que pasa no demuestra nada si también pasaría con el código roto. Los cinco defectos de la sección anterior se volvieron a meter, uno a uno, para comprobar que su prueba fallaba:</p>
   <table class="datos">
@@ -676,7 +677,30 @@ cd frontend-react &amp;&amp; npm run coverage  # con el informe de cobertura</pr
   <p>Se dicen porque callarlas sería justamente el tipo de error que estas pruebas existen para evitar.</p>
   <p><strong>El arrastre rápido no se puede reproducir aquí.</strong> El defecto era una carrera: los tres eventos del arrastre caen en el mismo tic y el estado de React todavía no se ha aplicado. Pero <code>fireEvent</code> envuelve cada evento en <code>act()</code>, que vacía la cola de React, así que la carrera no llega a darse: se comprobó volviendo a poner el <code>useState</code>, y las dieciséis pruebas seguían en verde. En su lugar se mide con un <code>Profiler</code> que empezar un arrastre no provoque un redibujado, que es lo que distingue una <code>ref</code> del estado, y esa sí falla con el código viejo.</p>
   <p><strong>El destino recordado al entrar tampoco.</strong> Por el mismo <code>act()</code>, el <code>&lt;Navigate&gt;</code> de «ya tienes sesión» le gana al <code>navegar(desde)</code> y la pantalla acaba en la portada. Se comprobó en un Chromium de verdad, contra los dos servidores: entrar en <code>/contenido</code> sin sesión e iniciarla aterriza en <code>/contenido</code>. La prueba afirma por eso a dónde manda la pantalla, no dónde acaba.</p>
-  <h3>5.7 Lo que este frontend todavía no tiene</h3>
+  <h3>5.7 El frontend publicado</h3>
+  <p>Desde la versión <strong>v3.3.0</strong> es este el frontend que sirve el servidor: abrir la dirección del proyecto entrega esta aplicación, y los códigos QR llevan a su página <code>/p/:slug</code>. El original sigue en el repositorio y se publica cambiando una variable, <code>FRONTEND=clasico</code>; sus 396 pruebas de Playwright pasan igual, porque levantan su propio servidor.</p>
+  <p>Publicarlo obligó a tres cosas que no hacían falta con el original, y que son las que de verdad distinguen servir una aplicación de una sola página:</p>
+  <table class="datos">
+    <tr>
+      <th style="width:30%">Qué hubo que hacer</th>
+      <th>Por qué</th>
+    </tr>
+    <tr>
+      <td>Reenviar las rutas al index.html</td>
+      <td>/perfil o /contenido no son archivos: los resuelve el enrutador en el navegador. Sin esto funcionan al navegar y dan 404 al recargar, que es el fallo más fácil de dejar pasar. Solo se reenvían los GET sin extensión: a un POST a una ruta que no existe hay que decirle que no existe, y a un .js que falta, también.</td>
+    </tr>
+    <tr>
+      <td>Inyectar las etiquetas de vista previa</td>
+      <td>WhatsApp, Telegram y Google no ejecutan JavaScript, y esta pantalla se dibuja entera en el navegador: sin inyectarlas en el servidor no habría nada que leer al pegar el enlace. El index.html lleva las mismas marcas que usaba la pantalla del frontend original.</td>
+    </tr>
+    <tr>
+      <td>Mover el enlace del correo</td>
+      <td>React no sirve archivos .html: la recuperación de contraseña apunta ahora a /restablecer. La dirección sale de la configuración y sigue a la variable, porque escribirla en el servicio la habría dejado desfasada al cambiarla.</td>
+    </tr>
+  </table>
+  <p>Y una pantalla nueva, <code>/p/:slug</code>, que es la que ve quien escanea: sin buscador —ya llegó a su negocio— y con el registro de escaneos, visitas y clics que hasta ahora hacía el frontend original.</p>
+  <div class="nota"><strong>Un defecto encontrado al probarlo.</strong> La primera versión guardaba en una <code>ref</code> que ya había contado la visita, para que <code>StrictMode</code> no la contara dos veces. Sobraba —la bandera de vigencia del efecto ya lo impedía— y además dejaba sin contar la visita al ir de un negocio a otro dentro de la aplicación, porque React Router reutiliza el componente cuando solo cambia el slug. La prueba que lo destapó falla con la <code>ref</code> y pasa sin ella.</div>
+  <h3>5.8 Lo que este frontend todavía no tiene</h3>
   <p>No hay pruebas de extremo a extremo propias, en un navegador de verdad. El frontend original del proyecto tiene 396 de Playwright y este se verificó pantalla por pantalla a mano contra el servidor real, pero las dos comprobaciones de la sección anterior enseñan dónde está el límite de jsdom: lo que depende del momento exacto en que React aplica un cambio pide un navegador.</p>
 </section>
 

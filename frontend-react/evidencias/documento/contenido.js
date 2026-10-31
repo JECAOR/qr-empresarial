@@ -23,7 +23,7 @@ exports.portada = {
     ["Ficha", "3336250"],
     ["Guías", "Frontend N.º 1 y N.º 2, más los ocho módulos del proyecto"],
     ["Repositorio", "github.com/JECAOR/qr-empresarial"],
-    ["Versión", "v3.2.0"],
+    ["Versión", "v3.3.0"],
     ["Fecha", "31 de octubre de 2026"]
   ],
   pie: [
@@ -116,7 +116,9 @@ exports.cuerpo = [
   { t: "salto" },
   { t: "h2", v: "3. Evidencia de integración con la API" },
 
-  { t: "p", v: "El frontend consume *38 de los 40 endpoints* de la API REST del proyecto. Los dos restantes son `GET /api/health`, que solo comprueba que el servidor responde, y `POST /api/publico/:slug/eventos`, que registra los escaneos y las visitas: lo llama la vista pública que sirve Express, no esta aplicación, porque si lo hiciera inflaría las estadísticas cada vez que el dueño abriera su propio panel." },
+  { t: "p", v: "El frontend consume *39 de los 40 endpoints* de la API REST del proyecto. El que falta es `GET /api/health`, que solo comprueba que el servidor responde." },
+
+  { t: "p", v: "`POST /api/publico/:slug/eventos` —el que cuenta escaneos, visitas y clics— lo llama *solo* la página del código QR, `/p/:slug`. El panel del dueño no, o inflaría sus propias estadísticas cada vez que abriera su perfil. La diferencia no se ve en pantalla: equivocarse ahí no rompe nada, solo deja las cifras mintiendo, y por eso tiene pruebas propias." },
 
   { t: "h3", v: "3.1 Endpoints por módulo" },
   { t: "tabla", anchos: [26, 40, 34], cabeceras: ["Módulo", "Endpoints", "Pantalla"], filas: [
@@ -126,7 +128,7 @@ exports.cuerpo = [
     ["Perfil", "/perfiles/me (GET, PUT), /me/tema", "Mi negocio"],
     ["Contenido", "/contenido (GET, POST), /categorias, /orden, /:id (PUT, DELETE), /:id/estado", "Contenido"],
     ["Código QR", "/qr (GET, POST), /estado, /imagen", "Código QR"],
-    ["Vista pública", "/publico/:slug", "Perfil público"],
+    ["Vista pública", "/publico/:slug, /:slug/eventos", "Perfil público, página del QR"],
     ["Estadísticas", "/estadisticas", "Actividad"],
     ["Administración", "/admin/resumen, /admin/usuarios, /:id, /reportes/usuarios", "Administración"]
   ] },
@@ -252,18 +254,18 @@ exports.cuerpo = [
 
   { t: "h3", v: "5.4 Las pruebas automáticas" },
 
-  { t: "p", v: "*417 pruebas en 25 archivos*, que tardan medio minuto. Se ejecutan con `npm test` dentro de `frontend-react/`. El motor es *Vitest*, que usa la misma configuración que Vite, con *Testing Library* sobre *jsdom*: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS." },
+  { t: "p", v: "*439 pruebas en 26 archivos*, que tardan medio minuto. Se ejecutan con `npm test` dentro de `frontend-react/`. El motor es *Vitest*, que usa la misma configuración que Vite, con *Testing Library* sobre *jsdom*: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS." },
 
   { t: "tabla", anchos: [40, 14, 46], cabeceras: ["Qué se prueba", "Pruebas", "Lo que se comprueba"], filas: [
-    ["Las catorce pantallas", "179", "El recorrido entero: cargar, escribir, guardar, fallar y reintentar"],
+    ["Las quince pantallas", "194", "El recorrido entero: cargar, escribir, guardar, fallar y reintentar"],
     ["Los doce componentes", "108", "Lo que dibujan con cada dato y con qué avisan al pulsarlos"],
-    ["Los once servicios", "84", "La ruta, el método y el cuerpo de cada llamada, y qué pasa con cada error"],
-    ["El mapa de rutas", "27", "Que cada dirección lleve a su pantalla y que las protegidas lo estén"],
+    ["Los once servicios", "90", "La ruta, el método y el cuerpo de cada llamada, y qué pasa con cada error"],
+    ["El mapa de rutas", "28", "Que cada dirección lleve a su pantalla y que las protegidas lo estén"],
     ["El contexto de sesión", "11", "Que no se fíe del navegador y que tire la sesión si el servidor la rechaza"],
     ["El guardia de rutas", "8", "Quién pasa, a dónde se le manda y que no se enseñe nada mientras comprueba"]
   ] },
 
-  { t: "p", v: "*Cobertura: 99,4 % de las líneas y 96,3 % de las ramas* (`npm run coverage`). Ninguna prueba llega a la red: `.env.test` apunta a un servidor que no existe, de modo que una que se escapara fallaría en lugar de tocar la base de datos de desarrollo." },
+  { t: "p", v: "*Cobertura: 99,4 % de las líneas y 96,4 % de las ramas* (`npm run coverage`). Ninguna prueba llega a la red: `.env.test` apunta a un servidor que no existe, de modo que una que se escapara fallaría en lugar de tocar la base de datos de desarrollo." },
 
   { t: "h3", v: "5.5 Cada prueba se falsificó" },
 
@@ -286,7 +288,23 @@ exports.cuerpo = [
 
   { t: "p", v: "*El destino recordado al entrar tampoco.* Por el mismo `act()`, el `<Navigate>` de «ya tienes sesión» le gana al `navegar(desde)` y la pantalla acaba en la portada. Se comprobó en un Chromium de verdad, contra los dos servidores: entrar en `/contenido` sin sesión e iniciarla aterriza en `/contenido`. La prueba afirma por eso a dónde manda la pantalla, no dónde acaba." },
 
-  { t: "h3", v: "5.7 Lo que este frontend todavía no tiene" },
+  { t: "h3", v: "5.7 El frontend publicado" },
+
+  { t: "p", v: "Desde la versión *v3.3.0* es este el frontend que sirve el servidor: abrir la dirección del proyecto entrega esta aplicación, y los códigos QR llevan a su página `/p/:slug`. El original sigue en el repositorio y se publica cambiando una variable, `FRONTEND=clasico`; sus 396 pruebas de Playwright pasan igual, porque levantan su propio servidor." },
+
+  { t: "p", v: "Publicarlo obligó a tres cosas que no hacían falta con el original, y que son las que de verdad distinguen servir una aplicación de una sola página:" },
+
+  { t: "tabla", anchos: [30, 70], cabeceras: ["Qué hubo que hacer", "Por qué"], filas: [
+    ["Reenviar las rutas al index.html", "/perfil o /contenido no son archivos: los resuelve el enrutador en el navegador. Sin esto funcionan al navegar y dan 404 al recargar, que es el fallo más fácil de dejar pasar. Solo se reenvían los GET sin extensión: a un POST a una ruta que no existe hay que decirle que no existe, y a un .js que falta, también."],
+    ["Inyectar las etiquetas de vista previa", "WhatsApp, Telegram y Google no ejecutan JavaScript, y esta pantalla se dibuja entera en el navegador: sin inyectarlas en el servidor no habría nada que leer al pegar el enlace. El index.html lleva las mismas marcas que usaba la pantalla del frontend original."],
+    ["Mover el enlace del correo", "React no sirve archivos .html: la recuperación de contraseña apunta ahora a /restablecer. La dirección sale de la configuración y sigue a la variable, porque escribirla en el servicio la habría dejado desfasada al cambiarla."]
+  ] },
+
+  { t: "p", v: "Y una pantalla nueva, `/p/:slug`, que es la que ve quien escanea: sin buscador —ya llegó a su negocio— y con el registro de escaneos, visitas y clics que hasta ahora hacía el frontend original." },
+
+  { t: "nota", v: "*Un defecto encontrado al probarlo.* La primera versión guardaba en una `ref` que ya había contado la visita, para que `StrictMode` no la contara dos veces. Sobraba —la bandera de vigencia del efecto ya lo impedía— y además dejaba sin contar la visita al ir de un negocio a otro dentro de la aplicación, porque React Router reutiliza el componente cuando solo cambia el slug. La prueba que lo destapó falla con la `ref` y pasa sin ella." },
+
+  { t: "h3", v: "5.8 Lo que este frontend todavía no tiene" },
 
   { t: "p", v: "No hay pruebas de extremo a extremo propias, en un navegador de verdad. El frontend original del proyecto tiene 396 de Playwright y este se verificó pantalla por pantalla a mano contra el servidor real, pero las dos comprobaciones de la sección anterior enseñan dónde está el límite de jsdom: lo que depende del momento exacto en que React aplica un cambio pide un navegador." }
 ];
