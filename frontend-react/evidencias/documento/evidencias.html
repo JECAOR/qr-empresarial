@@ -207,7 +207,7 @@
     <tr><td>Ficha</td><td>3336250</td></tr>
     <tr><td>Guías</td><td>Frontend N.º 1 y N.º 2, más los ocho módulos del proyecto</td></tr>
     <tr><td>Repositorio</td><td>github.com/JECAOR/qr-empresarial</td></tr>
-    <tr><td>Versión</td><td>v3.0.1</td></tr>
+    <tr><td>Versión</td><td>v3.2.0</td></tr>
     <tr><td>Fecha</td><td>31 de octubre de 2026</td></tr>
   </table>
   <p class="portada__pie">Todas las capturas de este documento se tomaron contra el servidor real,<br>
@@ -249,7 +249,11 @@
     estadisticas/GraficaActividad La gráfica diaria, en SVG
     admin/DetalleCuenta          La actividad reciente de una cuenta
   pages/                         Trece pantallas
-  services/                      Once servicios, uno por módulo de la API</pre>
+  services/                      Once servicios, uno por módulo de la API
+  pruebas/                       Lo que montan las 417 pruebas
+
+Cada archivo .test.jsx vive al lado de lo que prueba, no en una
+carpeta aparte: asi se ve de un vistazo que tiene pruebas y que no.</pre>
   <h3>2.2 Por qué cada decisión</h3>
   <table class="datos">
     <tr>
@@ -274,7 +278,7 @@
     </tr>
     <tr>
       <td>GraficaActividad</td>
-      <td>SVG dibujado a mano, sin librería: son dos series de entre siete y noventa puntos, y Chart.js con su envoltorio para React pesa más que toda la aplicación. El &lt;title&gt; de cada punto da la información al pasar el cursor, que es cosa del navegador.</td>
+      <td>SVG dibujado a mano, sin librería: son dos series de entre siete y noventa puntos, y traer chart.js con react-chartjs-2 costaría 70 KB comprimidos —la aplicación pasaría de 98 a 169, un 72 % más—, medido instalándolos y compilando. El &lt;title&gt; de cada punto da la información al pasar el cursor, que es cosa del navegador.</td>
     </tr>
     <tr>
       <td>DetalleCuenta</td>
@@ -286,7 +290,7 @@
     </tr>
   </table>
   <h3>2.3 Dependencias</h3>
-  <p>Tres en producción y cinco de desarrollo. <strong>Ninguna librería de interfaz</strong>: los estilos, la gráfica y los diálogos son propios.</p>
+  <p><strong>Tres en producción</strong> y once de desarrollo, seis de ellas solo para las pruebas. <strong>Ninguna librería de interfaz</strong>: los estilos, la gráfica y los diálogos son propios.</p>
   <table class="datos">
     <tr>
       <th style="width:34%">Paquete</th>
@@ -318,8 +322,23 @@
       <td>1.88</td>
       <td>Análisis estático</td>
     </tr>
+    <tr>
+      <td>vitest</td>
+      <td>3.2</td>
+      <td>El motor de las pruebas; usa la misma configuración que Vite</td>
+    </tr>
+    <tr>
+      <td>@testing-library/react</td>
+      <td>16.3</td>
+      <td>Monta un componente y lo consulta como lo haría una persona</td>
+    </tr>
+    <tr>
+      <td>jsdom</td>
+      <td>30.1</td>
+      <td>El navegador de mentira donde se dibujan</td>
+    </tr>
   </table>
-  <p>Resultado: <strong>95 KB comprimidos</strong> para trece pantallas.</p>
+  <p>Las de desarrollo no entran en lo que se descarga el visitante. Resultado: <strong>103 KB comprimidos</strong> para trece pantallas —98 de JavaScript y 5 de estilos—, medidos con <code>npm run build</code>.</p>
 </section>
 <section>
   <h2>3. Evidencia de integración con la API</h2>
@@ -522,8 +541,11 @@ Guia React — Frontend N.2   15 peticiones   31 pruebas</pre>
     </tr>
   </table>
   <h3>5.1 Historial de commits del frontend</h3>
-  <p>Diecisiete commits sobre <code>frontend-react/</code>, del 21 al 23 de octubre de 2026, dentro de un repositorio con <strong>120 commits y 47 etiquetas</strong>. Cada módulo se desarrolló en su propia rama y se integró con <code>merge --no-ff</code>, de modo que la rama queda en el historial en lugar de aplanarse.</p>
-  <pre>2026-10-23  feat(frontend-react): el modulo 8, la administracion          v3.0.0
+  <p>Veinte commits sobre <code>frontend-react/</code>, del 21 al 31 de octubre de 2026, dentro de un repositorio con <strong>126 commits y 50 etiquetas</strong>. Cada módulo se desarrolló en su propia rama y se integró con <code>merge --no-ff</code>, de modo que la rama queda en el historial en lugar de aplanarse.</p>
+  <pre>2026-10-31  test(frontend-react): 417 pruebas propias con Vitest          v3.2.0
+2026-10-31  docs(evidencias): el documento tambien en Word                v3.1.0
+2026-10-31  docs(evidencias): documento de evidencias del frontend        v3.0.1
+2026-10-23  feat(frontend-react): el modulo 8, la administracion          v3.0.0
 2026-10-23  feat(frontend-react): el modulo 7, la cuenta                  v2.12.0
 2026-10-23  feat(frontend-react): el modulo 6, la actividad del perfil    v2.11.0
 2026-10-23  feat(frontend-react): el modulo 4, el codigo QR               v2.10.0
@@ -546,6 +568,9 @@ Guia React — Frontend N.2   15 peticiones   31 pruebas</pre>
 
 cd backend        &amp;&amp; npm install &amp;&amp; npm run dev    # http://localhost:3000
 cd frontend-react &amp;&amp; npm install &amp;&amp; npm run dev    # http://localhost:5173</pre>
+  <p>Las pruebas del frontend no necesitan ninguna de las dos cosas: ni base de datos ni servidor.</p>
+  <pre>cd frontend-react &amp;&amp; npm test          # las 417
+cd frontend-react &amp;&amp; npm run coverage  # con el informe de cobertura</pre>
   <p>Cuentas de demostración, las dos con la contraseña <code>Clave123*</code>: <code>admin@caferaices.co</code> (administrador) y <code>contacto@laespiga.co</code> (empresa).</p>
   <h3>5.3 Defectos encontrados y corregidos</h3>
   <p>Construir estas pantallas destapó cinco defectos, cuatro en el propio frontend y uno en el backend. Se documentan porque forman parte del proceso:</p>
@@ -575,8 +600,84 @@ cd frontend-react &amp;&amp; npm install &amp;&amp; npm run dev    # http://loca
       <td>Al cambiar el nombre, la barra seguía mostrando el anterior hasta recargar. AuthContext gana un refrescar().</td>
     </tr>
   </table>
-  <h3>5.4 Lo que este frontend todavía no tiene</h3>
-  <p>No hay pruebas automáticas propias. El frontend original del proyecto tiene 396 de Playwright; este se verificó pantalla por pantalla contra el servidor real, y las peticiones están cubiertas por las 44 pruebas de Postman, pero una suite de interfaz sigue pendiente.</p>
+  <h3>5.4 Las pruebas automáticas</h3>
+  <p><strong>417 pruebas en 25 archivos</strong>, que tardan medio minuto. Se ejecutan con <code>npm test</code> dentro de <code>frontend-react/</code>. El motor es <strong>Vitest</strong>, que usa la misma configuración que Vite, con <strong>Testing Library</strong> sobre <strong>jsdom</strong>: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS.</p>
+  <table class="datos">
+    <tr>
+      <th style="width:40%">Qué se prueba</th>
+      <th style="width:14%">Pruebas</th>
+      <th>Lo que se comprueba</th>
+    </tr>
+    <tr>
+      <td>Las catorce pantallas</td>
+      <td>179</td>
+      <td>El recorrido entero: cargar, escribir, guardar, fallar y reintentar</td>
+    </tr>
+    <tr>
+      <td>Los doce componentes</td>
+      <td>108</td>
+      <td>Lo que dibujan con cada dato y con qué avisan al pulsarlos</td>
+    </tr>
+    <tr>
+      <td>Los once servicios</td>
+      <td>84</td>
+      <td>La ruta, el método y el cuerpo de cada llamada, y qué pasa con cada error</td>
+    </tr>
+    <tr>
+      <td>El mapa de rutas</td>
+      <td>27</td>
+      <td>Que cada dirección lleve a su pantalla y que las protegidas lo estén</td>
+    </tr>
+    <tr>
+      <td>El contexto de sesión</td>
+      <td>11</td>
+      <td>Que no se fíe del navegador y que tire la sesión si el servidor la rechaza</td>
+    </tr>
+    <tr>
+      <td>El guardia de rutas</td>
+      <td>8</td>
+      <td>Quién pasa, a dónde se le manda y que no se enseñe nada mientras comprueba</td>
+    </tr>
+  </table>
+  <p><strong>Cobertura: 99,4 % de las líneas y 96,3 % de las ramas</strong> (<code>npm run coverage</code>). Ninguna prueba llega a la red: <code>.env.test</code> apunta a un servidor que no existe, de modo que una que se escapara fallaría en lugar de tocar la base de datos de desarrollo.</p>
+  <h3>5.5 Cada prueba se falsificó</h3>
+  <p>Una prueba que pasa no demuestra nada si también pasaría con el código roto. Los cinco defectos de la sección anterior se volvieron a meter, uno a uno, para comprobar que su prueba fallaba:</p>
+  <table class="datos">
+    <tr>
+      <th style="width:44%">Defecto reintroducido</th>
+      <th>Qué pasó</th>
+    </tr>
+    <tr>
+      <td>La fecha de la gráfica leída con new Date()</td>
+      <td>La etiqueta pasó a decir «30 sep» en lugar de «1 oct»: el mismo día de menos que se vio en pantalla</td>
+    </tr>
+    <tr>
+      <td>La limpieza que cerraba el diálogo</td>
+      <td>Dos pruebas en rojo, incluida la que lo monta en StrictMode</td>
+    </tr>
+    <tr>
+      <td>El login que mandaba a todos a /usuarios</td>
+      <td>Dos pruebas en rojo</td>
+    </tr>
+    <tr>
+      <td>Las preferencias que ignoraban al servidor</td>
+      <td>La nota de «valores de fábrica» no desaparecía: una prueba en rojo</td>
+    </tr>
+    <tr>
+      <td>Quitar el refrescar() de la cuenta</td>
+      <td>Una prueba en rojo</td>
+    </tr>
+    <tr>
+      <td>Fiarse del campo success del ejemplo</td>
+      <td>Diez de las dieciocho de apiClient en rojo</td>
+    </tr>
+  </table>
+  <h3>5.6 Dos cosas que estas pruebas no demuestran</h3>
+  <p>Se dicen porque callarlas sería justamente el tipo de error que estas pruebas existen para evitar.</p>
+  <p><strong>El arrastre rápido no se puede reproducir aquí.</strong> El defecto era una carrera: los tres eventos del arrastre caen en el mismo tic y el estado de React todavía no se ha aplicado. Pero <code>fireEvent</code> envuelve cada evento en <code>act()</code>, que vacía la cola de React, así que la carrera no llega a darse: se comprobó volviendo a poner el <code>useState</code>, y las dieciséis pruebas seguían en verde. En su lugar se mide con un <code>Profiler</code> que empezar un arrastre no provoque un redibujado, que es lo que distingue una <code>ref</code> del estado, y esa sí falla con el código viejo.</p>
+  <p><strong>El destino recordado al entrar tampoco.</strong> Por el mismo <code>act()</code>, el <code>&lt;Navigate&gt;</code> de «ya tienes sesión» le gana al <code>navegar(desde)</code> y la pantalla acaba en la portada. Se comprobó en un Chromium de verdad, contra los dos servidores: entrar en <code>/contenido</code> sin sesión e iniciarla aterriza en <code>/contenido</code>. La prueba afirma por eso a dónde manda la pantalla, no dónde acaba.</p>
+  <h3>5.7 Lo que este frontend todavía no tiene</h3>
+  <p>No hay pruebas de extremo a extremo propias, en un navegador de verdad. El frontend original del proyecto tiene 396 de Playwright y este se verificó pantalla por pantalla a mano contra el servidor real, pero las dos comprobaciones de la sección anterior enseñan dónde está el límite de jsdom: lo que depende del momento exacto en que React aplica un cambio pide un navegador.</p>
 </section>
 
 </body>

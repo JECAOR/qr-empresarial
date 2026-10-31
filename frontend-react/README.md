@@ -109,6 +109,9 @@ src/
     usuarios/
       TablaUsuarios/          El listado, que en móvil se vuelve fichas
       FormularioUsuario/      Alta y edición
+  pruebas/
+    preparar.js               Lo que se monta antes de cada prueba
+    ayudas.jsx                Lo que repiten las pruebas
   pages/
     PerfilPublico/            La portada pública
     Login/                    La entrada
@@ -221,7 +224,73 @@ sobrescribir la segunda.
 dos veces en desarrollo, a propósito, para que salte a la vista un efecto que
 no sabe limpiarse. En producción se ejecuta una sola vez.
 
-## Verificación
+## Las pruebas
+
+**417 pruebas en 25 archivos**, con [Vitest](https://vitest.dev) y
+[Testing Library](https://testing-library.com) sobre jsdom. No necesitan ni
+base de datos ni servidor:
+
+```bash
+npm test
+```
+
+```bash
+npm run coverage
+```
+
+Cubren **el 99,4 % de las líneas y el 96,3 % de las ramas**. Cada archivo
+`.test.jsx` vive al lado de lo que prueba, no en una carpeta aparte: así se ve
+de un vistazo qué tiene pruebas y qué no.
+
+| Qué se prueba | Pruebas |
+|---|---:|
+| Las catorce pantallas | 179 |
+| Los doce componentes | 108 |
+| Los once servicios | 84 |
+| El mapa de rutas | 27 |
+| El contexto de sesión | 11 |
+| El guardia de rutas | 8 |
+
+Los componentes se consultan como lo haría una persona —por su etiqueta, por
+su texto, por su papel—, no por el nombre de sus clases CSS: una prueba que
+busca `.boton-principal` se rompe al cambiar un estilo y no se entera si el
+botón deja de poder pulsarse.
+
+**Ninguna prueba llega a la red.** `.env.test` apunta a un servidor que no
+existe, de modo que una petición que se escapara falla en lugar de tocar la
+base de datos de desarrollo.
+
+### Cada prueba se falsificó
+
+Una prueba que pasa no demuestra nada si también pasaría con el código roto.
+Los cinco defectos que documenta
+[`evidencias/`](evidencias) se volvieron a meter, uno a uno, para comprobar que
+su prueba fallaba. Por ejemplo, devolver la fecha de la gráfica a `new Date()`
+hace que la etiqueta diga «30 sep» en lugar de «1 oct», que es exactamente el
+día de menos que se vio en pantalla; y fiarse del campo `success` del ejemplo
+de la guía tumba diez de las dieciocho de `apiClient`.
+
+### Dos cosas que estas pruebas no demuestran
+
+**El arrastre rápido no se puede reproducir aquí.** El defecto era una carrera:
+los tres eventos del arrastre caen en el mismo tic y el estado de React todavía
+no se ha aplicado. Pero `fireEvent` envuelve cada evento en `act()`, que vacía
+la cola de React, así que la carrera no llega a darse — se comprobó volviendo a
+poner el `useState`, y las dieciséis pruebas seguían en verde. En su lugar se
+mide con un `Profiler` que empezar un arrastre no provoque un redibujado, que
+es lo que distingue una `ref` del estado, y eso sí falla con el código viejo.
+
+**El destino recordado al entrar, tampoco.** Por el mismo `act()`, el
+`<Navigate>` de «ya tienes sesión» le gana al `navegar(desde)` y la pantalla
+acaba en la portada. Se comprobó en un Chromium de verdad, contra los dos
+servidores: entrar en `/contenido` sin sesión e iniciarla aterriza en
+`/contenido`. La prueba afirma por eso **a dónde manda** la pantalla, no dónde
+acaba.
+
+Lo que depende del momento exacto en que React aplica un cambio pide un
+navegador. Una suite de extremo a extremo propia sigue pendiente.
+
+## Verificación contra el servidor real
 
 El punto 5.6 de la guía pide contrastar lo que responde la API, lo que hay en
 MySQL y lo que ve el navegador. La parte automatizable está en
@@ -497,8 +566,9 @@ Cuatro medidas, la gráfica día a día y los enlaces más pulsados, en los tres
 rangos que acepta el servidor: 7, 30 y 90 días.
 
 **La gráfica se dibuja a mano en SVG**, sin librería. Son dos series de entre
-siete y noventa puntos; Chart.js con su envoltorio para React pesa más que todo
-el resto de esta aplicación junta. El `<title>` de cada punto da la información
+siete y noventa puntos, y traer `chart.js` con `react-chartjs-2` costaría
+**70 KB comprimidos**: la aplicación entera pasa de 98 a 169 KB, un 72 % más,
+medido instalándolos y compilando. El `<title>` de cada punto da la información
 al pasar el cursor, que es cosa del navegador y no cuesta nada.
 
 El lienzo usa coordenadas propias y el SVG lo escala al ancho disponible, así

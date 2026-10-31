@@ -23,7 +23,7 @@ exports.portada = {
     ["Ficha", "3336250"],
     ["Guías", "Frontend N.º 1 y N.º 2, más los ocho módulos del proyecto"],
     ["Repositorio", "github.com/JECAOR/qr-empresarial"],
-    ["Versión", "v3.0.1"],
+    ["Versión", "v3.2.0"],
     ["Fecha", "31 de octubre de 2026"]
   ],
   pie: [
@@ -80,7 +80,11 @@ exports.cuerpo = [
     "    estadisticas/GraficaActividad La gráfica diaria, en SVG",
     "    admin/DetalleCuenta          La actividad reciente de una cuenta",
     "  pages/                         Trece pantallas",
-    "  services/                      Once servicios, uno por módulo de la API"
+    "  services/                      Once servicios, uno por módulo de la API",
+    "  pruebas/                       Lo que montan las 417 pruebas",
+    "",
+    "Cada archivo .test.jsx vive al lado de lo que prueba, no en una",
+    "carpeta aparte: asi se ve de un vistazo que tiene pruebas y que no."
   ] },
 
   { t: "h3", v: "2.2 Por qué cada decisión" },
@@ -89,21 +93,24 @@ exports.cuerpo = [
     ["AuthContext", "La sesión la necesitan la barra, el guardia y cuatro pantallas. Pasarla por props obligaría a atravesar componentes que no la usan."],
     ["RutaProtegida", "Un solo sitio donde se decide quién pasa. Recuerda a dónde iba el usuario para devolverlo ahí después de entrar."],
     ["CampoTexto", "Las cuatro pantallas de cuenta repetían el mismo bloque de etiqueta, campo y texto de ayuda."],
-    ["GraficaActividad", "SVG dibujado a mano, sin librería: son dos series de entre siete y noventa puntos, y Chart.js con su envoltorio para React pesa más que toda la aplicación. El <title> de cada punto da la información al pasar el cursor, que es cosa del navegador."],
+    ["GraficaActividad", "SVG dibujado a mano, sin librería: son dos series de entre siete y noventa puntos, y traer chart.js con react-chartjs-2 costaría 70 KB comprimidos —la aplicación pasaría de 98 a 169, un 72 % más—, medido instalándolos y compilando. El <title> de cada punto da la información al pasar el cursor, que es cosa del navegador."],
     ["DetalleCuenta", "Va en un <dialog> para que el navegador se encargue del foco, de Escape y de bloquear lo de detrás."],
     ["TablaUsuarios", "Bajo 780 px cada fila se convierte en una ficha con el nombre de la columna delante de su valor. Una tabla de siete columnas en un móvil obliga a desplazar la pantalla a lo ancho para alcanzar los botones."]
   ] },
 
   { t: "h3", v: "2.3 Dependencias" },
-  { t: "p", v: "Tres en producción y cinco de desarrollo. *Ninguna librería de interfaz*: los estilos, la gráfica y los diálogos son propios." },
+  { t: "p", v: "*Tres en producción* y once de desarrollo, seis de ellas solo para las pruebas. *Ninguna librería de interfaz*: los estilos, la gráfica y los diálogos son propios." },
   { t: "tabla", anchos: [34, 16, 50], cabeceras: ["Paquete", "Versión", "Para qué"], filas: [
     ["react / react-dom", "19.3", "La biblioteca y su puente con el navegador"],
     ["react-router-dom", "7.18", "Enrutado y rutas protegidas"],
     ["vite", "8.3", "Servidor de desarrollo y empaquetado"],
     ["@vitejs/plugin-react", "6.1", "Compilación de JSX y recarga en caliente"],
-    ["oxlint", "1.88", "Análisis estático"]
+    ["oxlint", "1.88", "Análisis estático"],
+    ["vitest", "3.2", "El motor de las pruebas; usa la misma configuración que Vite"],
+    ["@testing-library/react", "16.3", "Monta un componente y lo consulta como lo haría una persona"],
+    ["jsdom", "30.1", "El navegador de mentira donde se dibujan"]
   ] },
-  { t: "p", v: "Resultado: *95 KB comprimidos* para trece pantallas." },
+  { t: "p", v: "Las de desarrollo no entran en lo que se descarga el visitante. Resultado: *103 KB comprimidos* para trece pantallas —98 de JavaScript y 5 de estilos—, medidos con `npm run build`." },
 
   // ---------------------------------------------------------------- 3
   { t: "salto" },
@@ -191,10 +198,13 @@ exports.cuerpo = [
   ] },
 
   { t: "h3", v: "5.1 Historial de commits del frontend" },
-  { t: "p", v: "Diecisiete commits sobre `frontend-react/`, del 21 al 23 de octubre de 2026, dentro de un repositorio con *120 commits y 47 etiquetas*. Cada módulo se desarrolló en su propia rama y se integró con `merge --no-ff`, de modo que la rama queda en el historial en lugar de aplanarse." },
+  { t: "p", v: "Veinte commits sobre `frontend-react/`, del 21 al 31 de octubre de 2026, dentro de un repositorio con *126 commits y 50 etiquetas*. Cada módulo se desarrolló en su propia rama y se integró con `merge --no-ff`, de modo que la rama queda en el historial en lugar de aplanarse." },
   // Con el prefijo tal cual sale de git: es lo que demuestra que los mensajes
   // siguen Conventional Commits, que es justo lo que dice el parrafo siguiente.
   { t: "pre", v: [
+    "2026-10-31  test(frontend-react): 417 pruebas propias con Vitest          v3.2.0",
+    "2026-10-31  docs(evidencias): el documento tambien en Word                v3.1.0",
+    "2026-10-31  docs(evidencias): documento de evidencias del frontend        v3.0.1",
     "2026-10-23  feat(frontend-react): el modulo 8, la administracion          v3.0.0",
     "2026-10-23  feat(frontend-react): el modulo 7, la cuenta                  v2.12.0",
     "2026-10-23  feat(frontend-react): el modulo 6, la actividad del perfil    v2.11.0",
@@ -222,6 +232,12 @@ exports.cuerpo = [
     "cd backend        && npm install && npm run dev    # http://localhost:3000",
     "cd frontend-react && npm install && npm run dev    # http://localhost:5173"
   ] },
+
+  { t: "p", v: "Las pruebas del frontend no necesitan ninguna de las dos cosas: ni base de datos ni servidor." },
+  { t: "pre", v: [
+    "cd frontend-react && npm test          # las 417",
+    "cd frontend-react && npm run coverage  # con el informe de cobertura"
+  ] },
   { t: "p", v: "Cuentas de demostración, las dos con la contraseña `Clave123*`: `admin@caferaices.co` (administrador) y `contacto@laespiga.co` (empresa)." },
 
   { t: "h3", v: "5.3 Defectos encontrados y corregidos" },
@@ -234,6 +250,43 @@ exports.cuerpo = [
     ["La barra se quedaba con el nombre viejo", "Al cambiar el nombre, la barra seguía mostrando el anterior hasta recargar. AuthContext gana un refrescar()."]
   ] },
 
-  { t: "h3", v: "5.4 Lo que este frontend todavía no tiene" },
-  { t: "p", v: "No hay pruebas automáticas propias. El frontend original del proyecto tiene 396 de Playwright; este se verificó pantalla por pantalla contra el servidor real, y las peticiones están cubiertas por las 44 pruebas de Postman, pero una suite de interfaz sigue pendiente." }
+  { t: "h3", v: "5.4 Las pruebas automáticas" },
+
+  { t: "p", v: "*417 pruebas en 25 archivos*, que tardan medio minuto. Se ejecutan con `npm test` dentro de `frontend-react/`. El motor es *Vitest*, que usa la misma configuración que Vite, con *Testing Library* sobre *jsdom*: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS." },
+
+  { t: "tabla", anchos: [40, 14, 46], cabeceras: ["Qué se prueba", "Pruebas", "Lo que se comprueba"], filas: [
+    ["Las catorce pantallas", "179", "El recorrido entero: cargar, escribir, guardar, fallar y reintentar"],
+    ["Los doce componentes", "108", "Lo que dibujan con cada dato y con qué avisan al pulsarlos"],
+    ["Los once servicios", "84", "La ruta, el método y el cuerpo de cada llamada, y qué pasa con cada error"],
+    ["El mapa de rutas", "27", "Que cada dirección lleve a su pantalla y que las protegidas lo estén"],
+    ["El contexto de sesión", "11", "Que no se fíe del navegador y que tire la sesión si el servidor la rechaza"],
+    ["El guardia de rutas", "8", "Quién pasa, a dónde se le manda y que no se enseñe nada mientras comprueba"]
+  ] },
+
+  { t: "p", v: "*Cobertura: 99,4 % de las líneas y 96,3 % de las ramas* (`npm run coverage`). Ninguna prueba llega a la red: `.env.test` apunta a un servidor que no existe, de modo que una que se escapara fallaría en lugar de tocar la base de datos de desarrollo." },
+
+  { t: "h3", v: "5.5 Cada prueba se falsificó" },
+
+  { t: "p", v: "Una prueba que pasa no demuestra nada si también pasaría con el código roto. Los cinco defectos de la sección anterior se volvieron a meter, uno a uno, para comprobar que su prueba fallaba:" },
+
+  { t: "tabla", anchos: [44, 56], cabeceras: ["Defecto reintroducido", "Qué pasó"], filas: [
+    ["La fecha de la gráfica leída con new Date()", "La etiqueta pasó a decir «30 sep» en lugar de «1 oct»: el mismo día de menos que se vio en pantalla"],
+    ["La limpieza que cerraba el diálogo", "Dos pruebas en rojo, incluida la que lo monta en StrictMode"],
+    ["El login que mandaba a todos a /usuarios", "Dos pruebas en rojo"],
+    ["Las preferencias que ignoraban al servidor", "La nota de «valores de fábrica» no desaparecía: una prueba en rojo"],
+    ["Quitar el refrescar() de la cuenta", "Una prueba en rojo"],
+    ["Fiarse del campo success del ejemplo", "Diez de las dieciocho de apiClient en rojo"]
+  ] },
+
+  { t: "h3", v: "5.6 Dos cosas que estas pruebas no demuestran" },
+
+  { t: "p", v: "Se dicen porque callarlas sería justamente el tipo de error que estas pruebas existen para evitar." },
+
+  { t: "p", v: "*El arrastre rápido no se puede reproducir aquí.* El defecto era una carrera: los tres eventos del arrastre caen en el mismo tic y el estado de React todavía no se ha aplicado. Pero `fireEvent` envuelve cada evento en `act()`, que vacía la cola de React, así que la carrera no llega a darse: se comprobó volviendo a poner el `useState`, y las dieciséis pruebas seguían en verde. En su lugar se mide con un `Profiler` que empezar un arrastre no provoque un redibujado, que es lo que distingue una `ref` del estado, y esa sí falla con el código viejo." },
+
+  { t: "p", v: "*El destino recordado al entrar tampoco.* Por el mismo `act()`, el `<Navigate>` de «ya tienes sesión» le gana al `navegar(desde)` y la pantalla acaba en la portada. Se comprobó en un Chromium de verdad, contra los dos servidores: entrar en `/contenido` sin sesión e iniciarla aterriza en `/contenido`. La prueba afirma por eso a dónde manda la pantalla, no dónde acaba." },
+
+  { t: "h3", v: "5.7 Lo que este frontend todavía no tiene" },
+
+  { t: "p", v: "No hay pruebas de extremo a extremo propias, en un navegador de verdad. El frontend original del proyecto tiene 396 de Playwright y este se verificó pantalla por pantalla a mano contra el servidor real, pero las dos comprobaciones de la sección anterior enseñan dónde está el límite de jsdom: lo que depende del momento exacto en que React aplica un cambio pide un navegador." }
 ];
