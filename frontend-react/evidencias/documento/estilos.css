@@ -1,0 +1,189 @@
+  @page { size: A4; margin: 18mm 16mm 20mm; }
+
+  :root {
+    --tinta: #1E293B;
+    --suave: #556880;
+    --borde: #E2E8F0;
+    --marca: #4F46E5;
+    --fondo: #F8FAFC;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: var(--tinta);
+  }
+
+  h1, h2, h3 { line-height: 1.25; }
+
+  h2 {
+    font-size: 15pt;
+    margin: 0 0 10px;
+    padding-bottom: 7px;
+    border-bottom: 2px solid var(--marca);
+    break-after: avoid;
+  }
+
+  h3 {
+    font-size: 11.5pt;
+    margin: 20px 0 7px;
+    color: var(--marca);
+    break-after: avoid;
+  }
+
+  p { margin: 0 0 9px; text-align: justify; }
+
+  section { break-before: page; }
+  section:first-of-type { break-before: auto; }
+
+  /* ---------- Portada ---------- */
+  .portada {
+    height: 247mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .portada__marca {
+    font-size: 10pt;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--marca);
+  }
+
+  .portada h1 {
+    font-size: 27pt;
+    margin: 14px 0 6px;
+  }
+
+  .portada__sub {
+    font-size: 13pt;
+    color: var(--suave);
+    margin: 0 0 36px;
+    text-align: center;
+  }
+
+  .portada__datos {
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 10.5pt;
+    text-align: left;
+  }
+
+  .portada__datos td { padding: 6px 14px; border-bottom: 1px solid var(--borde); }
+  .portada__datos td:first-child {
+    font-weight: 700;
+    color: var(--suave);
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .portada__pie { margin-top: 40px; font-size: 9.5pt; color: var(--suave); }
+
+  /* ---------- Tablas ---------- */
+  table.datos {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 9.5pt;
+    break-inside: avoid;
+  }
+
+  table.datos th {
+    background: var(--fondo);
+    text-align: left;
+    padding: 7px 9px;
+    border-bottom: 2px solid var(--borde);
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--suave);
+  }
+
+  table.datos td {
+    padding: 7px 9px;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: top;
+  }
+
+  table.datos code { font-size: 9pt; }
+
+  code {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    background: var(--fondo);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9.5pt;
+  }
+
+  pre {
+    background: var(--fondo);
+    border: 1px solid var(--borde);
+    border-left: 3px solid var(--marca);
+    border-radius: 4px;
+    padding: 9px 12px;
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 8.5pt;
+    line-height: 1.45;
+    overflow: hidden;
+    break-inside: avoid;
+    margin: 8px 0 14px;
+  }
+
+  ul { margin: 0 0 10px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+
+  .nota {
+    background: var(--fondo);
+    border-left: 3px solid var(--marca);
+    padding: 9px 13px;
+    margin: 12px 0;
+    font-size: 9.5pt;
+    break-inside: avoid;
+  }
+
+  .nota strong { color: var(--marca); }
+
+  /* ---------- Capturas ---------- */
+  .captura {
+    break-inside: avoid;
+    margin-bottom: 18px;
+  }
+
+  .captura img {
+    width: 100%;
+    border: 1px solid var(--borde);
+    border-radius: 5px;
+    display: block;
+  }
+
+  .captura figcaption {
+    font-size: 8.5pt;
+    color: var(--suave);
+    margin-top: 5px;
+    line-height: 1.4;
+  }
+
+  .captura figcaption b { color: var(--tinta); }
+
+  .dos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* La captura de móvil es casi tres veces más alta que ancha: si se limita
+     por ancho se sale de la página. Se limita por alto y el ancho se ajusta
+     solo. */
+  .estrecha img {
+    width: auto;
+    max-height: 155mm;
+    margin: 0 auto;
+  }
