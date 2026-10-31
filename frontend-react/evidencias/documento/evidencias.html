@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Documento de evidencias — Frontend React</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm; }
+
+  :root {
+    --tinta: #1E293B;
+    --suave: #556880;
+    --borde: #E2E8F0;
+    --marca: #4F46E5;
+    --fondo: #F8FAFC;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: var(--tinta);
+  }
+
+  h1, h2, h3 { line-height: 1.25; }
+
+  h2 {
+    font-size: 15pt;
+    margin: 0 0 10px;
+    padding-bottom: 7px;
+    border-bottom: 2px solid var(--marca);
+    break-after: avoid;
+  }
+
+  h3 {
+    font-size: 11.5pt;
+    margin: 20px 0 7px;
+    color: var(--marca);
+    break-after: avoid;
+  }
+
+  p { margin: 0 0 9px; text-align: justify; }
+
+  section { break-before: page; }
+  section:first-of-type { break-before: auto; }
+
+  /* ---------- Portada ---------- */
+  .portada {
+    height: 247mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .portada__marca {
+    font-size: 10pt;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--marca);
+  }
+
+  .portada h1 {
+    font-size: 27pt;
+    margin: 14px 0 6px;
+  }
+
+  .portada__sub {
+    font-size: 13pt;
+    color: var(--suave);
+    margin: 0 0 36px;
+    text-align: center;
+  }
+
+  .portada__datos {
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 10.5pt;
+    text-align: left;
+  }
+
+  .portada__datos td { padding: 6px 14px; border-bottom: 1px solid var(--borde); }
+  .portada__datos td:first-child {
+    font-weight: 700;
+    color: var(--suave);
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .portada__pie { margin-top: 40px; font-size: 9.5pt; color: var(--suave); }
+
+  /* ---------- Tablas ---------- */
+  table.datos {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 9.5pt;
+    break-inside: avoid;
+  }
+
+  table.datos th {
+    background: var(--fondo);
+    text-align: left;
+    padding: 7px 9px;
+    border-bottom: 2px solid var(--borde);
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--suave);
+  }
+
+  table.datos td {
+    padding: 7px 9px;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: top;
+  }
+
+  table.datos code { font-size: 9pt; }
+
+  code {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    background: var(--fondo);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9.5pt;
+  }
+
+  pre {
+    background: var(--fondo);
+    border: 1px solid var(--borde);
+    border-left: 3px solid var(--marca);
+    border-radius: 4px;
+    padding: 9px 12px;
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 8.5pt;
+    line-height: 1.45;
+    overflow: hidden;
+    break-inside: avoid;
+    margin: 8px 0 14px;
+  }
+
+  ul { margin: 0 0 10px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+
+  .nota {
+    background: var(--fondo);
+    border-left: 3px solid var(--marca);
+    padding: 9px 13px;
+    margin: 12px 0;
+    font-size: 9.5pt;
+    break-inside: avoid;
+  }
+
+  .nota strong { color: var(--marca); }
+
+  /* ---------- Capturas ---------- */
+  .captura {
+    break-inside: avoid;
+    margin-bottom: 18px;
+  }
+
+  .captura img {
+    width: 100%;
+    border: 1px solid var(--borde);
+    border-radius: 5px;
+    display: block;
+  }
+
+  .captura figcaption {
+    font-size: 8.5pt;
+    color: var(--suave);
+    margin-top: 5px;
+    line-height: 1.4;
+  }
+
+  .captura figcaption b { color: var(--tinta); }
+
+  .dos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* La captura de móvil es casi tres veces más alta que ancha: si se limita
+     por ancho se sale de la página. Se limita por alto y el ancho se ajusta
+     solo. */
+  .estrecha img {
+    width: auto;
+    max-height: 155mm;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<!-- ====================== PORTADA ====================== -->
+<div class="portada">
+  <p class="portada__marca">SENA · Tecnólogo en Análisis y Desarrollo de Software</p>
+
+  <h1>Documento de evidencias</h1>
+  <p class="portada__sub">Frontend en React del proyecto QR Empresarial</p>
+
+  <table class="portada__datos">
+    <tr><td>Proyecto</td><td>QR Empresarial — perfiles empresariales con código QR dinámico</td></tr>
+    <tr><td>Aprendiz</td><td>Jean Carlos Orozco Hernández</td></tr>
+    <tr><td>Ficha</td><td>3336250</td></tr>
+    <tr><td>Guías</td><td>Frontend N.º 1 y N.º 2, más los ocho módulos del proyecto</td></tr>
+    <tr><td>Repositorio</td><td>github.com/JECAOR/qr-empresarial</td></tr>
+    <tr><td>Versión</td><td>v3.0.0</td></tr>
+    <tr><td>Fecha</td><td>31 de octubre de 2026</td></tr>
+  </table>
+
+  <p class="portada__pie">
+    Todas las capturas de este documento se tomaron contra el servidor real,<br>
+    con los datos de <code>database/seed.sql</code>, y se regeneran con un guion versionado.
+  </p>
+</div>
+
+<!-- ====================== 1. CONCEPTOS ====================== -->
+<section>
+  <h2>1. Conceptos fundamentales utilizados</h2>
+
+  <p>
+    El frontend es una aplicación de una sola página construida con <strong>React 19</strong> y
+    <strong>Vite 8</strong>, que consume la API REST del propio proyecto. No accede nunca a la base
+    de datos: pide y envía datos por HTTP, y es el backend quien decide qué se puede hacer.
+  </p>
+
+  <h3>Componentes, props y composición</h3>
+  <p>
+    Cada pieza de interfaz es una función que devuelve JSX. Lo que cambia entre usos llega por
+    <strong>props</strong>: <code>TarjetaContenido</code> recibe el título, el detalle y el tipo de
+    bloque, y decide con una condición si se dibuja como enlace o como texto. Así la misma pieza
+    sirve para los seis bloques del perfil sin repetir código.
+  </p>
+
+  <h3>Estado y efectos</h3>
+  <p>
+    <code>useState</code> guarda lo que cambia mientras la pantalla está abierta y avisa a React de
+    que debe volver a dibujar. <code>useEffect</code> sirve para lo que ocurre fuera del dibujado
+    —pedirle los datos al servidor— y su lista de dependencias decide cuándo se repite: con
+    <code>[dias]</code>, solo al cambiar el periodo de las estadísticas.
+  </p>
+  <p>
+    Cada efecto que pide datos devuelve una función de limpieza. Sin ella, si se consulta un negocio
+    y antes de que llegue la respuesta se consulta otro, la primera podría pisar a la segunda.
+  </p>
+
+  <div class="nota">
+    <strong>Dos peticiones en desarrollo no son un error.</strong> <code>StrictMode</code> ejecuta
+    cada efecto dos veces a propósito, para que salte a la vista un efecto que no sabe limpiarse.
+    En producción se ejecuta una sola vez.
+  </div>
+
+  <h3>Contexto</h3>
+  <p>
+    La sesión —quién eres, tu rol, entrar y salir— vive en un <strong>contexto</strong>
+    (<code>AuthContext</code>) en lugar de pasarse por props de pantalla en pantalla. Al abrir la
+    aplicación no se confía en lo que hay guardado en el navegador: se le pregunta al servidor con
+    <code>GET /usuarios/me</code>, de modo que un token caducado o revocado se detecta enseguida.
+  </p>
+
+  <h3>Enrutado y rutas protegidas</h3>
+  <p>
+    <strong>React Router</strong> decide qué pantalla se dibuja según la dirección.
+    <code>RutaProtegida</code> exige sesión y, cuando hace falta, un rol.
+  </p>
+
+  <div class="nota">
+    <strong>El guardia no es seguridad.</strong> Quien escriba la dirección a mano o llame a la API
+    con <code>curl</code> se lo salta entero. La seguridad la aplica Express en cada endpoint: una
+    cuenta de empresa recibe <code>403</code> aunque consiga pintar la pantalla. Lo que hace el
+    guardia es no ofrecer puertas que van a dar error.
+  </div>
+
+  <h3>Separación en capas</h3>
+  <p>
+    Ninguna pantalla llama a <code>fetch</code>. Todas pasan por un servicio, y todos los servicios
+    por un único <code>apiClient</code> que pone la dirección base, el tipo de contenido y el token,
+    y convierte un error del servidor en una excepción con su mensaje. Si mañana cambia la forma de
+    autenticarse, se toca un archivo.
+  </p>
+</section>
+
+<!-- ====================== 2. COMPONENTES ====================== -->
+<section>
+  <h2>2. Componentes implementados y su justificación</h2>
+
+  <h3>2.1 Estructura del proyecto</h3>
+  <pre>src/
+  context/AuthContext.jsx        La sesión: quién eres, entrar, salir y refrescar
+  components/
+    Layout/                      Barra de navegación común
+    RutaProtegida/               Exige sesión y, si hace falta, un rol
+    Formulario/CampoTexto        Etiqueta, campo y ayuda, en una sola pieza
+    FichaNegocio/                Datos del negocio; omite los campos vacíos
+    TarjetaContenido/            Un bloque: enlace o texto, según su tipo
+    contenido/ListaBloques       Los bloques con su orden y sus acciones
+    contenido/FormularioBloque   Alta y edición de un bloque
+    usuarios/TablaUsuarios       El listado; en móvil se vuelve fichas
+    usuarios/FormularioUsuario   Alta y edición de una cuenta
+    perfil/SelectorTema          El color de marca
+    estadisticas/GraficaActividad La gráfica diaria, en SVG
+    admin/DetalleCuenta          La actividad reciente de una cuenta
+  pages/                         Trece pantallas
+  services/                      Once servicios, uno por módulo de la API</pre>
+
+  <h3>2.2 Por qué cada decisión</h3>
+
+  <table class="datos">
+    <tr>
+      <th style="width:30%">Componente</th>
+      <th>Justificación</th>
+    </tr>
+    <tr>
+      <td><b>apiClient</b></td>
+      <td>Única puerta de salida hacia la API. El ejemplo de la guía comprueba
+      <code>body.success</code>; esta API no tiene ese campo, y fiarse de él haría que todo
+      pareciera correcto. Manda el código HTTP.</td>
+    </tr>
+    <tr>
+      <td><b>AuthContext</b></td>
+      <td>La sesión la necesitan la barra, el guardia y cuatro pantallas. Pasarla por props
+      obligaría a atravesar componentes que no la usan.</td>
+    </tr>
+    <tr>
+      <td><b>RutaProtegida</b></td>
+      <td>Un solo sitio donde se decide quién pasa. Recuerda a dónde iba el usuario para
+      devolverlo ahí después de entrar.</td>
+    </tr>
+    <tr>
+      <td><b>CampoTexto</b></td>
+      <td>Las cuatro pantallas de cuenta repetían el mismo bloque de etiqueta, campo y texto de
+      ayuda.</td>
+    </tr>
+    <tr>
+      <td><b>GraficaActividad</b></td>
+      <td>SVG dibujado a mano, sin librería: son dos series de entre siete y noventa puntos, y
+      Chart.js con su envoltorio para React pesa más que toda la aplicación. El
+      <code>&lt;title&gt;</code> de cada punto da la información al pasar el cursor, que es cosa
+      del navegador.</td>
+    </tr>
+    <tr>
+      <td><b>DetalleCuenta</b></td>
+      <td>Va en un <code>&lt;dialog&gt;</code> para que el navegador se encargue del foco, de
+      <code>Escape</code> y de bloquear lo de detrás.</td>
+    </tr>
+    <tr>
+      <td><b>TablaUsuarios</b></td>
+      <td>Bajo 780&nbsp;px cada fila se convierte en una ficha con el nombre de la columna delante
+      de su valor. Una tabla de siete columnas en un móvil obliga a desplazar la pantalla a lo
+      ancho para alcanzar los botones.</td>
+    </tr>
+  </table>
+
+  <h3>2.3 Dependencias</h3>
+  <p>
+    Tres en producción y cinco de desarrollo. <strong>Ninguna librería de interfaz</strong>: los
+    estilos, la gráfica y los diálogos son propios.
+  </p>
+
+  <table class="datos">
+    <tr><th style="width:34%">Paquete</th><th style="width:16%">Versión</th><th>Para qué</th></tr>
+    <tr><td><code>react</code> / <code>react-dom</code></td><td>19.3</td><td>La biblioteca y su puente con el navegador</td></tr>
+    <tr><td><code>react-router-dom</code></td><td>7.18</td><td>Enrutado y rutas protegidas</td></tr>
+    <tr><td><code>vite</code></td><td>8.3</td><td>Servidor de desarrollo y empaquetado</td></tr>
+    <tr><td><code>@vitejs/plugin-react</code></td><td>6.1</td><td>Compilación de JSX y recarga en caliente</td></tr>
+    <tr><td><code>oxlint</code></td><td>1.88</td><td>Análisis estático</td></tr>
+  </table>
+
+  <p>Resultado: <strong>95&nbsp;KB comprimidos</strong> para trece pantallas.</p>
+</section>
+
+<!-- ====================== 3. INTEGRACIÓN ====================== -->
+<section>
+  <h2>3. Evidencia de integración con la API</h2>
+
+  <p>
+    El frontend consume <strong>38 de los 40 endpoints</strong> de la API REST del proyecto. Los dos
+    restantes son <code>GET /api/health</code>, que solo comprueba que el servidor responde, y
+    <code>POST /api/publico/:slug/eventos</code>, que registra los escaneos y las visitas: lo llama
+    la vista pública que sirve Express, no esta aplicación, porque si lo hiciera inflaría las
+    estadísticas cada vez que el dueño abriera su propio panel.
+  </p>
+
+  <h3>3.1 Endpoints por módulo</h3>
+
+  <table class="datos">
+    <tr><th style="width:26%">Módulo</th><th style="width:40%">Endpoints</th><th>Pantalla</th></tr>
+    <tr><td>Autenticación</td><td><code>/auth/login</code>, <code>/logout</code>, <code>/registro</code>, <code>/recuperar-contrasena</code>, <code>/restablecer/:token</code>, <code>/restablecer-contrasena</code></td><td>Entrar, Registro, Recuperar, Restablecer</td></tr>
+    <tr><td>Cuenta propia</td><td><code>/usuarios/me</code> (GET, PUT, DELETE), <code>/me/contrasena</code>, <code>/me/preferencias</code> (GET, PUT)</td><td>Configuración</td></tr>
+    <tr><td>Usuarios</td><td><code>/usuarios</code> (GET, POST), <code>/:id</code> (GET, PUT, DELETE), <code>/:id/estado</code></td><td>Gestión de usuarios</td></tr>
+    <tr><td>Perfil</td><td><code>/perfiles/me</code> (GET, PUT), <code>/me/tema</code></td><td>Mi negocio</td></tr>
+    <tr><td>Contenido</td><td><code>/contenido</code> (GET, POST), <code>/categorias</code>, <code>/orden</code>, <code>/:id</code> (PUT, DELETE), <code>/:id/estado</code></td><td>Contenido</td></tr>
+    <tr><td>Código QR</td><td><code>/qr</code> (GET, POST), <code>/estado</code>, <code>/imagen</code></td><td>Código QR</td></tr>
+    <tr><td>Vista pública</td><td><code>/publico/:slug</code></td><td>Perfil público</td></tr>
+    <tr><td>Estadísticas</td><td><code>/estadisticas</code></td><td>Actividad</td></tr>
+    <tr><td>Administración</td><td><code>/admin/resumen</code>, <code>/admin/usuarios</code>, <code>/:id</code>, <code>/reportes/usuarios</code></td><td>Administración</td></tr>
+  </table>
+
+  <h3>3.2 Lo que hubo que adaptar del ejemplo de las guías</h3>
+
+  <p>
+    Las guías usan SICE como proyecto orientador y advierten que cada equipo debe comprobar el
+    contrato real de su API. Al hacerlo aparecieron ocho diferencias, todas comprobadas contra el
+    servidor con <code>curl</code> antes de escribir una sola pantalla:
+  </p>
+
+  <table class="datos">
+    <tr><th style="width:44%">El ejemplo asume</th><th>Esta API responde</th></tr>
+    <tr><td>Campo <code>success</code> en el cuerpo</td><td>No existe: manda el código HTTP</td></tr>
+    <tr><td><code>data.user</code> y <code>expiresIn</code></td><td><code>data.usuario</code>, sin <code>expiresIn</code></td></tr>
+    <tr><td><code>role</code> como objeto <code>{id, name}</code></td><td><code>rol</code> como cadena</td></tr>
+    <tr><td><code>{email, password}</code> al entrar</td><td><code>{correo, contrasena}</code></td></tr>
+    <tr><td>Cuatro roles</td><td>Dos: <code>empresa</code> y <code>administrador</code></td></tr>
+    <tr><td><code>/users/:id/status</code></td><td><code>/usuarios/:id/estado</code></td></tr>
+    <tr><td>Estado como <code>1</code> o <code>0</code></td><td>Como palabra: <code>activo</code> o <code>restringido</code></td></tr>
+    <tr><td>El CRUD abierto a varios roles</td><td>Solo <code>administrador</code></td></tr>
+  </table>
+
+  <div class="nota">
+    Copiar el ejemplo tal cual habría dado <code>contenido.map is not a function</code> y una
+    pantalla sin rol con la que no se puede proteger nada. La guía lista ese error entre los
+    frecuentes.
+  </div>
+
+  <h3>3.3 Comprobación de las peticiones</h3>
+
+  <p>
+    La colección de Postman del proyecto trae dos carpetas dedicadas a este frontend, con
+    <strong>46 peticiones y 44 pruebas automáticas</strong> que recorren los mismos endpoints en el
+    mismo orden que las pantallas, incluidos los casos negativos —400, 401, 403, 404 y 409— y el
+    contraste de permisos entre un administrador y una empresa.
+  </p>
+
+  <pre>Guia React — Frontend N.1   3 peticiones   13 pruebas
+Guia React — Frontend N.2  15 peticiones   31 pruebas</pre>
+
+  <p>
+    Crean su propia cuenta de prueba y la eliminan al terminar, de modo que dejan la base como la
+    encontraron.
+  </p>
+</section>
+
+<!-- ====================== 4. CAPTURAS ====================== -->
+<section>
+  <h2>4. Capturas de la interfaz</h2>
+
+  <p>
+    Las dieciséis capturas siguientes las genera
+    <code>frontend-react/evidencias/generar-capturas.js</code>, que abre un navegador, entra con las
+    cuentas de demostración y recorre la aplicación <strong>contra el servidor real</strong>. Lo que
+    se ve sale de MySQL: una pantalla dibujada con datos inventados no demuestra nada.
+  </p>
+
+  <h3>4.1 Acceso y cuenta</h3>
+
+  <div class="dos">
+    <figure class="captura">
+      <img src="PANTALLAS/01-login.png" alt="Pantalla de inicio de sesión">
+      <figcaption><b>01 · Iniciar sesión.</b> Guarda el token en <code>sessionStorage</code>: la sesión muere al cerrar la pestaña.</figcaption>
+    </figure>
+
+    <figure class="captura">
+      <img src="PANTALLAS/02-registro.png" alt="Pantalla de registro">
+      <figcaption><b>02 · Registro.</b> El negocio es opcional; si se llena, la cuenta y su perfil se crean en una misma transacción.</figcaption>
+    </figure>
+
+    <figure class="captura">
+      <img src="PANTALLAS/03-recuperar-contrasena.png" alt="Recuperar contraseña">
+      <figcaption><b>03 · Recuperar la contraseña.</b> Responde lo mismo exista o no el correo, para no revelar qué direcciones están registradas.</figcaption>
+    </figure>
+
+    <figure class="captura">
+      <img src="PANTALLAS/04-restablecer-enlace-invalido.png" alt="Enlace de recuperación inválido">
+      <figcaption><b>04 · Enlace caducado.</b> Se comprueba antes de enseñar el formulario: pedir una contraseña nueva para luego decir que el enlace no sirve es la peor manera de contarlo.</figcaption>
+    </figure>
+  </div>
+
+  <h3>4.2 Vista pública y errores</h3>
+
+  <figure class="captura">
+    <img src="PANTALLAS/05-perfil-publico.png" alt="Perfil público de un negocio">
+    <figcaption><b>05 · Perfil público.</b> Lo que ve quien escanea el código. No pide sesión. Solo aparecen los bloques activos: el dueño ve seis, el público cinco.</figcaption>
+  </figure>
+
+  <figure class="captura">
+    <img src="PANTALLAS/06-pagina-no-encontrada.png" alt="Página no encontrada">
+    <figcaption><b>06 · Dirección inexistente.</b> Se dice en lugar de redirigir a la portada en silencio, que haría creer al usuario que llegó donde quería.</figcaption>
+  </figure>
+
+  <h3>4.3 Panel del negocio</h3>
+
+  <figure class="captura">
+    <img src="PANTALLAS/07-perfil-del-negocio.png" alt="Perfil del negocio">
+    <figcaption><b>07 · Mi negocio.</b> Los nueve campos del perfil, el color de marca y la dirección pública, que se muestra pero no se edita: si el <code>slug</code> cambiara, los códigos ya impresos dejarían de funcionar.</figcaption>
+  </figure>
+
+  <figure class="captura">
+    <img src="PANTALLAS/08-contenido.png" alt="Contenido del perfil">
+    <figcaption><b>08 · Contenido.</b> Tres secciones con su cuenta de bloques. Se reordena arrastrando y con las flechas: el arrastre de HTML no funciona con el dedo, y sin las flechas un móvil se quedaría sin forma de reordenar.</figcaption>
+  </figure>
+
+  <figure class="captura">
+    <img src="PANTALLAS/09-codigo-qr.png" alt="Código QR">
+    <figcaption><b>09 · Código QR.</b> La vista previa la genera el servidor, el mismo endpoint que la descarga: lo que se ve es exactamente el archivo que se va a bajar.</figcaption>
+  </figure>
+
+  <figure class="captura">
+    <img src="PANTALLAS/10-actividad.png" alt="Actividad del perfil">
+    <figcaption><b>10 · Actividad.</b> Cuatro medidas, la gráfica diaria en SVG y los enlaces más pulsados, en 7, 30 o 90 días —los tres rangos que acepta el servidor—.</figcaption>
+  </figure>
+
+  <figure class="captura">
+    <img src="PANTALLAS/11-configuracion.png" alt="Configuración de la cuenta">
+    <figcaption><b>11 · Configuración.</b> Datos, contraseña, avisos y baja. La contraseña solo se pide cuando cambia el correo. Los avisos se guardan pero no se envían, y la pantalla lo dice.</figcaption>
+  </figure>
+
+  <h3>4.4 Administración</h3>
+
+  <figure class="captura">
+    <img src="PANTALLAS/12-gestion-de-usuarios.png" alt="Gestión de usuarios">
+    <figcaption><b>12 · Gestión de usuarios.</b> Los siete endpoints del módulo. Restringir y eliminar están deshabilitados en la propia fila: el servidor lo impide y ofrecer un botón que solo puede fallar es una mala pantalla.</figcaption>
+  </figure>
+
+  <figure class="captura">
+    <img src="PANTALLAS/13-administracion.png" alt="Panel de administración">
+    <figcaption><b>13 · Administración.</b> Seis cifras, filtros con búsqueda, paginación y el reporte en CSV, que respeta los filtros y empieza por BOM para que Excel no rompa las tildes.</figcaption>
+  </figure>
+
+  <div class="dos">
+    <figure class="captura">
+      <img src="PANTALLAS/14-administracion-detalle.png" alt="Detalle de una cuenta">
+      <figcaption><b>14 · Detalle de una cuenta.</b> La actividad reciente, que la tabla no cabe.</figcaption>
+    </figure>
+
+    <figure class="captura">
+      <img src="PANTALLAS/15-acceso-denegado.png" alt="Acceso denegado">
+      <figcaption><b>15 · Acceso denegado.</b> Una cuenta de empresa en una ruta de administrador.</figcaption>
+    </figure>
+  </div>
+
+  <h3>4.5 Diseño adaptable</h3>
+
+  <figure class="captura estrecha">
+    <img src="PANTALLAS/16-contenido-movil.png" alt="Contenido en móvil">
+    <figcaption><b>16 · Contenido a 390&nbsp;px.</b> Sin desplazamiento horizontal: la navegación baja a su propia línea y las acciones de cada bloque se reparten.</figcaption>
+  </figure>
+</section>
+
+<!-- ====================== 5. REPOSITORIO ====================== -->
+<section>
+  <h2>5. Repositorio Git</h2>
+
+  <table class="datos">
+    <tr><td style="width:32%"><b>URL</b></td><td>https://github.com/JECAOR/qr-empresarial</td></tr>
+    <tr><td><b>Código del frontend</b></td><td><code>frontend-react/</code></td></tr>
+    <tr><td><b>README</b></td><td><code>frontend-react/README.md</code> y el de la raíz</td></tr>
+    <tr><td><b>Evidencias</b></td><td><code>frontend-react/evidencias/</code></td></tr>
+  </table>
+
+  <h3>5.1 Historial de commits del frontend</h3>
+
+  <p>
+    Diecisiete commits sobre <code>frontend-react/</code>, del 21 al 23 de octubre de 2026, dentro
+    de un repositorio con <strong>120 commits y 47 etiquetas</strong>. Cada módulo se desarrolló en
+    su propia rama y se integró con <code>merge --no-ff</code>, de modo que la rama queda en el
+    historial en lugar de aplanarse.
+  </p>
+
+  <pre>2026-10-23  feat(frontend-react): el modulo 8, la administracion          v3.0.0
+2026-10-23  feat(frontend-react): el modulo 7, la cuenta                  v2.12.0
+2026-10-23  feat(frontend-react): el modulo 6, la actividad del perfil    v2.11.0
+2026-10-23  feat(frontend-react): el modulo 4, el codigo QR               v2.10.0
+2026-10-23  feat(frontend-react): el modulo 3, el contenido del perfil    v2.9.0
+2026-10-22  feat(frontend-react): el modulo 2, el perfil del negocio      v2.8.0
+2026-10-22  feat(frontend-react): el modulo 1 completo                    v2.7.0
+2026-10-22  docs(evidencias): las tres capturas que cierran la Guia 02    v2.6.0
+2026-10-22  test(postman): carpeta de la Guia Frontend N.2                v2.5.1
+2026-10-22  docs(evidencias): matriz de pruebas y capturas de la Guia 02
+2026-10-22  feat(frontend-react): sesion JWT, rutas por rol y usuarios    v2.5.0
+2026-10-21  docs(evidencias): la captura de Vite, Guia 01 completa        v2.4.0
+2026-10-21  docs(evidencias): las cinco primeras capturas de la Guia 01
+2026-10-21  docs(evidencias): Postman es una sola captura, no dos
+2026-10-21  docs(frontend-react): carpeta de evidencias de la Guia 01
+2026-10-21  docs(frontend-react): cierra los tres huecos de la Guia 01    v2.3.1
+2026-10-21  feat(frontend-react): primera pantalla en React, Guia N.1     v2.3.0</pre>
+
+  <p>
+    Los mensajes siguen <strong>Conventional Commits</strong> y explican el porqué, no solo el qué.
+    El historial completo está en GitHub.
+  </p>
+
+  <h3>5.2 Cómo ejecutarlo</h3>
+
+  <pre>mysql -u root -p --default-character-set=utf8mb4 qr_empresarial &lt; database/seed.sql
+
+cd backend        &amp;&amp; npm install &amp;&amp; npm run dev    # http://localhost:3000
+cd frontend-react &amp;&amp; npm install &amp;&amp; npm run dev    # http://localhost:5173</pre>
+
+  <p>
+    Cuentas de demostración, las dos con la contraseña <code>Clave123*</code>:
+    <code>admin@caferaices.co</code> (administrador) y <code>contacto@laespiga.co</code> (empresa).
+  </p>
+
+  <h3>5.3 Defectos encontrados y corregidos</h3>
+
+  <p>
+    Construir estas pantallas destapó cinco defectos, cuatro en el propio frontend y uno en el
+    backend. Se documentan porque forman parte del proceso:
+  </p>
+
+  <table class="datos">
+    <tr><th style="width:30%">Defecto</th><th>Causa y corrección</th></tr>
+    <tr>
+      <td><b>Un botón se publicaba como texto</b><br><span style="color:#556880">backend</span></td>
+      <td>El tipo se decidía comparando el nombre de la categoría con el literal <code>'Botón'</code>, y el cliente <code>mysql</code> de la consola de Windows reescribía los acentos al cargar las migraciones. Se corrigió con <code>SET NAMES utf8mb4</code> en los dieciséis archivos SQL y comparando por el icono, que es ASCII.</td>
+    </tr>
+    <tr>
+      <td><b>Nombres de columnas en la API</b><br><span style="color:#556880">backend</span></td>
+      <td><code>GET /usuarios</code> devolvía las filas tal como salen de MySQL mientras el resto respondía en camelCase. Nadie lo veía porque el frontend original no llama a esa ruta.</td>
+    </tr>
+    <tr>
+      <td><b>El diálogo se cerraba solo</b></td>
+      <td><code>close()</code> dispara el evento <code>close</code>, que borraba el estado; y <code>StrictMode</code> ejecuta el efecto dos veces. La limpieza sobraba.</td>
+    </tr>
+    <tr>
+      <td><b>El arrastre fallaba al ser rápido</b></td>
+      <td>El índice de origen iba en estado de React, que no se ha aplicado cuando llega el <code>drop</code> si los tres eventos caen en el mismo tic. Se pasó a <code>useRef</code>.</td>
+    </tr>
+    <tr>
+      <td><b>La barra se quedaba con el nombre viejo</b></td>
+      <td>Al cambiar el nombre, la barra seguía mostrando el anterior hasta recargar. <code>AuthContext</code> gana un <code>refrescar()</code>.</td>
+    </tr>
+  </table>
+
+  <h3>5.4 Lo que este frontend todavía no tiene</h3>
+
+  <p>
+    No hay pruebas automáticas propias. El frontend original del proyecto tiene 396 de Playwright;
+    este se verificó pantalla por pantalla contra el servidor real, y las peticiones están cubiertas
+    por las 44 pruebas de Postman, pero una suite de interfaz sigue pendiente.
+  </p>
+</section>
+
+</body>
+</html>
