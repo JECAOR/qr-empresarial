@@ -1,42 +1,46 @@
-// Renderiza el documento de evidencias a PDF con el Chromium de Playwright.
+// GENERAR-PDF.JS — el documento de evidencias en PDF
 //
-// Se hace asi y no con una libreria de PDF porque el documento lleva tildes,
-// tablas y dieciseis capturas: el navegador ya sabe maquetar eso.
-import path from "node:path";
-import fs from "node:fs/promises";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
+// Arma el HTML desde contenido.js, le incrusta las capturas y lo imprime con
+// el Chromium de Playwright, el mismo que ya usa el proyecto para sus pruebas:
+// asi no hace falta ninguna dependencia nueva. Se hace con un navegador y no
+// con una libreria de PDF porque el documento lleva tildes, tablas y dieciseis
+// capturas, y el navegador ya sabe maquetar eso.
+//
+// Deja tambien evidencias.html, que es el mismo documento para mirarlo en el
+// navegador. Ese archivo es una salida, no la fuente: el texto esta en
+// contenido.js y de ahi salen tanto este PDF como el Word.
+const path = require("node:path");
+const fs = require("node:fs/promises");
 
-const require = createRequire(import.meta.url);
+const EVIDENCIAS = path.join(__dirname, "..");
+const RAIZ = path.join(EVIDENCIAS, "..", "..");
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const { chromium } = require(path.join(RAIZ, "frontend", "node_modules", "playwright"));
+const { construir } = require("./generar-html.js");
 
-const PROYECTO = "C:/Users/jeano/OneDrive - OROZCO S.A.S/Escritorio/qr-empresarial";
-const { chromium } = require(path.join(PROYECTO, "frontend", "node_modules", "playwright"));
-
-const FUENTE = path.join(__dirname, "evidencias.html");
-const SALIDA = path.join(PROYECTO, "frontend-react", "evidencias",
-  "Evidencias-Frontend-React-JCOH.pdf");
-
-const PANTALLAS = path.join(PROYECTO, "frontend-react", "evidencias", "pantallas");
+const PANTALLAS = path.join(EVIDENCIAS, "pantallas");
+const HTML = path.join(__dirname, "evidencias.html");
+const SALIDA = path.join(EVIDENCIAS, "Evidencias-Frontend-React-JCOH.pdf");
 
 (async () => {
+  const html = construir();
+
+  await fs.writeFile(HTML, html, "utf8");
+
   // Las capturas se incrustan en base64: asi el PDF no depende de rutas y
   // Chromium no tiene que resolver archivos locales desde el HTML.
-  let html = await fs.readFile(FUENTE, "utf8");
+  let conImagenes = html;
 
-  const archivos = await fs.readdir(PANTALLAS);
-
-  for (const archivo of archivos) {
+  for (const archivo of await fs.readdir(PANTALLAS)) {
     const datos = await fs.readFile(path.join(PANTALLAS, archivo));
 
-    html = html.replaceAll(
+    conImagenes = conImagenes.replaceAll(
       `PANTALLAS/${archivo}`,
       `data:image/png;base64,${datos.toString("base64")}`
     );
   }
 
-  const faltan = html.match(/PANTALLAS\/[^"]+/g);
+  const faltan = conImagenes.match(/PANTALLAS\/[^"]+/g);
 
   if (faltan) {
     console.log("  AVISO: faltan estas capturas:", [...new Set(faltan)].join(", "));
@@ -45,7 +49,7 @@ const PANTALLAS = path.join(PROYECTO, "frontend-react", "evidencias", "pantallas
   const navegador = await chromium.launch();
   const pagina = await navegador.newPage();
 
-  await pagina.setContent(html, { waitUntil: "networkidle" });
+  await pagina.setContent(conImagenes, { waitUntil: "networkidle" });
 
   await pagina.pdf({
     path: SALIDA,
@@ -57,7 +61,7 @@ const PANTALLAS = path.join(PROYECTO, "frontend-react", "evidencias", "pantallas
       <div style="width:100%;font-family:'Segoe UI',sans-serif;font-size:7.5pt;
                   color:#556880;padding:0 16mm;display:flex;
                   justify-content:space-between;">
-        <span>QR Empresarial · Frontend React · JCOH · Ficha 3336250</span>
+        <span>QR Empresarial &middot; Frontend React &middot; JCOH &middot; Ficha 3336250</span>
         <span class="pageNumber"></span>
       </div>`,
     margin: { top: "16mm", bottom: "18mm", left: "16mm", right: "16mm" }
