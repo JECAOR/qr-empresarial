@@ -16,6 +16,7 @@ const perfilService = require('../perfiles/perfil.service');
 const usuarioRepository = require('../usuarios/usuario.repository');
 const usuarioService = require('../usuarios/usuario.service');
 const { enviarEnlaceRecuperacion } = require('../../utils/correo');
+const { RUTA_RESTABLECER } = require('../../config/frontend');
 
 const ROL_POR_DEFECTO = 'empresa';
 
@@ -226,7 +227,10 @@ async function solicitarRecuperacion(correo) {
 
   await authRepository.crearTokenRecuperacion(usuario.id_usuario, hashDelToken(token), expiraEn);
 
-  const enlace = `${process.env.APP_URL}/restablecer.html?token=${token}`;
+  // La pantalla depende del frontend publicado: React resuelve /restablecer
+  // con su enrutador y no sirve archivos .html. Escribir aqui una de las dos
+  // direcciones dejaria el enlace roto en cuanto se cambiara la variable.
+  const enlace = `${process.env.APP_URL}${RUTA_RESTABLECER}?token=${token}`;
 
   // El enlace tambien se imprime en la consola: si el envio falla, el
   // desarrollador sigue teniendo con que probar.

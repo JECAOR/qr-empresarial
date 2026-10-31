@@ -52,3 +52,48 @@ export async function obtenerPerfilPublico(slug) {
 
   return resultado.data;
 }
+
+/**
+ * Informa un escaneo, una visita o un clic (RF-11).
+ *
+ * No pasa por peticion() ni se espera la respuesta: lo que importa es que la
+ * persona vea el perfil, no que se apunte la visita. Si falla, se pierde ese
+ * evento y no pasa nada mas.
+ *
+ * Para el clic hace falta sendBeacon, que el navegador entrega aunque la
+ * pagina se este yendo al enlace. Con un fetch normal, la navegacion
+ * cancelaria la peticion y el clic no se contaria nunca; keepalive es el
+ * respaldo para los navegadores que no traen sendBeacon.
+ *
+ * Solo lo llama la pagina que sirve el codigo QR. El panel del dueno no, o
+ * inflaria sus propias estadisticas cada vez que abriera su perfil.
+ *
+ * @param {string} slug
+ * @param {{tipo: "escaneo"|"visita"|"clic", idEnlace?: number}} evento
+ */
+export function informarEvento(slug, evento) {
+  const url = `${API_URL}/publico/${encodeURIComponent(slug)}/eventos`;
+  const cuerpo = JSON.stringify(evento);
+
+  if (navigator.sendBeacon) {
+    try {
+      const enviado = navigator.sendBeacon(
+        url,
+        new Blob([cuerpo], { type: "application/json" })
+      );
+
+      if (enviado) return;
+    } catch {
+      // Algunos navegadores lo rechazan con ciertos tipos: se sigue con fetch
+    }
+  }
+
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: cuerpo,
+    keepalive: true
+  }).catch(() => {
+    // Un evento perdido no es motivo para molestar a nadie
+  });
+}

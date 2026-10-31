@@ -3,7 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Al servir /p/:slug, el servidor reemplaza lo que hay entre las marcas
+         METADATOS por las etiquetas de ese negocio. Hace falta porque los
+         robots que leen las vistas previas -WhatsApp, Telegram, Google- no
+         ejecutan JavaScript: si se dejaran al navegador, al pegar el enlace
+         saldría siempre el mismo título genérico.
+
+         Lo que sigue es lo que se ve en el resto de la aplicación. No se
+         quiten las marcas: el servidor las busca y avisa si no están. -->
+    <!-- METADATOS:INICIO -->
     <title>QR Empresarial — perfil público</title>
+    <meta name="description" content="Perfil empresarial publicado con QR Empresarial." />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Perfil · QR Empresarial" />
+    <meta property="og:description" content="Perfil empresarial publicado con QR Empresarial." />
+    <meta property="og:image" content="/assets/og-image.png" />
+    <meta property="og:locale" content="es_CO" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Perfil · QR Empresarial" />
+    <meta name="twitter:image" content="/assets/og-image.png" />
+    <!-- METADATOS:FIN -->
   </head>
   <body>
     <div id="root"></div>

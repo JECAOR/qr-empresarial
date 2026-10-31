@@ -6,7 +6,7 @@ import "./TarjetaContenido.css";
  * Son de dos clases y no se dibujan igual: un enlace o un boton llevan a otro
  * sitio y tienen que poder pulsarse; un texto solo se lee.
  */
-function TarjetaContenido({ titulo, detalle, categoria, tipo }) {
+function TarjetaContenido({ id, titulo, detalle, categoria, tipo }) {
   const esEnlace = tipo === "enlace" || tipo === "boton";
 
   return (
@@ -22,6 +22,10 @@ function TarjetaContenido({ titulo, detalle, categoria, tipo }) {
           href={detalle}
           target="_blank"
           rel="noreferrer noopener"
+          // Lo lee la pagina del codigo QR para contar el clic por
+          // delegacion. Aqui no se cuenta nada: esta pieza se usa tambien en
+          // la portada, donde los clics del dueno no deben contarse.
+          data-bloque={id}
         >
           {detalle}
         </a>

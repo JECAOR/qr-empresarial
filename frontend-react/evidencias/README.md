@@ -4,10 +4,10 @@ El entregable principal es el documento, en los dos formatos:
 
 ### [`Evidencias-Frontend-React-JCOH.pdf`](Evidencias-Frontend-React-JCOH.pdf) · [`.docx`](Evidencias-Frontend-React-JCOH.docx)
 
-Diecinueve páginas con los cinco puntos que pide la ficha: los conceptos
-fundamentales, los componentes implementados y por qué, la evidencia de
-integración con la API, las capturas de la interfaz y los datos del
-repositorio.
+Veintidós páginas —veintiuna en Word, que aprovecha algo mejor el espacio—
+con los cinco puntos que pide la ficha: los conceptos fundamentales, los
+componentes implementados y por qué, la evidencia de integración con la API,
+las capturas de la interfaz y los datos del repositorio.
 
 Los dos salen del **mismo texto**, [`documento/contenido.js`](documento/contenido.js),
 y dicen exactamente lo mismo: se comprobó comparando palabra por palabra lo que

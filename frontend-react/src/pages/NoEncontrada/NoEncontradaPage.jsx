@@ -19,8 +19,8 @@ export default function NoEncontradaPage() {
 
       <p>
         Si buscabas el perfil de un negocio, su dirección es del tipo{" "}
-        <code>/p/nombre-del-negocio</code> y la sirve el servidor, no esta
-        aplicación.
+        <code>/p/nombre-del-negocio</code>. Comprueba que esté bien escrita:
+        si el negocio no existe, esa página lo dice.
       </p>
 
       <Link to="/">Ir al inicio</Link>

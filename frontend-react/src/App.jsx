@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
 import RutaProtegida from "./components/RutaProtegida/RutaProtegida";
 import PerfilPublicoPage from "./pages/PerfilPublico/PerfilPublicoPage";
+import PaginaEscaneadaPage from "./pages/PaginaEscaneada/PaginaEscaneadaPage";
 import LoginPage from "./pages/Login/LoginPage";
 import RegistroPage from "./pages/Cuenta/RegistroPage";
 import RecuperarPage from "./pages/Cuenta/RecuperarPage";
@@ -33,6 +34,11 @@ export default function App() {
       <Route path="/registro" element={<RegistroPage />} />
       <Route path="/recuperar" element={<RecuperarPage />} />
       <Route path="/restablecer" element={<RestablecerPage />} />
+
+      {/* La pagina que llevan codificada los codigos QR. Fuera de Layout a
+          proposito: quien escanea no viene a navegar por la aplicacion, y una
+          barra con "Mi negocio" y "Salir" solo le confundiria. */}
+      <Route path="/p/:slug" element={<PaginaEscaneadaPage />} />
 
       <Route element={<Layout />}>
         <Route path="/" element={<PerfilPublicoPage />} />

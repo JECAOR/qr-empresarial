@@ -17,6 +17,7 @@ const contenidoRoutes = require('./modules/contenido/contenido.routes');
 const qrRoutes = require('./modules/qr/qr.routes');
 const publicoRoutes = require('./modules/publico/publico.routes');
 const { paginaPublica } = require('./modules/publico/publico.metadatos');
+const frontend = require('./config/frontend');
 const estadisticaRoutes = require('./modules/estadisticas/estadistica.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
 const errorHandler = require('./middlewares/error.middleware');
@@ -58,9 +59,12 @@ app.use(express.json());
 // segundo servidor. Importa para el RF-03: el enlace del correo de
 // recuperacion apunta a este mismo origen.
 //
+// Cual de los dos frontends se publica lo decide la variable FRONTEND: ver
+// src/config/frontend.js. Por defecto, el de React.
+//
 // Va antes de las rutas de la API, pero no las tapa: estas viven bajo /api,
 // y ahi no hay archivos que servir.
-app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
+app.use(express.static(frontend.CARPETA));
 
 // --- Vista publica (RF-09) ---
 //
@@ -72,7 +76,7 @@ app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
 // perfil o no, y es la pantalla la que muestra el aviso si no hay nada: asi
 // esta ruta no revela que slugs estan registrados.
 app.get('/p/:slug', async (req, res, next) => {
-  const archivo = path.join(__dirname, '..', '..', 'frontend', 'public.html');
+  const archivo = frontend.PANTALLA_PUBLICA;
 
   try {
     // Las etiquetas de vista previa se arman aqui con los datos del negocio.
@@ -114,6 +118,30 @@ app.use('/api/admin', adminRoutes);        // RF-13 y RF-15: administracion
 app.use('/api', (req, res) => {
   res.status(404).json({ message: 'Recurso no encontrado' });
 });
+
+// --- Reenvio de rutas del frontend en React ---
+//
+// React resuelve sus direcciones en el navegador: /perfil, /contenido o
+// /acceso-denegado no son archivos. express.static no los encuentra, y sin
+// esto recargar cualquiera de esas pantallas -o abrir un enlace guardado-
+// daria un 404 del servidor en vez de la aplicacion.
+//
+// Va despues del 404 de /api, para no tapar los errores de la API con una
+// pantalla HTML que quien llama no espera. Solo responde a GET: a un POST a
+// una ruta que no existe se le debe decir que no existe, no entregarle una
+// pagina.
+//
+// Con el frontend original no hace falta: alli cada pantalla es un archivo.
+if (frontend.EN_REACT) {
+  app.get(/.*/, (req, res, next) => {
+    // Si pide algo con extension -una imagen, un .js- y no se encontro, es
+    // un archivo que falta de verdad: entregarle el index.html seria darle
+    // HTML donde espera otra cosa.
+    if (path.extname(req.path)) return next();
+
+    res.sendFile(path.join(frontend.CARPETA, 'index.html'));
+  });
+}
 
 // Middleware global de errores: siempre despues de las rutas
 app.use(errorHandler);

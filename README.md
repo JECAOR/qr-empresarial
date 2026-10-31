@@ -11,7 +11,8 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 |---|---|
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
 | Base de datos MySQL `qr_empresarial` (11 tablas, 14 migraciones) | Implementada |
-| Frontend HTML/CSS/JS (12 pantallas, PWA, pruebas Playwright) | Implementado y conectado a la API. `localStorage` queda como caché: el servidor es la fuente de verdad |
+| Frontend HTML/CSS/JS (12 pantallas, PWA, 396 pruebas Playwright) | Implementado y conectado a la API. Sigue en el repositorio; se publica con `FRONTEND=clasico` |
+| Frontend React (14 pantallas, 417 pruebas Vitest) | Terminado (`v3.2.1`). **Es el que publica el servidor** desde `v3.3.0` |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
@@ -296,18 +297,43 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 ## El segundo frontend, en React
 
 [`frontend-react/`](frontend-react) es un **segundo cliente de la misma API**,
-construido con React 19 y Vite 8 para la Guía Frontend N.º 1 del programa. No
-sustituye al frontend original ni lo modifica: los dos consumen el mismo backend,
-y el de React cubre la vista pública del perfil, el inicio de sesión con JWT y
-la gestión de usuarios, con sus rutas protegidas por rol.
+construido con React 19 y Vite 8 para las Guías Frontend N.º 1 y N.º 2 del
+programa. Cubre los ocho módulos en catorce pantallas y consume 38 de los 40
+endpoints, con 417 pruebas propias (Vitest y Testing Library).
 
-La vista pública que sirve Express en `/p/:slug` **se queda donde está**, porque
-inyecta las etiquetas Open Graph y Schema.org desde el servidor y los rastreadores
-no ejecutan JavaScript. El cliente de React es para el panel, que va detrás de un
-inicio de sesión.
+**Es el que publica el servidor desde `v3.3.0.`** Los dos siguen en el
+repositorio y ninguno modifica al otro; cuál se sirve lo decide la variable
+`FRONTEND` del backend:
 
-Su propio [README](frontend-react/README.md) explica cómo levantarlo y qué hubo
-que adaptar del ejemplo de la guía.
+| `FRONTEND` | Qué se publica en `http://localhost:3000` |
+|---|---|
+| `react` (por defecto) | `frontend-react/dist` — hay que compilarlo antes |
+| `clasico` | `frontend/` — el original, tal como estaba |
+
+Publicar React obliga a tres cosas que no hacían falta con el original, y que
+son las que de verdad distinguen servir una aplicación de una sola página:
+
+- **El reenvío de rutas.** `/perfil` o `/contenido` no son archivos: los
+  resuelve el enrutador en el navegador. Sin reenviarlas al `index.html`,
+  funcionan al navegar y dan 404 al recargar, que es el fallo más fácil de
+  dejar pasar. Solo se reenvían las peticiones `GET` sin extensión: a un POST
+  a una ruta que no existe hay que decirle que no existe, y a un `.js` que
+  falta, también.
+- **Las etiquetas de vista previa.** `/p/:slug` sigue armándolas en el
+  servidor, porque los robots que las leen —WhatsApp, Telegram, Google— no
+  ejecutan JavaScript. Con React importa más que antes: la pantalla se dibuja
+  entera en el navegador, así que sin esto no habría nada que leer. El
+  `index.html` de React lleva las mismas marcas `METADATOS` que `public.html`.
+- **El enlace del correo de recuperación.** React no sirve archivos `.html`,
+  así que apunta a `/restablecer` y no a `/restablecer.html`. Esa dirección
+  sale de [`src/config/frontend.js`](backend/src/config/frontend.js) para que
+  no se quede desfasada al cambiar la variable.
+
+Las 396 pruebas de Playwright del frontend original **siguen pasando igual**:
+levantan su propio servidor en el puerto 4173 y no dependen de esto.
+
+Su propio [README](frontend-react/README.md) explica cómo levantarlo, sus
+pruebas y qué hubo que adaptar del ejemplo de la guía.
 
 ## Estructura de carpetas
 
@@ -411,21 +437,30 @@ done
 # vacia y la coleccion de Postman no tiene con que entrar.
 mysql -u root -p --default-character-set=utf8mb4 qr_empresarial < database/seed.sql
 
-# 2. Backend
-cd backend
+# 2. Frontend en React, que es el que publica el servidor
+cd frontend-react
+npm install
+cp .env.example .env      # VITE_API_URL ya trae el valor de desarrollo
+npm run build             # deja frontend-react/dist, que es lo que se sirve
+
+# 3. Backend
+cd ../backend
 npm install
 cp .env.example .env      # completar DB_PASSWORD y generar JWT_SECRET
 npm run dev               # servidor con nodemon en http://localhost:3000
 
-# 3. Comprobación
+# 4. Comprobación
 # GET  http://localhost:3000/api/health  →  {"status":"ok"}
-# Abra http://localhost:3000/login.html  →  la aplicación completa
+# Abra http://localhost:3000/          →  la aplicación completa
+#
+# Si el paso 2 se salta, el servidor arranca igual y avisa de que falta
+# compilar. Para publicar el frontend original en su lugar: FRONTEND=clasico
 
-# 4. Pruebas automaticas del backend (133, Jest + Supertest)
-# (se sigue en backend/, desde el paso 2)
+# 5. Pruebas automaticas del backend (158, Jest + Supertest)
+# (se sigue en backend/, desde el paso 3)
 npm test                  # crea su propia base qr_empresarial_test; no toca la suya
 
-# 5. Pruebas del frontend (396, Playwright)
+# 6. Pruebas del frontend original (396, Playwright)
 cd ../frontend
 npm install
 npx playwright install chromium

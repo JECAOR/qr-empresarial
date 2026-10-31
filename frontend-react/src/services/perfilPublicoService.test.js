@@ -7,9 +7,9 @@
 // API devuelve {data: {perfil, contenido}}.
 // ============================================
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { obtenerPerfilPublico } from "./perfilPublicoService";
+import { obtenerPerfilPublico, informarEvento } from "./perfilPublicoService";
 import { respuesta, simularFetch } from "../pruebas/ayudas";
 
 const PERFIL = {
@@ -98,5 +98,77 @@ describe("obtenerPerfilPublico()", () => {
 
       await expect(obtenerPerfilPublico("x")).resolves.toHaveProperty("contenido", []);
     });
+  });
+});
+
+describe("informarEvento()", () => {
+  const EVENTO = { tipo: "escaneo" };
+
+  it("usa sendBeacon, que sobrevive a la navegacion", async () => {
+    const beacon = vi.fn().mockReturnValue(true);
+
+    vi.stubGlobal("navigator", { ...navigator, sendBeacon: beacon });
+
+    const espia = simularFetch([]);
+
+    informarEvento("la-espiga", EVENTO);
+
+    expect(beacon).toHaveBeenCalledTimes(1);
+    expect(beacon.mock.calls[0][0]).toMatch(/\/publico\/la-espiga\/eventos$/);
+    expect(await beacon.mock.calls[0][1].text()).toBe(JSON.stringify(EVENTO));
+
+    // Con sendBeacon no hace falta el fetch
+    expect(espia).not.toHaveBeenCalled();
+  });
+
+  it("escapa la direccion del negocio", () => {
+    const beacon = vi.fn().mockReturnValue(true);
+
+    vi.stubGlobal("navigator", { ...navigator, sendBeacon: beacon });
+
+    informarEvento("un negocio/raro", EVENTO);
+
+    expect(beacon.mock.calls[0][0]).toMatch(/\/publico\/un%20negocio%2Fraro\/eventos$/);
+  });
+
+  // Hay navegadores sin sendBeacon. keepalive es lo que permite que la
+  // peticion sobreviva a la navegacion al pulsar un enlace.
+  it("cae en fetch con keepalive si no hay sendBeacon", () => {
+    vi.stubGlobal("navigator", { ...navigator, sendBeacon: undefined });
+
+    const espia = simularFetch([respuesta(null, { status: 204 })]);
+
+    informarEvento("la-espiga", EVENTO);
+
+    const [url, opciones] = espia.mock.calls[0];
+
+    expect(url).toMatch(/\/publico\/la-espiga\/eventos$/);
+    expect(opciones.method).toBe("POST");
+    expect(opciones.keepalive).toBe(true);
+    expect(JSON.parse(opciones.body)).toEqual(EVENTO);
+  });
+
+  // Algunos lo rechazan segun el tipo del Blob, y devuelven false o lanzan.
+  it.each([
+    ["devuelve false", () => false],
+    ["lanza", () => { throw new TypeError("tipo no permitido"); }]
+  ])("cae en fetch si sendBeacon %s", (_, beacon) => {
+    vi.stubGlobal("navigator", { ...navigator, sendBeacon: vi.fn(beacon) });
+
+    const espia = simularFetch([respuesta(null, { status: 204 })]);
+
+    informarEvento("la-espiga", EVENTO);
+
+    expect(espia).toHaveBeenCalledTimes(1);
+  });
+
+  // Un evento perdido no es motivo para molestar a nadie: lo que importa es
+  // que la persona vea el perfil, no que se apunte la visita.
+  it("no revienta si la peticion falla", () => {
+    vi.stubGlobal("navigator", { ...navigator, sendBeacon: undefined });
+
+    simularFetch([new TypeError("Failed to fetch")]);
+
+    expect(() => informarEvento("la-espiga", EVENTO)).not.toThrow();
   });
 });
