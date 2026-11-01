@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 import { registrar } from "../../services/cuentaService";
 import { useAuth } from "../../context/AuthContext";
@@ -16,12 +16,17 @@ const VACIO = {
 
 export default function RegistroPage() {
   const { usuario, cargando, entrar } = useAuth();
-  const navegar = useNavigate();
 
   const [form, setForm] = useState(VACIO);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
+  // La unica salida, igual que en LoginPage: en cuanto hay sesion se sale
+  // por aqui. Antes habia tambien un navegar("/") despues de entrar(), que no
+  // hacia nada -React desmonta esta pantalla al dibujar el <Navigate>, y
+  // React Router ignora en silencio una navegacion desde un componente
+  // desmontado-. Aqui las dos salidas llevaban al mismo sitio y no se notaba;
+  // en LoginPage no, y ahi si era un defecto.
   if (!cargando && usuario) return <Navigate to="/" replace />;
 
   function cambio(evento) {
@@ -50,8 +55,6 @@ export default function RegistroPage() {
       // El registro no devuelve token, asi que se entra a continuacion con
       // lo que se acaba de escribir. Pedirlo otra vez seria absurdo.
       await entrar(form.correo.trim(), form.contrasena);
-
-      navegar("/", { replace: true });
     } catch (fallo) {
       setError(fallo.message);
     } finally {

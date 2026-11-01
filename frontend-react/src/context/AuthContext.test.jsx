@@ -157,8 +157,9 @@ describe("entrar(), salir() y refrescar()", () => {
 
     await waitFor(() => expect(screen.getByTestId("rol")).toHaveTextContent("administrador"));
 
-    // Lo devuelve ademas de guardarlo porque quien llama necesita el rol ya
-    // mismo para decidir a que pantalla ir, antes de que React redibuje.
+    // Lo devuelve ademas de guardarlo, para que quien pide entrar sepa quien
+    // entro sin esperar un redibujado. Ninguna pantalla lo usa ya: el login
+    // decide a donde ir con un <Navigate>, y no leyendo esto.
     expect(usuarios[0]).toEqual(USUARIO_ADMIN);
   });
 

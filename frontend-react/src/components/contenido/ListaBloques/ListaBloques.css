@@ -39,6 +39,12 @@
   gap: 2px;
 }
 
+/* El tamaño minimo no es decoracion. Estas flechas son la UNICA forma de
+   reordenar con el dedo -el arrastre de HTML no funciona al tacto-, y con el
+   padding de antes quedaban de 22 x 20 px: por debajo de los 24 x 24 que
+   pide el criterio 2.5.8 de la WCAG 2.2, y dificiles de acertar justo en el
+   dispositivo donde son imprescindibles. Lo encontro
+   pruebas-e2e/movil.spec.js midiendolas en un navegador de verdad. */
 .bloque__orden button {
   border: 1px solid var(--slate-300);
   border-radius: 7px;
@@ -46,7 +52,11 @@
   color: var(--slate-600);
   font-size: 12px;
   line-height: 1;
-  padding: 4px 7px;
+  min-width: 32px;
+  min-height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   cursor: pointer;
 }
 

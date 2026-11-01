@@ -233,9 +233,11 @@ no sabe limpiarse. En producción se ejecuta una sola vez.
 
 ## Las pruebas
 
-**439 pruebas en 26 archivos**, con [Vitest](https://vitest.dev) y
-[Testing Library](https://testing-library.com) sobre jsdom. No necesitan ni
-base de datos ni servidor:
+**439 en jsdom y 129 en un navegador de verdad.** Las primeras, con
+[Vitest](https://vitest.dev) y
+[Testing Library](https://testing-library.com), miran lo que dibuja React y
+cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
+—más abajo—. Ninguna de las dos necesita base de datos ni servidor:
 
 ```bash
 npm test
@@ -277,25 +279,56 @@ hace que la etiqueta diga «30 sep» en lugar de «1 oct», que es exactamente e
 día de menos que se vio en pantalla; y fiarse del campo `success` del ejemplo
 de la guía tumba diez de las dieciocho de `apiClient`.
 
-### Dos cosas que estas pruebas no demuestran
+### Dos cosas que estas pruebas no demostraban
 
-**El arrastre rápido no se puede reproducir aquí.** El defecto era una carrera:
-los tres eventos del arrastre caen en el mismo tic y el estado de React todavía
-no se ha aplicado. Pero `fireEvent` envuelve cada evento en `act()`, que vacía
-la cola de React, así que la carrera no llega a darse — se comprobó volviendo a
-poner el `useState`, y las dieciséis pruebas seguían en verde. En su lugar se
-mide con un `Profiler` que empezar un arrastre no provoque un redibujado, que
-es lo que distingue una `ref` del estado, y eso sí falla con el código viejo.
+Las dos tenían que ver con el `act()` de `fireEvent`, que vacía la cola de React
+entre un evento y el siguiente. Las dos se resolvieron midiéndolas en un
+navegador, y ninguna acabó donde se creía.
 
-**El destino recordado al entrar, tampoco.** Por el mismo `act()`, el
-`<Navigate>` de «ya tienes sesión» le gana al `navegar(desde)` y la pantalla
-acaba en la portada. Se comprobó en un Chromium de verdad, contra los dos
-servidores: entrar en `/contenido` sin sesión e iniciarla aterriza en
-`/contenido`. La prueba afirma por eso **a dónde manda** la pantalla, no dónde
-acaba.
+**El arrastre rápido.** El comentario del componente decía que los tres eventos
+caen en el mismo tic y que con el índice de origen en estado el arrastre
+fallaba. **No falla.** Se midió cambiándolo a `useState` y arrastrando en
+Chromium, despacio y con los tres eventos uno detrás de otro: reordena igual,
+porque React trata `dragstart` y `drop` como eventos discretos y aplica el
+cambio antes de entregar el siguiente. La `ref` se queda porque ahorra un
+redibujado de la lista entera por cada arrastre que empieza —eso sí lo mide un
+`Profiler`—, no porque haga falta para que funcione. El comentario, que afirmaba
+una carrera que no existe, se corrigió.
 
-Lo que depende del momento exacto en que React aplica un cambio pide un
-navegador. Una suite de extremo a extremo propia sigue pendiente.
+**El destino recordado al entrar.** Aquí no era una limitación de las pruebas:
+**era un defecto**, y de los visibles. `LoginPage` tenía dos salidas —el
+`<Navigate>` de «ya tienes sesión» y un `navegar(state.desde)` después del
+`await`—, y en el navegador ganaba la primera: React agrupa el `setUsuario` con
+lo que viene detrás, dibuja una sola vez, devuelve el `<Navigate>` y desmonta la
+pantalla; el `navegar()` llegaba sobre un componente desmontado y React Router
+lo ignoraba en silencio. Quien abría un enlace a `/contenido` sin sesión entraba
+y aterrizaba en la portada.
+
+La prueba de Vitest no podía verlo, y el comentario que tenía afirmaba —sin
+haberlo medido— que en el navegador aterrizaba bien. Lo encontró
+`pruebas-e2e/entrar.spec.js` en su primera corrida. Ahora hay una sola salida,
+declarativa, y la prueba de Vitest comprueba **dónde aterriza** y no a dónde
+dice que manda.
+
+## Las pruebas de extremo a extremo
+
+**129 pruebas en 7 archivos**, con [Playwright](https://playwright.dev) sobre
+Chromium, contra el paquete compilado:
+
+```bash
+npx playwright install chromium   # solo la primera vez
+npm run test:e2e
+```
+
+Solo lo que un navegador puede contestar y jsdom no: el arrastre nativo, la
+descarga de archivos de verdad, `sendBeacon`, la recarga y el historial, el CSS
+a 375 px y una auditoría de axe-core. Nada de lo que ya cubre Vitest se repite
+allí.
+
+Encontraron tres defectos en su primera corrida —el destino al entrar, las
+flechas de reordenar a 22 px y el contraste de la etiqueta del rol— y están
+documentadas una por una en [`pruebas-e2e/README.md`](pruebas-e2e/README.md),
+con lo que cada archivo cubre y lo que sigue sin demostrarse.
 
 ## Verificación contra el servidor real
 

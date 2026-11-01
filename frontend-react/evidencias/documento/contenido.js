@@ -23,7 +23,7 @@ exports.portada = {
     ["Ficha", "3336250"],
     ["Guías", "Frontend N.º 1 y N.º 2, más los ocho módulos del proyecto"],
     ["Repositorio", "github.com/JECAOR/qr-empresarial"],
-    ["Versión", "v3.3.0"],
+    ["Versión", "v3.4.0"],
     ["Fecha", "31 de octubre de 2026"]
   ],
   pie: [
@@ -99,7 +99,7 @@ exports.cuerpo = [
   ] },
 
   { t: "h3", v: "2.3 Dependencias" },
-  { t: "p", v: "*Tres en producción* y once de desarrollo, seis de ellas solo para las pruebas. *Ninguna librería de interfaz*: los estilos, la gráfica y los diálogos son propios." },
+  { t: "p", v: "*Tres en producción* y trece de desarrollo, ocho de ellas solo para las pruebas. *Ninguna librería de interfaz*: los estilos, la gráfica y los diálogos son propios." },
   { t: "tabla", anchos: [34, 16, 50], cabeceras: ["Paquete", "Versión", "Para qué"], filas: [
     ["react / react-dom", "19.3", "La biblioteca y su puente con el navegador"],
     ["react-router-dom", "7.18", "Enrutado y rutas protegidas"],
@@ -108,7 +108,9 @@ exports.cuerpo = [
     ["oxlint", "1.88", "Análisis estático"],
     ["vitest", "3.2", "El motor de las pruebas; usa la misma configuración que Vite"],
     ["@testing-library/react", "16.3", "Monta un componente y lo consulta como lo haría una persona"],
-    ["jsdom", "30.1", "El navegador de mentira donde se dibujan"]
+    ["jsdom", "30.1", "El navegador de mentira donde se dibujan"],
+    ["@playwright/test", "1.64", "Chromium de verdad, para las pruebas de extremo a extremo"],
+    ["@axe-core/playwright", "4.14", "Auditoría de accesibilidad sobre la pantalla ya dibujada"]
   ] },
   { t: "p", v: "Las de desarrollo no entran en lo que se descarga el visitante. Resultado: *103 KB comprimidos* para trece pantallas —98 de JavaScript y 5 de estilos—, medidos con `npm run build`." },
 
@@ -200,11 +202,16 @@ exports.cuerpo = [
   ] },
 
   { t: "h3", v: "5.1 Historial de commits del frontend" },
-  { t: "p", v: "Veinte commits sobre `frontend-react/`, del 21 al 31 de octubre de 2026, dentro de un repositorio con *126 commits y 50 etiquetas*. Cada módulo se desarrolló en su propia rama y se integró con `merge --no-ff`, de modo que la rama queda en el historial en lugar de aplanarse." },
+  { t: "p", v: "Veinticinco commits sobre `frontend-react/`, del 21 al 31 de octubre de 2026, dentro de un repositorio con *135 commits y 53 etiquetas*. Cada módulo se desarrolló en su propia rama y se integró con `merge --no-ff`, de modo que la rama queda en el historial en lugar de aplanarse. Debajo, los veintidós últimos; faltan tres de las primeras capturas, por espacio." },
   // Con el prefijo tal cual sale de git: es lo que demuestra que los mensajes
   // siguen Conventional Commits, que es justo lo que dice el parrafo siguiente.
   { t: "pre", v: [
-    "2026-10-31  test(frontend-react): 417 pruebas propias con Vitest          v3.2.0",
+    "2026-10-31  test(frontend-react): 129 pruebas de extremo a extremo        v3.4.0",
+    "2026-10-31  fix(frontend-react): dos medidas por debajo de la WCAG",
+    "2026-10-31  fix(frontend-react): el login no devolvia a la pantalla",
+    "2026-10-31  feat: el servidor publica el frontend en React                v3.3.0",
+    "2026-10-31  docs(evidencias): el documento cuenta las pruebas             v3.2.1",
+    "2026-10-31  test(frontend-react): 439 pruebas propias con Vitest          v3.2.0",
     "2026-10-31  docs(evidencias): el documento tambien en Word                v3.1.0",
     "2026-10-31  docs(evidencias): documento de evidencias del frontend        v3.0.1",
     "2026-10-23  feat(frontend-react): el modulo 8, la administracion          v3.0.0",
@@ -219,9 +226,6 @@ exports.cuerpo = [
     "2026-10-22  docs(evidencias): matriz de pruebas y capturas de la Guia 02",
     "2026-10-22  feat(frontend-react): sesion JWT, rutas por rol y usuarios    v2.5.0",
     "2026-10-21  docs(evidencias): la captura de Vite, Guia 01 completa        v2.4.0",
-    "2026-10-21  docs(evidencias): las cinco primeras capturas de la Guia 01",
-    "2026-10-21  docs(evidencias): Postman es una sola captura, no dos",
-    "2026-10-21  docs(frontend-react): carpeta de evidencias de la Guia 01",
     "2026-10-21  docs(frontend-react): cierra los tres huecos de la Guia 01    v2.3.1",
     "2026-10-21  feat(frontend-react): primera pantalla en React, Guia N.1     v2.3.0"
   ] },
@@ -235,10 +239,13 @@ exports.cuerpo = [
     "cd frontend-react && npm install && npm run dev    # http://localhost:5173"
   ] },
 
-  { t: "p", v: "Las pruebas del frontend no necesitan ninguna de las dos cosas: ni base de datos ni servidor." },
+  { t: "p", v: "Las pruebas del frontend no necesitan ninguna de las dos cosas: ni base de datos ni servidor. Las de extremo a extremo compilan la aplicacion y la sirven ellas mismas." },
   { t: "pre", v: [
-    "cd frontend-react && npm test          # las 417",
-    "cd frontend-react && npm run coverage  # con el informe de cobertura"
+    "cd frontend-react && npm test          # las 439 en jsdom",
+    "cd frontend-react && npm run coverage  # con el informe de cobertura",
+    "",
+    "npx playwright install chromium        # solo la primera vez",
+    "cd frontend-react && npm run test:e2e  # las 129 en Chromium"
   ] },
   { t: "p", v: "Cuentas de demostración, las dos con la contraseña `Clave123*`: `admin@caferaices.co` (administrador) y `contacto@laespiga.co` (empresa)." },
 
@@ -248,7 +255,7 @@ exports.cuerpo = [
     ["Un botón se publicaba como texto (backend)", "El tipo se decidía comparando el nombre de la categoría con el literal 'Botón', y el cliente mysql de la consola de Windows reescribía los acentos al cargar las migraciones. Se corrigió con SET NAMES utf8mb4 en los dieciséis archivos SQL y comparando por el icono, que es ASCII."],
     ["Nombres de columnas en la API (backend)", "GET /usuarios devolvía las filas tal como salen de MySQL mientras el resto respondía en camelCase. Nadie lo veía porque el frontend original no llama a esa ruta."],
     ["El diálogo se cerraba solo", "close() dispara el evento close, que borraba el estado; y StrictMode ejecuta el efecto dos veces. La limpieza sobraba."],
-    ["El arrastre fallaba al ser rápido", "El índice de origen iba en estado de React, que no se ha aplicado cuando llega el drop si los tres eventos caen en el mismo tic. Se pasó a useRef."],
+    ["El arrastre, que resultó no estar roto", "El índice de origen se pasó a useRef creyendo que con estado el arrastre rápido fallaba. Medido después en Chromium —ver 5.6—, no falla: React aplica el cambio de dragstart antes de entregar el drop. La ref se queda porque ahorra un redibujado; la explicación que la acompañaba era falsa y se corrigió."],
     ["La barra se quedaba con el nombre viejo", "Al cambiar el nombre, la barra seguía mostrando el anterior hasta recargar. AuthContext gana un refrescar()."]
   ] },
 
@@ -277,16 +284,20 @@ exports.cuerpo = [
     ["El login que mandaba a todos a /usuarios", "Dos pruebas en rojo"],
     ["Las preferencias que ignoraban al servidor", "La nota de «valores de fábrica» no desaparecía: una prueba en rojo"],
     ["Quitar el refrescar() de la cuenta", "Una prueba en rojo"],
-    ["Fiarse del campo success del ejemplo", "Diez de las dieciocho de apiClient en rojo"]
+    ["Fiarse del campo success del ejemplo", "Diez de las dieciocho de apiClient en rojo"],
+    ["Las dos salidas del login, otra vez", "Tres pruebas de extremo a extremo en rojo: el destino recordado aterriza en la portada. Es el defecto de 5.8, y es la prueba de que esas tres discriminan"],
+    ["Invertir los índices del arrastre", "Cinco pruebas de extremo a extremo en rojo"]
   ] },
 
-  { t: "h3", v: "5.6 Dos cosas que estas pruebas no demuestran" },
+  { t: "h3", v: "5.6 Dos cosas que estas pruebas no podían demostrar" },
 
-  { t: "p", v: "Se dicen porque callarlas sería justamente el tipo de error que estas pruebas existen para evitar." },
+  { t: "p", v: "Las dos salían del mismo sitio: `fireEvent` envuelve cada evento en `act()`, que vacía la cola de React entre uno y el siguiente. Eso esconde todo lo que dependa del momento en que React aplica un cambio. Las dos se resolvieron midiéndolas en un navegador de verdad, y *ninguna acabó donde se creía*." },
 
-  { t: "p", v: "*El arrastre rápido no se puede reproducir aquí.* El defecto era una carrera: los tres eventos del arrastre caen en el mismo tic y el estado de React todavía no se ha aplicado. Pero `fireEvent` envuelve cada evento en `act()`, que vacía la cola de React, así que la carrera no llega a darse: se comprobó volviendo a poner el `useState`, y las dieciséis pruebas seguían en verde. En su lugar se mide con un `Profiler` que empezar un arrastre no provoque un redibujado, que es lo que distingue una `ref` del estado, y esa sí falla con el código viejo." },
+  { t: "p", v: "*El arrastre rápido.* Se daba por hecho que los tres eventos caen en el mismo tic y que con el índice de origen en estado el arrastre fallaba. No falla: se midió cambiándolo a `useState` y arrastrando en Chromium, despacio y con los tres eventos uno detrás de otro, y reordena igual, porque React trata `dragstart` y `drop` como eventos discretos y aplica el cambio antes de entregar el siguiente. La `ref` se queda porque ahorra un redibujado de la lista entera por cada arrastre que empieza —eso sí lo mide un `Profiler`—, no porque haga falta. El comentario del componente, que afirmaba una carrera inexistente, se corrigió." },
 
-  { t: "p", v: "*El destino recordado al entrar tampoco.* Por el mismo `act()`, el `<Navigate>` de «ya tienes sesión» le gana al `navegar(desde)` y la pantalla acaba en la portada. Se comprobó en un Chromium de verdad, contra los dos servidores: entrar en `/contenido` sin sesión e iniciarla aterriza en `/contenido`. La prueba afirma por eso a dónde manda la pantalla, no dónde acaba." },
+  { t: "p", v: "*El destino recordado al entrar.* Aquí no era una limitación de las pruebas: *era un defecto*. Está en 5.8, porque lo encontró la suite de extremo a extremo y es el motivo de que exista." },
+
+  { t: "nota", v: "Las dos afirmaciones estaban escritas en el código, en este documento y en el README, y las dos eran falsas. Se corrigen donde estaban, y no solo aquí: una explicación equivocada que sobrevive en un comentario es la que leerá quien toque ese archivo dentro de seis meses." },
 
   { t: "h3", v: "5.7 El frontend publicado" },
 
@@ -304,7 +315,43 @@ exports.cuerpo = [
 
   { t: "nota", v: "*Un defecto encontrado al probarlo.* La primera versión guardaba en una `ref` que ya había contado la visita, para que `StrictMode` no la contara dos veces. Sobraba —la bandera de vigencia del efecto ya lo impedía— y además dejaba sin contar la visita al ir de un negocio a otro dentro de la aplicación, porque React Router reutiliza el componente cuando solo cambia el slug. La prueba que lo destapó falla con la `ref` y pasa sin ella." },
 
-  { t: "h3", v: "5.8 Lo que este frontend todavía no tiene" },
+  { t: "salto" },
+  { t: "h3", v: "5.8 Las pruebas de extremo a extremo" },
 
-  { t: "p", v: "No hay pruebas de extremo a extremo propias, en un navegador de verdad. El frontend original del proyecto tiene 396 de Playwright y este se verificó pantalla por pantalla a mano contra el servidor real, pero las dos comprobaciones de la sección anterior enseñan dónde está el límite de jsdom: lo que depende del momento exacto en que React aplica un cambio pide un navegador." }
+  { t: "p", v: "*129 pruebas en 7 archivos*, con *Playwright* sobre Chromium, contra el *paquete compilado*. Se ejecutan con `npm run test:e2e`: compilan la aplicación, la sirven y la apagan al terminar, y no necesitan ni el backend ni MySQL." },
+
+  { t: "p", v: "Existen por lo que dice 5.6. Las 439 de Vitest corren en jsdom, que no es un navegador: no aplica CSS, no tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene historial ni pestañas, y envuelve cada evento en `act()`. *Aquí no se repite nada que jsdom pueda contestar*: solo lo que necesita un navegador." },
+
+  { t: "tabla", anchos: [26, 38, 36], cabeceras: ["Archivo", "Qué prueba", "Por qué no en jsdom"], filas: [
+    ["entrar (15)", "A dónde se llega al entrar, el historial, Atrás después de salir, la guardia de rol", "act() decide quién gana entre dos salidas; no hay historial de navegador"],
+    ["arrastrar (12)", "Reordenar arrastrando, despacio y con los tres eventos seguidos; las flechas con ratón y teclado", "jsdom no tiene arrastre nativo ni dataTransfer"],
+    ["descargar (14)", "PNG, SVG, PDF y el CSV del reporte: nombre y primeros bytes del archivo; la vista previa; el portapapeles", "jsdom no descarga nada y createObjectURL es de pega"],
+    ["recargar (17)", "Recargar cada pantalla, enlaces directos, direcciones que no existen, la sesión al arrancar en frío", "no hay recarga, ni pestañas, ni sessionStorage entre pruebas"],
+    ["escaneada (14)", "Escaneos, visitas y clics del RF-11, y que el panel del dueño no cuente nada", "sendBeacon no existe en jsdom"],
+    ["movil (19)", "Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa", "Vitest corre con css: false y jsdom no maqueta"],
+    ["accesibilidad (19 x 2)", "Auditoría de axe-core en 13 pantallas y 4 estados, el tabulador y el foco visible", "la mitad de las reglas de axe miden contraste y tamaños"]
+  ] },
+
+  { t: "p", v: "Las dos últimas corren además con el viewport de un teléfono, porque en una pantalla estrecha cambian el contraste de algunos fondos, el orden visual y el tamaño de lo que hay que pulsar." },
+
+  { t: "p", v: "*Encontraron tres defectos en su primera ejecución.* Es la razón de ponerlas, y la medida de lo que las 439 anteriores no alcanzaban a ver:" },
+
+  { t: "tabla", anchos: [28, 72], cabeceras: ["Defecto", "Qué pasaba y cómo se corrigió"], filas: [
+    ["El destino recordado al entrar no funcionaba", "Quien abría un enlace a /contenido sin sesión entraba y aterrizaba en la portada. La pantalla de login tenía dos salidas: el <Navigate> de «ya tienes sesión» y un navegar(state.desde) después del await. En el navegador ganaba la primera —React agrupa el setUsuario con lo que viene detrás, dibuja una sola vez y desmonta la pantalla—, y el navegar() llegaba sobre un componente desmontado, que React Router ignora en silencio. Ahora hay una sola salida, declarativa."],
+    ["Las flechas de reordenar medían 22 x 20 px", "Por debajo de los 24 x 24 que pide el criterio 2.5.8 de la WCAG 2.2, y son la única forma de reordenar con el dedo, porque el arrastre de HTML no funciona al tacto. Se les puso un mínimo de 32 px."],
+    ["La etiqueta del rol no tenía contraste", "Blanco al 75 % sobre el índigo de la barra da 4,27:1, y hace falta 4,5:1 para texto pequeño. Salía en las nueve pantallas que llevan la barra. Subida al 85 %: 5,00:1."]
+  ] },
+
+  { t: "nota", v: "El primero es el que importa. La prueba de Vitest no podía verlo, y el comentario que acompañaba al código afirmaba —sin haberlo medido— que en el navegador funcionaba bien. Una suite que no puede fallar donde el código está roto no es una red de seguridad: es una afirmación sobre el código escrita en otro sitio." },
+
+  { t: "p", v: "La API se simula dentro del navegador, con memoria: reordenar y volver a pedir la lista devuelve el orden nuevo, como haría el servidor. Sin esa memoria, una prueba de reordenar pasaría aunque la pantalla no mandara nada. Y la simulación sale de los servicios del backend, no de lo que le convendría a la prueba: `GET /contenido` devuelve `categoria` como objeto y `GET /publico/:slug` la aplana a una cadena, y simular las dos iguales dejó la pantalla pública en blanco la primera vez. El defecto estaba en la simulación —pero una simulación que no se parece a la API deja pasar exactamente eso en el otro sentido." },
+
+  { t: "h3", v: "5.9 Lo que este frontend todavía no tiene" },
+
+  { t: "tabla", anchos: [30, 70], cabeceras: ["Qué falta", "Detalle"], filas: [
+    ["El color de marca no se aplica en ninguna parte", "La pantalla del perfil deja elegir entre tres temas y los guarda en el servidor, y la API los devuelve en el perfil público, pero ninguna pantalla de React los usa: el frontend original sí lo hacía. Es la parte del RF-12 que queda pendiente."],
+    ["Todas las pantallas comparten el título de la pestaña", "El original tenía un archivo .html por pantalla, cada uno con su título. Bajo React el título sale del único index.html, así que el historial y las pestañas del navegador dicen lo mismo en todas. La página del código QR es la excepción: el servidor le inyecta el título del negocio y React no lo toca."],
+    ["Safari de verdad", "El proyecto Móvil usa Chromium con el viewport y el user agent de un iPhone, porque este entorno no pudo instalar un WebKit real. Lo que se mide —media queries, cajas, contraste— no depende del motor; un fallo propio de WebKit sí se escaparía."],
+    ["El doble paso de StrictMode, en el navegador", "Solo ocurre en desarrollo, y las de extremo a extremo corren contra el paquete compilado. Ese caso lo cubre Vitest."]
+  ] }
 ];

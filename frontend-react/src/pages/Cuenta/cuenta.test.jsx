@@ -29,11 +29,15 @@ beforeEach(() => navegar.mockClear());
 // ---------------------------------------------------------------- registro
 
 describe("RegistroPage", () => {
+  // Con la portada mapeada aparte, para poder comprobar a donde ATERRIZA la
+  // pantalla y no solo a donde dice que manda. La pantalla sale por un
+  // <Navigate>, que es la unica salida que tiene.
   const montar = () => render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={["/registro"]}>
       <ProveedorAuth>
         <Routes>
-          <Route path="/" element={<RegistroPage />} />
+          <Route path="/registro" element={<RegistroPage />} />
+          <Route path="/" element={<p>perfil público</p>} />
         </Routes>
       </ProveedorAuth>
     </MemoryRouter>
@@ -102,7 +106,7 @@ describe("RegistroPage", () => {
     await waitFor(() => screen.getByLabelText("Correo electrónico"));
     await rellenar();
 
-    await waitFor(() => expect(navegar).toHaveBeenCalledWith("/", { replace: true }));
+    expect(await screen.findByText("perfil público")).toBeInTheDocument();
 
     expect(espia.mock.calls[1][0]).toMatch(/\/auth\/login$/);
     expect(cuerpoDe(espia, 1)).toEqual({ correo: "ana@ejemplo.co", contrasena: "Clave123*" });
@@ -118,7 +122,10 @@ describe("RegistroPage", () => {
     await rellenar();
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Ese correo ya está registrado");
-    expect(navegar).not.toHaveBeenCalled();
+
+    // Se queda en el formulario, con lo escrito, para poder corregirlo
+    expect(screen.getByRole("button", { name: "Crear cuenta" })).toBeInTheDocument();
+    expect(screen.queryByText("perfil público")).not.toBeInTheDocument();
   });
 
   it("echa de aqui a quien ya tiene sesion", async () => {
