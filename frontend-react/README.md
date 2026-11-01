@@ -56,6 +56,33 @@ los tres estados que exige la guía.
 El campo de texto permite consultar cualquier otro negocio, y sirve para
 provocar el error sin tocar el código.
 
+**La ficha enseña los once campos, y se puede pulsar.** Enseñaba seis: se
+quedaban fuera el **logo**, el **Instagram** y el **correo de contacto**, los
+tres rellenables desde `/perfil`. El dueño los guardaba, la API los devolvía y
+el visitante no los veía nunca —el mismo defecto que tuvo el color de marca—.
+
+Y lo que sí enseñaba era texto plano. El frontend original convertía estos
+datos en botones; aquí no se podía pulsar ninguno, y esto se lee casi siempre
+en un teléfono recién escaneado el código:
+
+| Dato | Lleva a |
+|---|---|
+| Teléfono | `tel:` y, aparte, WhatsApp |
+| Dirección | Google Maps |
+| Instagram | el perfil del negocio |
+| Correo | `mailto:` |
+| Horario | a ninguna parte: es un dato, no una acción |
+
+**El de WhatsApp no siempre aparece.** `wa.me` necesita el número
+internacional completo: se arma con el que tenga indicativo («+57 301…») o con
+un móvil colombiano de diez dígitos que empiece por 3, al que se le antepone
+el 57. Con un fijo no se ofrece, y es deliberado: un `wa.me` armado a medias
+no lleva a un número equivocado, lleva a una conversación con un desconocido.
+
+**El logo desaparece si no carga**, en lugar de dejar el icono roto del
+navegador, y su `alt` va vacío porque el nombre del negocio está escrito al
+lado y un lector de pantalla lo diría dos veces.
+
 **El contenido va separado por secciones (RF-05).** La API lo devuelve dos
 veces: `contenido`, la lista plana, y `porSeccion`, el mismo contenido
 agrupado. Estas pantallas usaban la primera y pintaban los bloques uno detrás
@@ -323,7 +350,7 @@ búsqueda—. Lo que sí interesa indexar es `/p/`, que es el producto.
 
 ## Las pruebas
 
-**519 en jsdom y 212 en un navegador de verdad.** Las primeras, con
+**534 en jsdom y 217 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -344,7 +371,7 @@ de un vistazo qué tiene pruebas y qué no.
 | Qué se prueba | Pruebas |
 |---|---:|
 | Las dieciséis pantallas | 230 |
-| Los trece componentes | 122 |
+| Los trece componentes | 137 |
 | Los once servicios | 99 |
 | El mapa de rutas | 30 |
 | El color de marca y el título | 19 |
@@ -402,7 +429,7 @@ dice que manda.
 
 ## Las pruebas de extremo a extremo
 
-**212 pruebas en 11 archivos**, con [Playwright](https://playwright.dev) sobre
+**217 pruebas en 11 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium, contra el paquete compilado:
 
 ```bash
