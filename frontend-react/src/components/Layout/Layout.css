@@ -61,7 +61,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.75;
+
+  /* Estaba en 0.75, y a ese valor el blanco sobre el indigo de la barra
+     queda en 4,27:1 —por debajo del 4,5:1 que pide la WCAG para texto
+     pequeño—. A 0.85 son 5,00:1, y sigue leyendose mas apagado que el
+     nombre, que es para lo que estaba la opacidad.
+     Lo encontro la auditoria de axe en pruebas-e2e/accesibilidad.spec.js:
+     la misma falta salia en las nueve pantallas que llevan la barra. */
+  opacity: 0.85;
 }
 
 .barra__salir,
