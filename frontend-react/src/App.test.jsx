@@ -44,6 +44,19 @@ function montar(ruta, usuario = null) {
       });
     }
 
+    // Las pantallas públicas leen data.perfil y data.porSeccion: con una
+    // lista vacía revientan antes de llegar a dibujarse, y la prueba diría
+    // que la ruta está mal cuando lo que falta es el dato.
+    if (url.includes("/publico/")) {
+      return respuesta({
+        data: {
+          perfil: { nombreNegocio: "Panadería La Espiga", slug: "panaderia-la-espiga" },
+          contenido: [],
+          porSeccion: {}
+        }
+      });
+    }
+
     return respuesta({ data: [] });
   });
 

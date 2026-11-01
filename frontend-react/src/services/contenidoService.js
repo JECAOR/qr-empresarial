@@ -8,6 +8,58 @@
 import { peticion } from "./apiClient";
 
 /**
+ * Las secciones en las que se reparte el contenido (RF-05).
+ *
+ * Viven aqui, con el servicio, porque son el vocabulario del campo `seccion`
+ * de esta API y no la decision de una pantalla: las usan el panel del dueno,
+ * para sus pestanas, y las dos vistas publicas, para separar el contenido con
+ * los mismos nombres. Tenerlas en cada sitio dejaria que el panel llamara
+ * "Menu principal" a lo que la pagina publica llama otra cosa.
+ *
+ * El orden es el de las pestanas del panel, y es el que se respeta al
+ * pintarlas: quien ordena su contenido en el panel espera verlo asi.
+ */
+export const SECCIONES = [
+  { id: "menu", nombre: "Menú principal" },
+  { id: "promos", nombre: "Promociones" },
+  { id: "reservas", nombre: "Reservaciones" }
+];
+
+/** La seccion del menu, que tiene pantalla propia. */
+export const SECCION_MENU = "menu";
+
+const posicionDe = (id) => {
+  const puesto = SECCIONES.findIndex((s) => s.id === id);
+
+  // Una que no conocemos va al final. El validador del backend acepta
+  // cualquier cadena en `seccion`, asi que puede llegar una que esta lista no
+  // tenga: se pinta con su nombre tal cual en lugar de desaparecer.
+  return puesto === -1 ? SECCIONES.length : puesto;
+};
+
+/**
+ * Convierte el `porSeccion` de la API en algo que se puede recorrer.
+ *
+ * Devuelve [{id, nombre, bloques}] con las secciones que TIENEN contenido, en
+ * el orden del panel. Las vacias se descartan aqui y no en la pantalla:
+ * un titulo de seccion sin nada debajo no dice nada.
+ *
+ * @param {object} porSeccion - Lo que devuelve GET /publico/:slug.
+ */
+export function seccionesEnOrden(porSeccion) {
+  if (!porSeccion) return [];
+
+  return Object.keys(porSeccion)
+    .filter((id) => porSeccion[id]?.length > 0)
+    .sort((a, b) => posicionDe(a) - posicionDe(b))
+    .map((id) => ({
+      id,
+      nombre: SECCIONES.find((s) => s.id === id)?.nombre ?? id,
+      bloques: porSeccion[id]
+    }));
+}
+
+/**
  * Los bloques del perfil, activos y desactivados.
  *
  * Es la diferencia con la vista publica: alli solo salen los activos. El

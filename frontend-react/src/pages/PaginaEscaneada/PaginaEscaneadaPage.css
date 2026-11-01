@@ -6,8 +6,34 @@
   padding: 24px 16px 48px;
 }
 
+/* Solo esta aqui para recibir el clic por delegacion: la separacion y el
+   orden de los bloques los pone ContenidoPublico, por secciones. */
 .escaneada__bloques {
-  display: grid;
+  margin-top: 4px;
+}
+
+/* El boton que lleva al menu completo (RF-05). Ocupa el ancho porque se
+   pulsa con el pulgar, recien salida la camara del codigo. */
+.escaneada__menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-top: 20px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--color-primary);
+  color: var(--white);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.escaneada__menu:hover {
+  background: var(--color-primary-dark);
+}
+
+.escaneada__menu::after {
+  content: "›";
+  font-size: 20px;
+  line-height: 1;
 }

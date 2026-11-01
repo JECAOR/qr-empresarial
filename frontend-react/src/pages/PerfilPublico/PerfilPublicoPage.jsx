@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { obtenerPerfilPublico } from "../../services/perfilPublicoService";
 import FichaNegocio from "../../components/FichaNegocio/FichaNegocio";
-import TarjetaContenido from "../../components/TarjetaContenido/TarjetaContenido";
+import ContenidoPublico from "../../components/ContenidoPublico/ContenidoPublico";
 import useTitulo from "../../hooks/useTitulo";
 import "./PerfilPublicoPage.css";
 
@@ -100,22 +100,19 @@ function PerfilPublicoPage() {
         <>
           <FichaNegocio perfil={datos.perfil} />
 
-          <h2 className="perfil__seccion">Contenido publicado</h2>
-
+          {/* Por secciones, con los mismos nombres y el mismo orden que las
+              pestanas del panel: esta pantalla es la vista previa de lo que
+              vera quien escanee el codigo, y antes lo pintaba todo en una
+              sola lista plana. */}
           {datos.contenido.length === 0 ? (
-            <p className="perfil__aviso">
-              Este perfil todavía no tiene contenido publicado.
-            </p>
+            <>
+              <h2 className="perfil__seccion">Contenido publicado</h2>
+              <p className="perfil__aviso">
+                Este perfil todavía no tiene contenido publicado.
+              </p>
+            </>
           ) : (
-            datos.contenido.map((bloque) => (
-              <TarjetaContenido
-                key={bloque.id}
-                titulo={bloque.titulo}
-                detalle={bloque.detalle}
-                categoria={bloque.categoria}
-                tipo={bloque.tipo}
-              />
-            ))
+            <ContenidoPublico porSeccion={datos.porSeccion} />
           )}
         </>
       )}

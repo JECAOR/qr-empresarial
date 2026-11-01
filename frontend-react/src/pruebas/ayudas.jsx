@@ -63,6 +63,27 @@ export function simularFetch(respuestas) {
   return espia;
 }
 
+/**
+ * Agrupa los bloques por seccion, como hace publico.service.js.
+ *
+ * GET /publico/:slug devuelve el contenido DOS veces: `contenido`, la lista
+ * plana, y `porSeccion`, el mismo contenido agrupado. Las pantallas publicas
+ * usan el segundo, porque separan el contenido por secciones (RF-05).
+ *
+ * Existe porque los fixtures mandaban `porSeccion: {}` con bloques en
+ * `contenido`, y en cuanto las pantallas empezaron a leer el agrupado esas
+ * pruebas pasaban con la pantalla VACIA. No se le pone un valor por defecto
+ * a `seccion` a proposito: si un fixture se olvida de ponerla, sale una
+ * seccion llamada "undefined" y se ve, en lugar de colarse.
+ */
+export function agruparPorSeccion(bloques) {
+  return bloques.reduce((agrupado, bloque) => {
+    agrupado[bloque.seccion] = [...(agrupado[bloque.seccion] ?? []), bloque];
+
+    return agrupado;
+  }, {});
+}
+
 /** Deja una sesion abierta en sessionStorage, como la deja iniciarSesion. */
 export function conSesion(usuario = USUARIO_EMPRESA, token = "token-de-prueba") {
   sessionStorage.setItem(CLAVE_TOKEN, token);

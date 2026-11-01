@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 
 import { obtenerPerfilPublico, informarEvento } from "../../services/perfilPublicoService";
 import FichaNegocio from "../../components/FichaNegocio/FichaNegocio";
-import TarjetaContenido from "../../components/TarjetaContenido/TarjetaContenido";
+import ContenidoPublico from "../../components/ContenidoPublico/ContenidoPublico";
 import useTitulo from "../../hooks/useTitulo";
 import { aplicarTema, temaGuardado } from "../../styles/tema";
 import "../PerfilPublico/PerfilPublicoPage.css";
@@ -149,20 +149,13 @@ export default function PaginaEscaneadaPage() {
           Este perfil todavía no tiene contenido publicado.
         </p>
       ) : (
-        // El onClick va en el contenedor, no en cada tarjeta: ver contarClic
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
-        <div className="escaneada__bloques" onClick={contarClic}>
-          {datos.contenido.map((bloque) => (
-            <TarjetaContenido
-              key={bloque.id}
-              id={bloque.id}
-              titulo={bloque.titulo}
-              detalle={bloque.detalle}
-              categoria={bloque.categoria}
-              tipo={bloque.tipo}
-            />
-          ))}
-        </div>
+        <>
+          {/* El onClick va en el contenedor, no en cada tarjeta: ver contarClic */}
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+          <div className="escaneada__bloques" onClick={contarClic}>
+            <ContenidoPublico porSeccion={datos.porSeccion} />
+          </div>
+        </>
       )}
     </main>
   );
