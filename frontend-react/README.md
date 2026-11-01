@@ -151,7 +151,22 @@ el de quien entra.
 alta y edición, activar y desactivar, eliminar y reordenar.
 
 **`/codigo-qr`** — el código (RF-07, RF-08 y RF-09): vista previa, color,
-tamaño, descarga en tres formatos y el interruptor de visibilidad.
+tamaño, descarga en tres formatos, el interruptor de visibilidad y cuatro
+formas de compartir la dirección.
+
+**Compartir era «Copiar enlace» y nada más.** El original ofrece cuatro, y es
+lo siguiente que se hace después de generar el código: pegarlo en el local
+está bien, pero el enlace se manda —y aquí se manda por WhatsApp—. Ahora:
+copiar, WhatsApp (`wa.me/?text=`), correo (`mailto:` con asunto y cuerpo) e
+Instagram, que **copia** el enlace para la biografía y lo dice, porque
+Instagram no admite compartir una dirección por enlace: no hay a dónde
+mandarla.
+
+Lo que se manda lleva una línea de texto delante —«Esta es nuestra página:»—
+y no el enlace a secas, que parece un mensaje de los que se mandan solos. Y
+**no se ofrece mientras la página está retirada**: compartirla llevaría a
+quien la abriera a un aviso de «no disponible». Copiar el enlace sí sigue,
+que es para el dueño.
 
 **`/actividad`** — las estadísticas (RF-11): cuatro medidas, la gráfica
 diaria y los enlaces más pulsados, en 7, 30 o 90 días.
@@ -350,7 +365,7 @@ búsqueda—. Lo que sí interesa indexar es `/p/`, que es el producto.
 
 ## Las pruebas
 
-**534 en jsdom y 225 en un navegador de verdad.** Las primeras, con
+**541 en jsdom y 226 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -370,7 +385,7 @@ de un vistazo qué tiene pruebas y qué no.
 
 | Qué se prueba | Pruebas |
 |---|---:|
-| Las dieciséis pantallas | 230 |
+| Las dieciséis pantallas | 237 |
 | Los trece componentes | 137 |
 | Los once servicios | 99 |
 | El mapa de rutas | 30 |
@@ -429,7 +444,7 @@ dice que manda.
 
 ## Las pruebas de extremo a extremo
 
-**225 pruebas en 12 archivos**, con [Playwright](https://playwright.dev) sobre
+**226 pruebas en 12 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium y WebKit, contra el paquete compilado:
 
 ```bash

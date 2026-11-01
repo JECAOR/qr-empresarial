@@ -1,6 +1,6 @@
 # Pruebas de extremo a extremo — frontend en React
 
-**225 pruebas en 12 archivos**, con [Playwright](https://playwright.dev) sobre
+**226 pruebas en 12 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium. Corren contra el **paquete compilado**, en un navegador de verdad.
 
 ```bash
@@ -21,7 +21,7 @@ Y en modo interactivo, útil mientras se programa:
 npm run test:e2e:ui
 ```
 
-## Por qué existen, si ya hay 534 pruebas
+## Por qué existen, si ya hay 541 pruebas
 
 Las de Vitest corren en **jsdom, que no es un navegador**. No aplica CSS, no
 tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene
@@ -74,7 +74,7 @@ redibujado, no porque haga falta.
 | `descargar.spec.js` (14) | PNG, SVG, PDF y el CSV de la administración: nombre y primeros bytes del archivo; la vista previa en `blob:`; el portapapeles | jsdom no descarga nada; `createObjectURL` es de pega |
 | `recargar.spec.js` (17) | Recargar cada pantalla, enlaces directos, direcciones que no existen, la sesión al arrancar en frío | no hay recarga, ni pestañas, ni `sessionStorage` entre pruebas |
 | `escaneada.spec.js` (19) | Escaneos, visitas y clics del RF-11, que el panel del dueño no cuente nada, y que el logo del negocio se descargue y sus datos de contacto se puedan pulsar | `sendBeacon` no existe en jsdom; que un `<img>` CARGUE y que algo mida 24 px tampoco se ven allí |
-| `movil.spec.js` (20) | Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa | Vitest corre con `css: false` y jsdom no maqueta |
+| `movil.spec.js` (21) | Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa | Vitest corre con `css: false` y jsdom no maqueta |
 | `accesibilidad.spec.js` (24 × 2) | Auditoría de axe-core en 14 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible | la mitad de las reglas de axe miden contraste y tamaños |
 | `tema.spec.js` (19) | El color de marca (RF-12): que la barra se pinte con él, que cambie sin recargar, que no haya parpadeo al recargar, y que quien escanea vea los colores del negocio | jsdom puede ver el atributo, pero no que PINTE: Vitest corre con `css: false` |
 | `titulos.spec.js` (18) | El título de la pestaña en cada pantalla, al navegar y al volver atrás | lo que falla aquí es el cambio al NAVEGAR, y en jsdom cada pantalla se monta sola |
