@@ -20,7 +20,7 @@
 
 import { expect, test } from '@playwright/test';
 
-import { prepararSesion, simularApi } from './ayudas.js';
+import { prepararSesion, simularApi, PERFIL } from './ayudas.js';
 
 /** Abre la pagina del negocio y espera a que este dibujada. */
 async function abrir(page, direccion) {
@@ -200,5 +200,87 @@ test.describe('el panel del dueño no cuenta nada', () => {
     await page.waitForTimeout(300);
 
     expect(page.eventos).toEqual([]);
+  });
+});
+
+// --- La ficha del negocio ---
+//
+// REGRESION. La ficha enseñaba seis de los once campos que devuelve la API:
+// se quedaban fuera el logo, el Instagram y el correo de contacto, los tres
+// rellenables desde la pantalla del perfil. Y lo que sí enseñaba era texto
+// plano, cuando el frontend original lo convertía en botones.
+//
+// Que los enlaces APUNTEN a donde deben se prueba en jsdom, que es mucho más
+// rápido. Aquí está lo que allí no se puede ver: que el logo se descargue de
+// verdad y que lo que hay que pulsar se pueda acertar con el dedo.
+test.describe('la ficha del negocio', () => {
+  test('el logo se descarga, no solo se declara', async ({ page }) => {
+    await simularApi(page);
+    await page.goto(`/p/${PERFIL.slug}`);
+
+    const logo = page.locator('.ficha__logo');
+
+    await expect(logo).toBeVisible();
+
+    // naturalWidth es 0 mientras la imagen no haya cargado: un src escrito
+    // hacia una direccion rota pasaria la comprobacion de que el <img> esta.
+    expect(await logo.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+  });
+
+  test('una imagen que no carga no deja el icono roto', async ({ page }) => {
+    await simularApi(page);
+
+    // Se corta la descarga del logo, que es lo que pasa cuando el negocio
+    // apunta a una direccion que ya no sirve.
+    await page.route('**/assets/icon-192.png', (ruta) => ruta.abort());
+
+    await page.goto(`/p/${PERFIL.slug}`);
+
+    await expect(page.getByRole('heading', { name: PERFIL.nombreNegocio })).toBeVisible();
+    await expect(page.locator('.ficha__logo')).toHaveCount(0);
+  });
+
+  // Con exact: por defecto Playwright busca por subcadena, y el nombre del
+  // Instagram -@laespiga- esta dentro del correo -contacto@laespiga.co-.
+  test('los datos de contacto llevan a donde dicen', async ({ page }) => {
+    await simularApi(page);
+    await page.goto(`/p/${PERFIL.slug}`);
+
+    const enlace = (nombre) => page.getByRole('link', { name: nombre, exact: true });
+
+    await expect(enlace(PERFIL.telefono)).toHaveAttribute('href', /^tel:/);
+    await expect(enlace('WhatsApp')).toHaveAttribute('href', /^https:\/\/wa\.me\//);
+    await expect(enlace(PERFIL.direccion)).toHaveAttribute('href', /maps\.google\.com/);
+    await expect(enlace(PERFIL.instagram))
+      .toHaveAttribute('href', 'https://instagram.com/laespiga');
+    await expect(enlace(PERFIL.correoContacto))
+      .toHaveAttribute('href', `mailto:${PERFIL.correoContacto}`);
+  });
+
+  // El criterio 2.5.8 de la WCAG 2.2 pide 24 x 24 px. Es lo mismo que se
+  // midio con las flechas de reordenar, que estaban por debajo.
+  test('se pueden pulsar con el dedo', async ({ page }) => {
+    await simularApi(page);
+    await page.goto(`/p/${PERFIL.slug}`);
+
+    for (const nombre of [PERFIL.telefono, 'WhatsApp', PERFIL.direccion,
+      PERFIL.instagram, PERFIL.correoContacto]) {
+      const caja = await page.getByRole('link', { name: nombre, exact: true }).boundingBox();
+
+      expect(caja.height, nombre).toBeGreaterThanOrEqual(24);
+    }
+  });
+
+  // Un correo largo o una direccion larga no deben sacar la pagina de ancho.
+  test('un dato largo no desborda la pantalla', async ({ page }) => {
+    await simularApi(page);
+    await page.goto(`/p/${PERFIL.slug}`);
+
+    await expect(page.locator('.ficha')).toBeVisible();
+
+    const desborda = await page.evaluate(() =>
+      document.documentElement.scrollWidth > document.documentElement.clientWidth);
+
+    expect(desborda).toBe(false);
   });
 });

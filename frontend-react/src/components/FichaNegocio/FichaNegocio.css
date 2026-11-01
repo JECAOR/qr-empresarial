@@ -6,6 +6,28 @@
   margin-bottom: 20px;
 }
 
+/* El logo y el nombre, uno al lado del otro. Si el negocio no puso logo, el
+   nombre ocupa la fila entera sin dejar hueco. */
+.ficha__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ficha__quien {
+  min-width: 0;
+}
+
+.ficha__logo {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--slate-200);
+  background: var(--slate-50);
+}
+
 .ficha__nombre {
   margin: 0;
   font-size: 22px;
@@ -47,4 +69,21 @@
 .ficha__datos dd {
   margin: 0;
   color: var(--slate-900);
+}
+
+/* Los datos que llevan a algún sitio: llamar, WhatsApp, cómo llegar,
+   Instagram, escribir. Se pulsan con el pulgar en un teléfono, así que el
+   alto minimo son los 24 px que pide el criterio 2.5.8 de la WCAG 2.2 y el
+   area de toque llega hasta el borde del renglon. */
+.ficha__accion {
+  display: inline-block;
+  min-height: 24px;
+  padding: 2px 0;
+  color: var(--color-primary);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.ficha__accion:hover {
+  text-decoration: underline;
 }

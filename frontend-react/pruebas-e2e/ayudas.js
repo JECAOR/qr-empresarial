@@ -48,7 +48,12 @@ export const PERFIL = {
   horario: 'Lunes a sábado, 6:00 a.m. – 7:00 p.m.',
   instagram: '@laespiga',
   tema: 'indigo',
-  imagen: null
+
+  // Una direccion absoluta, como la que guarda el backend -solo acepta http
+  // o https-, pero servida por el propio servidor de las pruebas: asi el
+  // navegador la descarga de verdad en lugar de chocar con la red de
+  // seguridad que corta toda salida a internet.
+  imagen: 'http://localhost:4174/assets/icon-192.png'
 };
 
 /**
