@@ -5,23 +5,18 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import LoginPage from "./LoginPage";
 import { ProveedorAuth } from "../../context/AuthContext";
 import { CLAVE_TOKEN } from "../../services/apiClient";
 import { respuesta, simularFetch, USUARIO_ADMIN, USUARIO_EMPRESA } from "../../pruebas/ayudas";
 
-// Se espia useNavigate para poder comprobar a donde manda la pantalla, no
-// solo donde acaba: ver mas abajo, en la prueba del destino recordado.
-const navegar = vi.fn();
-
-vi.mock("react-router-dom", async (original) => ({
-  ...await original(),
-  useNavigate: () => navegar
-}));
-
-beforeEach(() => navegar.mockClear());
+// Ya no se espia useNavigate. Se hacia porque la pantalla tenia dos salidas
+// -un navegar() despues del await y un <Navigate> al dibujar- y en jsdom
+// ganaba una y en el navegador la otra, asi que lo unico comprobable aqui
+// era a donde MANDABA la llamada. Ahora hay una sola salida, declarativa, y
+// se comprueba donde aterriza de verdad: en el mapa de rutas de montar().
 
 /** Monta el login con un mapa de rutas que delata a dónde fue a parar. */
 function montar(entrada = "/login") {
@@ -100,7 +95,7 @@ describe("a donde lleva al entrar", () => {
     await waitFor(() => screen.getByLabelText("Correo electrónico"));
     await entrarCon();
 
-    await waitFor(() => expect(navegar).toHaveBeenCalledWith("/", { replace: true }));
+    expect(await screen.findByText("perfil público")).toBeInTheDocument();
   });
 
   it("un administrador va a la gestion de usuarios", async () => {
@@ -111,20 +106,18 @@ describe("a donde lleva al entrar", () => {
     await waitFor(() => screen.getByLabelText("Correo electrónico"));
     await entrarCon("admin@caferaices.co");
 
-    await waitFor(() => expect(navegar).toHaveBeenCalledWith("/usuarios", { replace: true }));
+    expect(await screen.findByText("gestión de usuarios")).toBeInTheDocument();
   });
 
-  // El guardia deja escrito a donde iba. Devolverlo ahi es la diferencia
-  // entre abrir un enlace guardado y tener que buscar otra vez la pantalla.
+  // REGRESION. El guardia deja escrito a donde iba; devolverlo ahi es la
+  // diferencia entre abrir un enlace guardado y tener que buscar otra vez la
+  // pantalla.
   //
-  // Se comprueba a donde manda, y no donde acaba la pantalla, porque aqui no
-  // se puede comprobar lo segundo: act() vacia la cola de React entre el
-  // setUsuario de entrar() y el navegar() de la linea siguiente, y en ese
-  // hueco gana el <Navigate> de "ya tienes sesion", que lleva a "/". En el
-  // navegador las dos actualizaciones se agrupan y no hay hueco: se
-  // comprobo con Playwright contra los servidores de verdad -entrar en
-  // /contenido sin sesion, iniciar sesion- y aterriza en /contenido.
-  it("manda a donde iba si llego rebotado de una pantalla privada", async () => {
+  // Esta prueba miraba antes a donde MANDABA navegar(), porque con dos
+  // salidas compitiendo el resultado dependia del entorno. Lo que pasaba en
+  // el navegador -que la otra salida ganaba y se aterrizaba en la portada-
+  // lo encontro pruebas-e2e/entrar.spec.js, no esta prueba.
+  it("devuelve a donde iba si llego rebotado de una pantalla privada", async () => {
     simularFetch([sesionDe(USUARIO_EMPRESA)]);
 
     render(
@@ -142,7 +135,7 @@ describe("a donde lleva al entrar", () => {
     await waitFor(() => screen.getByLabelText("Correo electrónico"));
     await entrarCon();
 
-    await waitFor(() => expect(navegar).toHaveBeenCalledWith("/contenido", { replace: true }));
+    expect(await screen.findByText("contenido")).toBeInTheDocument();
   });
 
   // Quien ya entro no tiene nada que hacer en el login.
@@ -213,7 +206,7 @@ describe("cuando algo falla", () => {
     await userEvent.type(screen.getByLabelText("Contraseña"), "Clave123*");
     await userEvent.click(screen.getByRole("button", { name: "Entrar" }));
 
-    await waitFor(() => expect(navegar).toHaveBeenCalledWith("/", { replace: true }));
+    expect(await screen.findByText("perfil público")).toBeInTheDocument();
   });
 
   it("apaga el boton mientras lo intenta", async () => {

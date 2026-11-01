@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 import "./LoginPage.css";
@@ -18,7 +18,6 @@ function destino(usuario) {
 
 export default function LoginPage() {
   const { usuario, cargando, entrar } = useAuth();
-  const navegar = useNavigate();
   const ubicacion = useLocation();
 
   // Lo deja RestablecerPage al terminar, para no perder el hilo
@@ -29,8 +28,27 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
-  // Quien ya tiene sesion no tiene nada que hacer aqui
-  if (!cargando && usuario) return <Navigate to={destino(usuario)} replace />;
+  // La UNICA salida de esta pantalla, tanto para quien ya tenia sesion como
+  // para quien acaba de entrar. Si llego rebotado desde una pantalla
+  // privada, la guardia dejo escrito de donde: se le devuelve alli.
+  //
+  // REGRESION. Antes habia dos salidas: este <Navigate>, que llevaba
+  // siempre a destino(usuario), y un navegar(state.desde) justo despues del
+  // await de entrar(). Competian, y en el navegador ganaba el <Navigate>:
+  // React agrupa el setUsuario de entrar() con lo que viene detras, dibuja
+  // una sola vez, y al dibujar esta pantalla con sesion ya puesta devuelve
+  // el <Navigate> y la desmonta. El navegar() de la linea siguiente llegaba
+  // sobre un componente desmontado, y React Router lo ignora sin decir
+  // nada: quien abria un enlace a /contenido sin sesion entraba y aterrizaba
+  // en la portada.
+  //
+  // La prueba de Vitest no lo veia -con act() de por medio ganaba la otra
+  // salida, asi que miraba a donde MANDABA navegar()- y el comentario que
+  // tenia aqui afirmaba, sin haberlo medido, que en el navegador aterrizaba
+  // bien. Lo encontro pruebas-e2e/entrar.spec.js.
+  if (!cargando && usuario) {
+    return <Navigate to={ubicacion.state?.desde ?? destino(usuario)} replace />;
+  }
 
   async function enviar(evento) {
     evento.preventDefault();
@@ -39,10 +57,9 @@ export default function LoginPage() {
     setEnviando(true);
 
     try {
-      const quien = await entrar(correo, contrasena);
-
-      // Si llego aqui rebotado desde una pantalla privada, se le devuelve
-      navegar(ubicacion.state?.desde ?? destino(quien), { replace: true });
+      // No se navega aqui: en cuanto la sesion queda puesta, el <Navigate>
+      // de arriba decide a donde ir. Una sola salida, sin carrera.
+      await entrar(correo, contrasena);
     } catch (fallo) {
       setError(fallo.message);
     } finally {

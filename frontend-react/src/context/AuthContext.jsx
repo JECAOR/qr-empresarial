@@ -69,8 +69,10 @@ export function ProveedorAuth({ children }) {
 
     setUsuario(nuevo);
 
-    // Se devuelve ademas de guardarlo: quien llama necesita el rol ya mismo
-    // para decidir a que pantalla ir, y el estado todavia no se ha aplicado.
+    // Se devuelve ademas de guardarlo. Hoy ninguna pantalla lo necesita -el
+    // login decide a donde ir dibujando un <Navigate>, no leyendo este
+    // valor-, pero quien pide entrar tiene derecho a saber quien entro sin
+    // esperar un redibujado.
     return nuevo;
   }
 
