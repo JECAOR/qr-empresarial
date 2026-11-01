@@ -350,7 +350,7 @@ búsqueda—. Lo que sí interesa indexar es `/p/`, que es el producto.
 
 ## Las pruebas
 
-**534 en jsdom y 217 en un navegador de verdad.** Las primeras, con
+**534 en jsdom y 225 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -429,11 +429,11 @@ dice que manda.
 
 ## Las pruebas de extremo a extremo
 
-**217 pruebas en 11 archivos**, con [Playwright](https://playwright.dev) sobre
-Chromium, contra el paquete compilado:
+**225 pruebas en 12 archivos**, con [Playwright](https://playwright.dev) sobre
+Chromium y WebKit, contra el paquete compilado:
 
 ```bash
-npx playwright install chromium   # solo la primera vez
+npx playwright install chromium webkit   # solo la primera vez
 npm run test:e2e
 ```
 
@@ -441,6 +441,14 @@ Solo lo que un navegador puede contestar y jsdom no: el arrastre nativo, la
 descarga de archivos de verdad, `sendBeacon`, la recarga y el historial, el CSS
 a 375 px, el service worker y una auditoría de axe-core. Nada de lo que ya cubre
 Vitest se repite allí.
+
+Corren en tres proyectos. El de **móvil usa WebKit de verdad** —el motor de
+Safari, y el único que hay en un iPhone— sobre un iPhone 13; durante varias
+versiones usó Chromium con el viewport del teléfono porque el entorno no había
+podido instalarlo. Y hay uno que corre contra el **servidor de desarrollo**,
+que es el único sitio donde no se mira el paquete compilado: `StrictMode`
+monta cada componente dos veces y React lo quita al compilar, así que esa
+conducta solo se puede comprobar allí.
 
 Encontraron cinco defectos —el destino al entrar, las flechas de reordenar a
 22 px, el contraste de la etiqueta del rol y, al aplicar los tres colores de

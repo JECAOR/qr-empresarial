@@ -1,11 +1,11 @@
 # Pruebas de extremo a extremo — frontend en React
 
-**217 pruebas en 11 archivos**, con [Playwright](https://playwright.dev) sobre
+**225 pruebas en 12 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium. Corren contra el **paquete compilado**, en un navegador de verdad.
 
 ```bash
 npm install
-npx playwright install chromium   # solo la primera vez
+npx playwright install chromium webkit   # solo la primera vez
 npm run test:e2e
 ```
 
@@ -79,6 +79,7 @@ redibujado, no porque haga falta.
 | `tema.spec.js` (19) | El color de marca (RF-12): que la barra se pinte con él, que cambie sin recargar, que no haya parpadeo al recargar, y que quien escanea vea los colores del negocio | jsdom puede ver el atributo, pero no que PINTE: Vitest corre con `css: false` |
 | `titulos.spec.js` (18) | El título de la pestaña en cada pantalla, al navegar y al volver atrás | lo que falla aquí es el cambio al NAVEGAR, y en jsdom cada pantalla se monta sola |
 | `pwa.spec.js` (15) | Que el icono, el manifiesto, `robots.txt` y el sitemap se sirvan de verdad, y que el service worker se registre y abra la aplicación sin conexión | jsdom no pide archivos ni registra service workers |
+| `desarrollo.spec.js` (8) | El doble paso de `StrictMode`: que ocurra, y que aun así una visita se cuente una sola vez | React quita `StrictMode` al compilar, así que corre contra el servidor de desarrollo |
 | `menu.spec.js` (20) | El recorrido del menú (RF-05): que el botón navegue sin recargar, que la pantalla aguante un enlace directo y una recarga, que Atrás vuelva al perfil, y que el clic en un enlace del menú salga contado | que el contenido quede AGRUPADO es estructura del DOM y se prueba en jsdom; el recorrido y `sendBeacon` no |
 | `ayudas.js` | No es una prueba: es la API simulada y la sesión sembrada | — |
 
@@ -89,9 +90,14 @@ fallos distintos. Las cuatro que sí miran el enlazado son las del `<head>`, la
 del manifiesto y las dos del service worker.
 
 `accesibilidad.spec.js` y `movil.spec.js` corren además en el proyecto
-**Móvil**, con el viewport de un iPhone 13: en una pantalla estrecha cambian el
-contraste de algunos fondos, el orden visual y el tamaño de lo que hay que
-pulsar.
+**Móvil**, con un iPhone 13: en una pantalla estrecha cambian el contraste de
+algunos fondos, el orden visual y el tamaño de lo que hay que pulsar.
+
+Ese proyecto usa **WebKit de verdad**, que es el motor de Safari y el único
+que hay en un iPhone —allí hasta Chrome y Firefox lo usan por dentro—. Durante
+varias versiones corrió con Chromium y el viewport del teléfono, porque el
+entorno no había podido instalar WebKit, y quedó escrito aquí que un fallo
+propio de WebKit se escaparía.
 
 ## Por qué no hace falta el backend
 
@@ -150,6 +156,21 @@ npx vite preview --mode e2e --outDir dist-e2e --port 4174 --strictPort
 - **El puerto 4174**, para no chocar con el 4173 de la suite del frontend
   original ni con el 3000 del backend.
 
+Hay un **segundo servidor**, `vite` en desarrollo sobre el 5174, y es el único
+sitio de toda la suite donde no se mira el paquete compilado. Lo necesita
+`desarrollo.spec.js`: React quita `StrictMode` al compilar, así que contra
+`vite preview` no habría doble paso que comprobar y esas pruebas pasarían sin
+haber mirado nada. Su `.env.e2e-dev` es el mismo que el otro con el puerto
+cambiado.
+
+Y **tres proyectos**:
+
+| Proyecto | Motor | Qué corre |
+|---|---|---|
+| `Escritorio` | Chromium, 1280×900 | todo menos `movil` y `desarrollo` |
+| `Móvil` | **WebKit**, iPhone 13 | `movil` y `accesibilidad` |
+| `Desarrollo` | Chromium, contra `vite` | `desarrollo` |
+
 `.env.e2e` apunta `VITE_API_URL` **al propio servidor de las pruebas**
 (`http://localhost:4174/api`) y no al backend de desarrollo. Es el mismo origen,
 así que no hay CORS que configurar en cada respuesta ni peticiones `OPTIONS` de
@@ -168,16 +189,39 @@ solo para su propio bloque.
 
 ## Lo que estas pruebas tampoco demuestran
 
-- **El doble paso de `StrictMode`.** Solo ocurre en desarrollo, y esto corre
-  contra el paquete compilado. La prueba de ese caso —la bandera `vigente` del
-  efecto de `PaginaEscaneadaPage`— sigue siendo la de Vitest.
 - **El conteo al ir de un negocio a otro sin recargar.** La aplicación nunca
   navega de `/p/a` a `/p/b` por dentro, así que no hay forma de provocarlo desde
   la interfaz. Esa regresión la cubre Vitest, que monta un `<Link>` para
   reproducirla.
-- **Safari.** `devices["iPhone 13"]` emula WebKit, pero este entorno no pudo
-  instalar un WebKit real, así que el proyecto **Móvil** usa Chromium con el
-  viewport y el user agent del teléfono. Lo que se mide —media queries, cajas,
-  contraste— no depende del motor; un fallo propio de WebKit sí se escaparía.
 - **Que la vista previa de WhatsApp se vea bien.** Las etiquetas Open Graph las
   inyecta Express, y `vite preview` no: eso lo prueba el backend.
+- **Los eventos del RF-11 en WebKit.** No es una decisión: Playwright no puede
+  leer el cuerpo de un `sendBeacon` en ese motor. Está medido, abajo.
+- **Safari de escritorio.** El proyecto **Móvil** cubre WebKit donde más
+  importa —lo que ve quien escanea el código, en un teléfono—. Correr además
+  toda la suite en un Safari de escritorio se probó y no encontró ni un
+  defecto de la aplicación: 165 de 173 en verde, y los 8 restantes por lo que
+  cuenta el apartado siguiente.
+
+### Lo que WebKit no deja observar, y lo que sí se comprobó
+
+Al pasar el proyecto Móvil a WebKit de verdad, las pruebas que cuentan los
+eventos del RF-11 fallaban. La pregunta importante era si fallaba **la
+aplicación** —es decir, si un iPhone no cuenta las visitas— o solo el arnés de
+pruebas. Se midió con un servidor HTTP corriente, fuera de Playwright:
+
+| | Chromium | WebKit |
+|---|---|---|
+| `sendBeacon` con un Blob JSON devuelve | `true` | `true` |
+| El cuerpo llega al servidor | `{"tipo":"visita",…}` | `{"tipo":"visita",…}` |
+| `page.route()` intercepta la petición | sí | sí |
+| `request.postData()` al interceptarla | el cuerpo | **`null`** |
+| `request.postDataBuffer()` | el cuerpo | **`null`** |
+
+O sea: **la aplicación cuenta bien en WebKit** —el evento sale con su cuerpo
+íntegro, igual que en Chromium— y lo que no puede es Playwright leerlo cuando
+lo intercepta. Por eso esas pruebas se quedan en Chromium: medir allí no
+prueba menos, y en WebKit no probaría nada.
+
+El otro fallo del experimento fue `context.grantPermissions('clipboard-write')`,
+que WebKit no admite: afecta a la prueba de copiar la dirección pública.
