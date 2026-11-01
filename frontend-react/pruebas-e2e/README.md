@@ -1,6 +1,6 @@
 # Pruebas de extremo a extremo — frontend en React
 
-**129 pruebas en 7 archivos**, con [Playwright](https://playwright.dev) sobre
+**189 pruebas en 10 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium. Corren contra el **paquete compilado**, en un navegador de verdad.
 
 ```bash
@@ -21,7 +21,7 @@ Y en modo interactivo, útil mientras se programa:
 npm run test:e2e:ui
 ```
 
-## Por qué existen, si ya hay 439 pruebas
+## Por qué existen, si ya hay 474 pruebas
 
 Las de Vitest corren en **jsdom, que no es un navegador**. No aplica CSS, no
 tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene
@@ -50,6 +50,15 @@ Y encontraron cosas. Tres, en la primera corrida:
   75 % sobre el índigo da 4,27:1, y hace falta 4,5:1. Salía en las nueve
   pantallas que llevan la barra. Ver `accesibilidad.spec.js`.
 
+Y una más, al aplicar por fin el color de marca del negocio (RF-12):
+
+- **La opacidad no sobrevive a cambiar el fondo.** Los enlaces de la barra
+  estaban al 80 % de opacidad y la etiqueta del rol al 85 %, los dos medidos
+  sobre el índigo. Con los otros dos temas la barra cambia de color y el
+  contraste se cae: 3,80:1 y 4,09:1 sobre el esmeralda, 3,85:1 y 4,15:1 sobre
+  el terracota. La auditoría de axe ahora corre con los tres colores, que es lo
+  que lo encontró. Ver `accesibilidad.spec.js` y `tema.spec.js`.
+
 Y corrigieron una afirmación falsa: el comentario de `ListaBloques.jsx` decía
 que con el índice de origen en estado el arrastre rápido fallaba. **No falla.**
 Se midió cambiándolo a `useState` y arrastrando en Chromium, despacio y con los
@@ -66,8 +75,17 @@ redibujado, no porque haga falta.
 | `recargar.spec.js` (17) | Recargar cada pantalla, enlaces directos, direcciones que no existen, la sesión al arrancar en frío | no hay recarga, ni pestañas, ni `sessionStorage` entre pruebas |
 | `escaneada.spec.js` (14) | Escaneos, visitas y clics del RF-11, y que el panel del dueño no cuente nada | `sendBeacon` no existe en jsdom |
 | `movil.spec.js` (19) | Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa | Vitest corre con `css: false` y jsdom no maqueta |
-| `accesibilidad.spec.js` (19 × 2) | Auditoría de axe-core en 13 pantallas y 4 estados, el tabulador y el foco visible | la mitad de las reglas de axe miden contraste y tamaños |
+| `accesibilidad.spec.js` (23 × 2) | Auditoría de axe-core en 13 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible | la mitad de las reglas de axe miden contraste y tamaños |
+| `tema.spec.js` (19) | El color de marca (RF-12): que la barra se pinte con él, que cambie sin recargar, que no haya parpadeo al recargar, y que quien escanea vea los colores del negocio | jsdom puede ver el atributo, pero no que PINTE: Vitest corre con `css: false` |
+| `titulos.spec.js` (18) | El título de la pestaña en cada pantalla, al navegar y al volver atrás | lo que falla aquí es el cambio al NAVEGAR, y en jsdom cada pantalla se monta sola |
+| `pwa.spec.js` (15) | Que el icono, el manifiesto, `robots.txt` y el sitemap se sirvan de verdad, y que el service worker se registre y abra la aplicación sin conexión | jsdom no pide archivos ni registra service workers |
 | `ayudas.js` | No es una prueba: es la API simulada y la sesión sembrada | — |
+
+Once de las quince de `pwa.spec.js` solo comprueban que los archivos
+**existan** y se sirvan; quitar los `<link>` del HTML no las tumba, y eso es a
+propósito: un enlace a un archivo que falta es peor que no tenerlo, y son dos
+fallos distintos. Las cuatro que sí miran el enlazado son las del `<head>`, la
+del manifiesto y las dos del service worker.
 
 `accesibilidad.spec.js` y `movil.spec.js` corren además en el proyecto
 **Móvil**, con el viewport de un iPhone 13: en una pantalla estrecha cambian el
@@ -95,7 +113,7 @@ Lo habitual es `prepararSesion(page)`, que hace las dos.
 reenvíe sus direcciones lo prueba
 [`backend/tests/frontend-publicado.test.js`](../../backend/tests/frontend-publicado.test.js),
 con Supertest. Que la API responda lo que debe, la colección de Postman en
-[`docs/postman/`](../../docs/postman) y las 158 pruebas del backend.
+[`docs/postman/`](../../docs/postman) y las 171 pruebas del backend.
 
 ### Que la simulación se parezca a la API no es un detalle
 
@@ -139,6 +157,13 @@ servidor de las pruebas en lugar de pegarle al backend de verdad y dejar la base
 de datos tocada. Por si acaso, `simularApi` **corta toda salida a internet** en
 el contexto: las tarjetas de contenido llevan enlaces reales a `wa.me` y a
 `maps.app.goo.gl`.
+
+**Los service workers van bloqueados** (`serviceWorkers: 'block'`). El paquete
+compilado registra uno, y uno activo respondería desde su caché: las peticiones
+saldrían del alcance de `page.route()` y los datos simulados dejarían de
+aplicarse, con fallos que no tendrían nada que ver con lo que la prueba mira. El
+único sitio donde se permiten es `pwa.spec.js`, que los necesita, y los activa
+solo para su propio bloque.
 
 ## Lo que estas pruebas tampoco demuestran
 

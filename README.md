@@ -12,7 +12,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
 | Base de datos MySQL `qr_empresarial` (11 tablas, 14 migraciones) | Implementada |
 | Frontend HTML/CSS/JS (12 pantallas, PWA, 396 pruebas Playwright) | Implementado y conectado a la API. Sigue en el repositorio; se publica con `FRONTEND=clasico` |
-| Frontend React (14 pantallas, 439 pruebas Vitest y 129 de extremo a extremo) | Terminado. **Es el que publica el servidor** desde `v3.3.0` |
+| Frontend React (14 pantallas, PWA, 474 pruebas Vitest y 189 de extremo a extremo) | Terminado. **Es el que publica el servidor** desde `v3.3.0` |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
@@ -206,7 +206,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (250 peticiones), Jest + Supertest (158), Vitest (439) y Playwright + axe-core (396 del frontend original y 129 del de React) | En uso |
+| Pruebas | Postman (250 peticiones), Jest + Supertest (171), Vitest (474) y Playwright + axe-core (396 del frontend original y 189 del de React) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -241,7 +241,7 @@ El CRUD de usuarios del sprint 1 resultó ser la mitad del módulo 8: el RF-14 �
 - **El service worker no guarda las respuestas de la API.** Solo las pantallas. Son datos de una cuenta concreta, y en un equipo compartido sin conexión la caché habría devuelto los de quien usó el navegador antes.
 - **Ninguna pantalla afirma cifras que nadie calcula.** La de inicio de sesión traía «1,200+ empresas activas», «4.8M escaneos este mes» y «99.9% tiempo en línea» escritas a mano, y un testimonio firmado por una persona que no existe. En su lugar hay tres capacidades reales del sistema. Es la misma regla que quitó la calificación inventada de la vista pública: si no se mide, no se afirma.
 - **Ninguna pantalla pública muestra datos de ejemplo.** La del menú mostraba los platos y precios de un negocio de muestra a cualquier visitante; ahora enseña los bloques que el negocio publicó en la sección «menu» de su panel, y su botón se oculta si esa sección está vacía.
-- **El tema de color es del negocio, no de quien lo mira.** Vive en el perfil empresarial y la vista pública lo aplica, así que quien escanea el código ve los colores que eligió el negocio. Antes se guardaba solo en el navegador, de modo que ese color no llegaba nunca a un visitante.
+- **El tema de color es del negocio, no de quien lo mira.** Vive en el perfil empresarial y la vista pública lo aplica, así que quien escanea el código ve los colores que eligió el negocio. Antes se guardaba solo en el navegador, de modo que ese color no llegaba nunca a un visitante. Esto fue cierto del frontend original desde `v1.7.0`, y **del de React solo desde `v3.5.0`**: hasta entonces su selector guardaba el color y ninguna pantalla lo pintaba, con el servidor publicando ya esa versión. Lo dice aquí porque estaba escrito como hecho cuando no lo era en lo que se servía.
 - **Para cambiar el correo hay que confirmar la contraseña**, y para cambiar el nombre no. El correo es el identificador con el que se inicia sesión y al que llega el enlace de recuperación: quien se hiciera con una sesión abierta podría cambiarlo y después apropiarse de la cuenta.
 - **Un escaneo se distingue de una visita directa.** La imagen del código lleva `?qr=1` y el enlace que se comparte no, así que la vista pública sabe por dónde llegó la persona. Son dos de las tres medidas del RF-11; la tercera son los clics en enlaces.
 - **Las estadísticas no identifican a quien visita.** No se guarda ni la IP ni nada parecido, así que se cuentan visitas, no visitantes únicos. El RF-11 pide «visitas al perfil».
@@ -299,8 +299,8 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 [`frontend-react/`](frontend-react) es un **segundo cliente de la misma API**,
 construido con React 19 y Vite 8 para las Guías Frontend N.º 1 y N.º 2 del
 programa. Cubre los ocho módulos en catorce pantallas y consume 38 de los 40
-endpoints, con pruebas propias en dos niveles: **439 en jsdom** (Vitest y
-Testing Library) y **129 en un navegador de verdad** (Playwright), estas
+endpoints, con pruebas propias en dos niveles: **474 en jsdom** (Vitest y
+Testing Library) y **189 en un navegador de verdad** (Playwright), estas
 ultimas solo para lo que jsdom no puede contestar.
 
 **Es el que publica el servidor desde `v3.3.0.`** Los dos siguen en el
@@ -458,7 +458,7 @@ npm run dev               # servidor con nodemon en http://localhost:3000
 # Si el paso 2 se salta, el servidor arranca igual y avisa de que falta
 # compilar. Para publicar el frontend original en su lugar: FRONTEND=clasico
 
-# 5. Pruebas automaticas del backend (158, Jest + Supertest)
+# 5. Pruebas automaticas del backend (171, Jest + Supertest)
 # (se sigue en backend/, desde el paso 3)
 npm test                  # crea su propia base qr_empresarial_test; no toca la suya
 
@@ -468,7 +468,7 @@ npm install
 npx playwright install chromium
 npm test                  # no necesita el backend encendido: simula la API
 
-# 7. Pruebas del frontend en React (439 en jsdom + 129 en Chromium)
+# 7. Pruebas del frontend en React (474 en jsdom + 189 en Chromium)
 cd ../frontend-react
 npm install
 npx playwright install chromium

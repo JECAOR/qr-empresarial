@@ -231,9 +231,60 @@ sobrescribir la segunda.
 dos veces en desarrollo, a propósito, para que salte a la vista un efecto que
 no sabe limpiarse. En producción se ejecuta una sola vez.
 
+## El título, el icono y la instalación
+
+Tres cosas que una aplicación de una sola página pierde sin darse cuenta,
+porque las trece pantallas comparten un `index.html`.
+
+**El título de la pestaña.** Decía `QR Empresarial — perfil público` en todas:
+en el login, en el panel y en la gestión de usuarios. El original tenía doce
+títulos distintos, uno por archivo. Ahora lo pone
+[`useTitulo()`](src/hooks/useTitulo.js) en cada pantalla, con el mismo
+separador que usa el servidor al armar las etiquetas de `/p/:slug`, para que el
+título que lee un robot y el que acaba poniendo el navegador no sean dos cosas
+distintas. En `/p/:slug` el título es el nombre del negocio, y mientras no se
+sabe no se toca: ponerle uno genérico borraría el que el servidor ya escribió
+para los robots, que no ejecutan JavaScript.
+
+Importa más de lo que parece: el título es lo que se lee en una pestaña sin
+espacio, en el historial y en un marcador, y es lo primero que anuncia un
+lector de pantalla al cambiar de página.
+
+**El icono.** El `<head>` no tenía **ninguna** etiqueta de icono, así que el
+navegador solo buscaba `/favicon.ico` —que no existe— y la pestaña salía sin
+icono. Los archivos estaban en `public/assets` desde el principio
+—`apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `favicon-32.png`—: se
+publicaban en `dist/assets` y nada los enlazaba.
+
+**La instalación y los buscadores.** Faltaban el manifiesto, el service worker,
+`robots.txt` y el `sitemap.xml`; el original tenía los cuatro. Están en
+[`public/`](public), y con ellos la aplicación se puede instalar y abre sin
+conexión una vez visitada.
+
+El service worker va a **red primero, caché de respaldo**: quien tiene internet
+ve siempre lo recién publicado, y la aplicación sigue abriendo sin señal. Lo
+contrario —caché primero— es más rápido y bastante peor, porque dejaría al
+dueño de un negocio sin ver el contenido que acaba de guardar. No guarda nada
+de `/api/`: son datos de una cuenta, y en un equipo compartido la caché
+devolvería lo de quien usó el navegador antes.
+
+A diferencia del original, no lleva una lista de pantallas que precargar: aquí
+hay un solo `index.html` y los demás archivos llevan un hash que cambia en cada
+compilación, así que una lista escrita a mano quedaría vieja al siguiente
+`build`. Lo que sí hace falta es el respaldo de navegación: una dirección del
+enrutador que no se había visitado —`/contenido`, `/actividad`— no está en la
+caché con su nombre, porque el servidor entrega el mismo `index.html` para
+todas.
+
+**`robots.txt` importa más aquí que en el original.** Las direcciones de React
+no son archivos: el servidor entrega la aplicación para todas, así que un robot
+que pida `/contenido` recibe un **200** y no un 404. Sin reglas, indexaría el
+panel entero —pantallas que piden sesión y se verían vacías en un resultado de
+búsqueda—. Lo que sí interesa indexar es `/p/`, que es el producto.
+
 ## Las pruebas
 
-**439 en jsdom y 129 en un navegador de verdad.** Las primeras, con
+**474 en jsdom y 189 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -312,7 +363,7 @@ dice que manda.
 
 ## Las pruebas de extremo a extremo
 
-**129 pruebas en 7 archivos**, con [Playwright](https://playwright.dev) sobre
+**189 pruebas en 10 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium, contra el paquete compilado:
 
 ```bash
@@ -322,13 +373,14 @@ npm run test:e2e
 
 Solo lo que un navegador puede contestar y jsdom no: el arrastre nativo, la
 descarga de archivos de verdad, `sendBeacon`, la recarga y el historial, el CSS
-a 375 px y una auditoría de axe-core. Nada de lo que ya cubre Vitest se repite
-allí.
+a 375 px, el service worker y una auditoría de axe-core. Nada de lo que ya cubre
+Vitest se repite allí.
 
-Encontraron tres defectos en su primera corrida —el destino al entrar, las
-flechas de reordenar a 22 px y el contraste de la etiqueta del rol— y están
-documentadas una por una en [`pruebas-e2e/README.md`](pruebas-e2e/README.md),
-con lo que cada archivo cubre y lo que sigue sin demostrarse.
+Encontraron cinco defectos —el destino al entrar, las flechas de reordenar a
+22 px, el contraste de la etiqueta del rol y, al aplicar los tres colores de
+marca, el de los enlaces de la barra— y están documentadas una por una en
+[`pruebas-e2e/README.md`](pruebas-e2e/README.md), con lo que cada archivo cubre
+y lo que sigue sin demostrarse.
 
 ## Verificación contra el servidor real
 
@@ -504,6 +556,58 @@ teléfono» y «teléfono igual a nada» no deberían ser dos cosas distintas.
 instante, sin pasar por el botón de guardar. Elegir un color es una decisión de
 un clic, y obligar a confirmarla aparte sería raro; además así no se arriesga a
 pisar nada del formulario.
+
+**Y se aplica, que es lo que faltaba.** Durante cinco versiones el selector
+funcionó, el servidor guardó el valor y la API lo devolvió, pero **ninguna
+pantalla de React lo pintaba**: se elegía un color y no cambiaba nada. Hasta el
+texto de la pantalla decía «se aplica a tu página pública», que no era cierto.
+Es la parte del RF-12 que el frontend original sí cumplía, con `js/theme.js`.
+
+Ahora lo aplica [`src/styles/tema.js`](src/styles/tema.js), que no hace más que
+poner `data-theme` en el `<html>`; los colores están en
+[`global.css`](src/styles/global.css), en bloques `html[data-theme="…"]`. Tres
+sitios lo usan:
+
+| Dónde | De quién toma el color |
+|---|---|
+| `main.jsx`, antes de dibujar | el que quedó guardado la última vez |
+| `Layout`, vía `useTemaPropio()` | `GET /perfiles/me` de quien tiene la sesión |
+| `/p/:slug` | el del negocio que se escaneó |
+
+**Sin recargar la página.** El frontend original hacía `location.reload()` al
+cambiar de color, porque generaba el código QR y las gráficas en un `<canvas>`
+y había que volver a pintarlos. Aquí no hace falta: la gráfica es SVG con
+`var(--color-primary)`, y el color del QR se elige en su propia pantalla y no
+es el de marca. Cambiar el atributo repinta la barra, los botones y la gráfica
+sin volver a dibujar ningún componente.
+
+**El color de otro negocio no se queda guardado.** Al mirar `/p/:slug` se
+aplica sin recordarlo, y al salir de esa pantalla se repone el propio. Sin eso,
+escanear el código de una panadería dejaría su color pintando el panel de quien
+lo escaneó. Al cerrar sesión se olvida: en el computador del mostrador, el color
+de un negocio no tiene que seguir puesto para quien entre después.
+
+**Cada tema trae su tipografía** —Plus Jakarta Sans, DM Sans, Poppins—, como en
+el original: el color solo no distingue bastante dos negocios. Las tres hojas se
+piden a Google Fonts en una sola petición, y el navegador solo descarga los
+archivos de la familia que de verdad se usa al dibujar.
+
+**Aplicarlo destapó un problema de contraste.** La opacidad es un recurso que no
+sobrevive a cambiar el fondo. Los enlaces de la barra estaban al 80 % y la
+etiqueta del rol al 85 %, medidos los dos sobre el índigo:
+
+| | índigo | esmeralda | terracota |
+|---|---|---|---|
+| Enlaces de la barra, al 80 % | 4,63:1 | **3,80:1** | **3,85:1** |
+| Etiqueta del rol, al 85 % | 5,00:1 | **4,09:1** | **4,15:1** |
+| Los dos, sin opacidad | 6,29:1 | 5,01:1 | 5,18:1 |
+
+El mínimo para texto pequeño es 4,5:1. La opacidad más baja que habría servido
+para los tres era 0,92, con la que la diferencia ya no se nota, así que se quitó:
+el enlace actual se marca con su subrayado —que no es una diferencia de color, y
+eso es justo lo que pide la WCAG 1.4.1— y el rol se distingue por sus 10 px en
+mayúsculas. Lo encontró la auditoría de axe, que ahora corre con los tres
+colores y no solo con el de defecto.
 
 **Los límites de cada campo se repiten en la pantalla** —150 para el nombre, 2000
 para la descripción— para que el navegador avise antes de gastar una petición. No

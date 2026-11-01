@@ -23,7 +23,7 @@ exports.portada = {
     ["Ficha", "3336250"],
     ["Guías", "Frontend N.º 1 y N.º 2, más los ocho módulos del proyecto"],
     ["Repositorio", "github.com/JECAOR/qr-empresarial"],
-    ["Versión", "v3.4.0"],
+    ["Versión", "v3.5.0"],
     ["Fecha", "31 de octubre de 2026"]
   ],
   pie: [
@@ -55,6 +55,11 @@ exports.cuerpo = [
 
   { t: "nota", v: "*El guardia no es seguridad.* Quien escriba la dirección a mano o llame a la API con `curl` se lo salta entero. La seguridad la aplica Express en cada endpoint: una cuenta de empresa recibe 403 aunque consiga pintar la pantalla. Lo que hace el guardia es no ofrecer puertas que van a dar error." },
 
+  { t: "h3", v: "Hooks propios" },
+  { t: "p", v: "Un *hook propio* es una función que agrupa estado y efectos para poder reutilizarlos. Hay dos. `useTitulo(titulo)` pone el título de la pestaña, y lo llama cada pantalla: bajo React hay un solo `index.html`, así que sin esto las trece dirían lo mismo. `useTemaPropio()` pide el perfil del negocio y aplica su color de marca; lo llama la barra de navegación, que envuelve a todas las pantallas del panel, de modo que el perfil se pide una vez por sesión y no en cada pantalla." },
+
+  { t: "nota", v: "*Por qué un hook y no un componente.* Ninguno de los dos dibuja nada: uno escribe en `document.title` y el otro en el `<html>`. Un componente que no devuelve interfaz es un componente de mentira; un hook dice exactamente lo que es, y se puede llamar desde donde conviene." },
+
   { t: "h3", v: "Separación en capas" },
   { t: "p", v: "Ninguna pantalla llama a `fetch`. Todas pasan por un servicio, y todos los servicios por un único `apiClient` que pone la dirección base, el tipo de contenido y el token, y convierte un error del servidor en una excepción con su mensaje. Si mañana cambia la forma de autenticarse, se toca un archivo." },
 
@@ -81,7 +86,18 @@ exports.cuerpo = [
     "    admin/DetalleCuenta          La actividad reciente de una cuenta",
     "  pages/                         Trece pantallas",
     "  services/                      Once servicios, uno por módulo de la API",
-    "  pruebas/                       Lo que montan las 417 pruebas",
+    "  hooks/",
+    "    useTemaPropio                El color de marca del negocio con sesión",
+    "    useTitulo                    El título de la pestaña de cada pantalla",
+    "  styles/",
+    "    global.css                   Variables de color y los tres temas",
+    "    tema.js                      Aplica el color de marca al <html>",
+    "  pruebas/                       Lo que montan las pruebas de jsdom",
+    "",
+    "public/                          Lo que se publica tal cual",
+    "  manifest.json                  Para que se pueda instalar",
+    "  service-worker.js              Red primero, caché de respaldo",
+    "  robots.txt, sitemap.xml        Qué puede indexar un buscador",
     "",
     "Cada archivo .test.jsx vive al lado de lo que prueba, no en una",
     "carpeta aparte: asi se ve de un vistazo que tiene pruebas y que no."
@@ -202,10 +218,13 @@ exports.cuerpo = [
   ] },
 
   { t: "h3", v: "5.1 Historial de commits del frontend" },
-  { t: "p", v: "Veinticinco commits sobre `frontend-react/`, del 21 al 31 de octubre de 2026, dentro de un repositorio con *135 commits y 53 etiquetas*. Cada módulo se desarrolló en su propia rama y se integró con `merge --no-ff`, de modo que la rama queda en el historial en lugar de aplanarse. Debajo, los veintidós últimos; faltan tres de las primeras capturas, por espacio." },
+  { t: "p", v: "Treinta commits sobre `frontend-react/`, del 21 al 31 de octubre de 2026, dentro de un repositorio con *140 commits y 54 etiquetas*. Cada módulo se desarrolló en su propia rama y se integró con `merge --no-ff`, de modo que la rama queda en el historial en lugar de aplanarse. Debajo, los veinticinco últimos; faltan los primeros, por espacio." },
   // Con el prefijo tal cual sale de git: es lo que demuestra que los mensajes
   // siguen Conventional Commits, que es justo lo que dice el parrafo siguiente.
   { t: "pre", v: [
+    "2026-10-31  feat(frontend-react): icono, manifiesto, service worker     v3.5.0",
+    "2026-10-31  feat(frontend-react): un titulo de pestana por pantalla",
+    "2026-10-31  feat(frontend-react): aplicar el color de marca (RF-12)",
     "2026-10-31  test(frontend-react): 129 pruebas de extremo a extremo        v3.4.0",
     "2026-10-31  fix(frontend-react): dos medidas por debajo de la WCAG",
     "2026-10-31  fix(frontend-react): el login no devolvia a la pantalla",
@@ -241,11 +260,11 @@ exports.cuerpo = [
 
   { t: "p", v: "Las pruebas del frontend no necesitan ninguna de las dos cosas: ni base de datos ni servidor. Las de extremo a extremo compilan la aplicacion y la sirven ellas mismas." },
   { t: "pre", v: [
-    "cd frontend-react && npm test          # las 439 en jsdom",
+    "cd frontend-react && npm test          # las 474 en jsdom",
     "cd frontend-react && npm run coverage  # con el informe de cobertura",
     "",
     "npx playwright install chromium        # solo la primera vez",
-    "cd frontend-react && npm run test:e2e  # las 129 en Chromium"
+    "cd frontend-react && npm run test:e2e  # las 189 en Chromium"
   ] },
   { t: "p", v: "Cuentas de demostración, las dos con la contraseña `Clave123*`: `admin@caferaices.co` (administrador) y `contacto@laespiga.co` (empresa)." },
 
@@ -261,22 +280,23 @@ exports.cuerpo = [
 
   { t: "h3", v: "5.4 Las pruebas automáticas" },
 
-  { t: "p", v: "*439 pruebas en 26 archivos*, que tardan medio minuto. Se ejecutan con `npm test` dentro de `frontend-react/`. El motor es *Vitest*, que usa la misma configuración que Vite, con *Testing Library* sobre *jsdom*: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS." },
+  { t: "p", v: "*474 pruebas en 28 archivos*, que tardan medio minuto. Se ejecutan con `npm test` dentro de `frontend-react/`. El motor es *Vitest*, que usa la misma configuración que Vite, con *Testing Library* sobre *jsdom*: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS." },
 
   { t: "tabla", anchos: [40, 14, 46], cabeceras: ["Qué se prueba", "Pruebas", "Lo que se comprueba"], filas: [
-    ["Las quince pantallas", "194", "El recorrido entero: cargar, escribir, guardar, fallar y reintentar"],
-    ["Los doce componentes", "108", "Lo que dibujan con cada dato y con qué avisan al pulsarlos"],
+    ["Las quince pantallas", "204", "El recorrido entero: cargar, escribir, guardar, fallar y reintentar"],
+    ["Los doce componentes", "114", "Lo que dibujan con cada dato y con qué avisan al pulsarlos"],
     ["Los once servicios", "90", "La ruta, el método y el cuerpo de cada llamada, y qué pasa con cada error"],
     ["El mapa de rutas", "28", "Que cada dirección lleve a su pantalla y que las protegidas lo estén"],
     ["El contexto de sesión", "11", "Que no se fíe del navegador y que tire la sesión si el servidor la rechaza"],
-    ["El guardia de rutas", "8", "Quién pasa, a dónde se le manda y que no se enseñe nada mientras comprueba"]
+    ["El guardia de rutas", "8", "Quién pasa, a dónde se le manda y que no se enseñe nada mientras comprueba"],
+    ["El color de marca y el título", "19", "Que un tema desconocido no escriba nada en el <html>, que el color de otro negocio no se quede guardado, y que el título lleve el separador del servidor"]
   ] },
 
   { t: "p", v: "*Cobertura: 99,4 % de las líneas y 96,4 % de las ramas* (`npm run coverage`). Ninguna prueba llega a la red: `.env.test` apunta a un servidor que no existe, de modo que una que se escapara fallaría en lugar de tocar la base de datos de desarrollo." },
 
   { t: "h3", v: "5.5 Cada prueba se falsificó" },
 
-  { t: "p", v: "Una prueba que pasa no demuestra nada si también pasaría con el código roto. Los cinco defectos de la sección anterior se volvieron a meter, uno a uno, para comprobar que su prueba fallaba:" },
+  { t: "p", v: "Una prueba que pasa no demuestra nada si también pasaría con el código roto. Los defectos de la sección anterior se volvieron a meter, uno a uno, para comprobar que su prueba fallaba. Donde la falsificación no tumba todo lo que se esperaría, se dice por qué:" },
 
   { t: "tabla", anchos: [44, 56], cabeceras: ["Defecto reintroducido", "Qué pasó"], filas: [
     ["La fecha de la gráfica leída con new Date()", "La etiqueta pasó a decir «30 sep» en lugar de «1 oct»: el mismo día de menos que se vio en pantalla"],
@@ -286,7 +306,11 @@ exports.cuerpo = [
     ["Quitar el refrescar() de la cuenta", "Una prueba en rojo"],
     ["Fiarse del campo success del ejemplo", "Diez de las dieciocho de apiClient en rojo"],
     ["Las dos salidas del login, otra vez", "Tres pruebas de extremo a extremo en rojo: el destino recordado aterriza en la portada. Es el defecto de 5.8, y es la prueba de que esas tres discriminan"],
-    ["Invertir los índices del arrastre", "Cinco pruebas de extremo a extremo en rojo"]
+    ["Invertir los índices del arrastre", "Cinco pruebas de extremo a extremo en rojo"],
+    ["Quitar useTemaPropio() de la barra", "Cuatro pruebas de jsdom y once de navegador en rojo. Las ocho que siguen pasando son las de la página escaneada, que aplica el color por su cuenta, y las que comprueban que el color de defecto no escriba atributo: son las que no dependen de ese hook"],
+    ["Dejar useTitulo() sin efecto", "Diecisiete de las dieciocho de titulos en rojo. La que pasa es la del negocio que no existe, que comprueba justamente que el título NO se toque"],
+    ["Quitar los <link> del icono y el manifiesto, y no registrar el service worker", "Cuatro de las quince de pwa en rojo. Las once que pasan solo comprueban que los archivos existan y se sirvan, lo cual sigue siendo cierto: son dos fallos distintos, y un enlace a un archivo que falta es peor que no tenerlo"],
+    ["Devolver la opacidad del 80 % a los enlaces de la barra", "Las cuatro auditorías de axe con los otros dos colores en rojo, con color-contrast sobre los enlaces. No hizo falta reintroducirlo: así se encontró"]
   ] },
 
   { t: "h3", v: "5.6 Dos cosas que estas pruebas no podían demostrar" },
@@ -318,9 +342,9 @@ exports.cuerpo = [
   { t: "salto" },
   { t: "h3", v: "5.8 Las pruebas de extremo a extremo" },
 
-  { t: "p", v: "*129 pruebas en 7 archivos*, con *Playwright* sobre Chromium, contra el *paquete compilado*. Se ejecutan con `npm run test:e2e`: compilan la aplicación, la sirven y la apagan al terminar, y no necesitan ni el backend ni MySQL." },
+  { t: "p", v: "*189 pruebas en 10 archivos*, con *Playwright* sobre Chromium, contra el *paquete compilado*. Se ejecutan con `npm run test:e2e`: compilan la aplicación, la sirven y la apagan al terminar, y no necesitan ni el backend ni MySQL." },
 
-  { t: "p", v: "Existen por lo que dice 5.6. Las 439 de Vitest corren en jsdom, que no es un navegador: no aplica CSS, no tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene historial ni pestañas, y envuelve cada evento en `act()`. *Aquí no se repite nada que jsdom pueda contestar*: solo lo que necesita un navegador." },
+  { t: "p", v: "Existen por lo que dice 5.6. Las 474 de Vitest corren en jsdom, que no es un navegador: no aplica CSS, no tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene historial ni pestañas, y envuelve cada evento en `act()`. *Aquí no se repite nada que jsdom pueda contestar*: solo lo que necesita un navegador." },
 
   { t: "tabla", anchos: [26, 38, 36], cabeceras: ["Archivo", "Qué prueba", "Por qué no en jsdom"], filas: [
     ["entrar (15)", "A dónde se llega al entrar, el historial, Atrás después de salir, la guardia de rol", "act() decide quién gana entre dos salidas; no hay historial de navegador"],
@@ -329,29 +353,46 @@ exports.cuerpo = [
     ["recargar (17)", "Recargar cada pantalla, enlaces directos, direcciones que no existen, la sesión al arrancar en frío", "no hay recarga, ni pestañas, ni sessionStorage entre pruebas"],
     ["escaneada (14)", "Escaneos, visitas y clics del RF-11, y que el panel del dueño no cuente nada", "sendBeacon no existe en jsdom"],
     ["movil (19)", "Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa", "Vitest corre con css: false y jsdom no maqueta"],
-    ["accesibilidad (19 x 2)", "Auditoría de axe-core en 13 pantallas y 4 estados, el tabulador y el foco visible", "la mitad de las reglas de axe miden contraste y tamaños"]
+    ["accesibilidad (23 x 2)", "Auditoría de axe-core en 13 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible", "la mitad de las reglas de axe miden contraste y tamaños"],
+    ["tema (19)", "El color de marca del RF-12: que la barra se pinte con él, que cambie sin recargar, que no parpadee al recargar y que quien escanea vea los colores del negocio", "jsdom ve el atributo, pero no que PINTE: Vitest corre con css: false"],
+    ["titulos (18)", "El título de la pestaña en cada pantalla, al navegar y al volver atrás", "lo que falla es el cambio al navegar, y en jsdom cada pantalla se monta sola"],
+    ["pwa (15)", "Que el icono, el manifiesto, robots.txt y el sitemap se sirvan, y que el service worker se registre y abra la aplicación sin conexión", "jsdom no pide archivos ni registra service workers"]
   ] },
 
   { t: "p", v: "Las dos últimas corren además con el viewport de un teléfono, porque en una pantalla estrecha cambian el contraste de algunos fondos, el orden visual y el tamaño de lo que hay que pulsar." },
 
-  { t: "p", v: "*Encontraron tres defectos en su primera ejecución.* Es la razón de ponerlas, y la medida de lo que las 439 anteriores no alcanzaban a ver:" },
+  { t: "p", v: "*Encontraron tres defectos en su primera ejecución, y un cuarto al aplicar por fin el color de marca.* Es la razón de ponerlas, y la medida de lo que las de jsdom no alcanzaban a ver:" },
 
   { t: "tabla", anchos: [28, 72], cabeceras: ["Defecto", "Qué pasaba y cómo se corrigió"], filas: [
     ["El destino recordado al entrar no funcionaba", "Quien abría un enlace a /contenido sin sesión entraba y aterrizaba en la portada. La pantalla de login tenía dos salidas: el <Navigate> de «ya tienes sesión» y un navegar(state.desde) después del await. En el navegador ganaba la primera —React agrupa el setUsuario con lo que viene detrás, dibuja una sola vez y desmonta la pantalla—, y el navegar() llegaba sobre un componente desmontado, que React Router ignora en silencio. Ahora hay una sola salida, declarativa."],
     ["Las flechas de reordenar medían 22 x 20 px", "Por debajo de los 24 x 24 que pide el criterio 2.5.8 de la WCAG 2.2, y son la única forma de reordenar con el dedo, porque el arrastre de HTML no funciona al tacto. Se les puso un mínimo de 32 px."],
-    ["La etiqueta del rol no tenía contraste", "Blanco al 75 % sobre el índigo de la barra da 4,27:1, y hace falta 4,5:1 para texto pequeño. Salía en las nueve pantallas que llevan la barra. Subida al 85 %: 5,00:1."]
+    ["La etiqueta del rol no tenía contraste", "Blanco al 75 % sobre el índigo de la barra da 4,27:1, y hace falta 4,5:1 para texto pequeño. Salía en las nueve pantallas que llevan la barra."],
+    ["La opacidad no sobrevive a cambiar el fondo", "Al aplicar los tres colores de marca, la barra pasó a tener tres fondos. Los enlaces estaban al 80 % de opacidad y la etiqueta del rol al 85 %, medidos los dos sobre el índigo: sobre el esmeralda dan 3,80:1 y 4,09:1, y sobre el terracota 3,85:1 y 4,15:1. La opacidad más baja que servía para los tres era 0,92, con la que la diferencia ya no se nota, así que se quitó: el enlace actual se marca con su subrayado —que no es una diferencia de color, y es lo que pide la WCAG 1.4.1— y el rol por sus 10 px en mayúsculas. La auditoría de axe corre ahora con los tres colores, que es lo que lo encontró."]
   ] },
 
   { t: "nota", v: "El primero es el que importa. La prueba de Vitest no podía verlo, y el comentario que acompañaba al código afirmaba —sin haberlo medido— que en el navegador funcionaba bien. Una suite que no puede fallar donde el código está roto no es una red de seguridad: es una afirmación sobre el código escrita en otro sitio." },
 
   { t: "p", v: "La API se simula dentro del navegador, con memoria: reordenar y volver a pedir la lista devuelve el orden nuevo, como haría el servidor. Sin esa memoria, una prueba de reordenar pasaría aunque la pantalla no mandara nada. Y la simulación sale de los servicios del backend, no de lo que le convendría a la prueba: `GET /contenido` devuelve `categoria` como objeto y `GET /publico/:slug` la aplana a una cadena, y simular las dos iguales dejó la pantalla pública en blanco la primera vez. El defecto estaba en la simulación —pero una simulación que no se parece a la API deja pasar exactamente eso en el otro sentido." },
 
-  { t: "h3", v: "5.9 Lo que este frontend todavía no tiene" },
+  { t: "h3", v: "5.9 Cuatro cosas que faltaban, y lo que sigue faltando" },
+
+  { t: "p", v: "La versión anterior de este documento declaraba cuatro huecos. Tres eran funcionalidad que el frontend original sí tenía y este no, y se cerraron en la v3.5.0; el cuarto, el título de la pestaña, era un defecto de la aplicación de una sola página. Se dejan escritos porque el valor de la lista era justamente haberlos encontrado." },
+
+  { t: "tabla", anchos: [30, 70], cabeceras: ["Lo que faltaba", "Qué era y cómo se resolvió"], filas: [
+    ["El color de marca no se aplicaba en ninguna parte", "Durante cinco versiones la pantalla del perfil dejó elegir entre tres temas, el servidor los guardó y la API los devolvió, pero ninguna pantalla de React los pintaba: se elegía un color y no cambiaba nada. Hasta el texto de la pantalla decía «se aplica a tu página pública», que no era cierto. Era la parte del RF-12 que quedaba pendiente, con el servidor publicando ya este frontend. Ahora lo aplica un módulo que no hace más que poner data-theme en el <html>, y los colores viven en global.css: la barra, los botones y la gráfica se repintan sin recargar la página, que es lo que el original tenía que hacer por generar el QR y las gráficas en un canvas."],
+    ["Todas las pantallas compartían el título de la pestaña", "Decían «QR Empresarial — perfil público» las trece: el login, el panel y la gestión de usuarios. El original tenía doce títulos, uno por archivo. Ahora lo pone un hook en cada pantalla, con el mismo separador que usa el servidor al armar las etiquetas de /p/{slug}; en esa pantalla el título es el nombre del negocio, y mientras no se sabe no se toca, para no borrar el que el servidor escribió para los robots."],
+    ["No había icono de pestaña", "El <head> no tenía ninguna etiqueta de icono, así que el navegador solo buscaba /favicon.ico —que no existe— y la pestaña salía sin icono. Los archivos estaban publicados en dist/assets desde el principio y nada los enlazaba."],
+    ["No había manifiesto, service worker ni robots.txt", "El original tenía los cuatro. Con ellos la aplicación se puede instalar y abre sin conexión una vez visitada. El service worker va a red primero y caché de respaldo, y no guarda nada de /api/: son datos de una cuenta y en un equipo compartido la caché devolvería lo de quien usó el navegador antes. El robots.txt importa más aquí que en el original, porque las direcciones de React no son archivos: un robot que pida /contenido recibe un 200, no un 404, así que sin reglas indexaría el panel entero."]
+  ] },
+
+  { t: "p", v: "*Lo que sigue faltando*, y no se ha resuelto:" },
 
   { t: "tabla", anchos: [30, 70], cabeceras: ["Qué falta", "Detalle"], filas: [
-    ["El color de marca no se aplica en ninguna parte", "La pantalla del perfil deja elegir entre tres temas y los guarda en el servidor, y la API los devuelve en el perfil público, pero ninguna pantalla de React los usa: el frontend original sí lo hacía. Es la parte del RF-12 que queda pendiente."],
-    ["Todas las pantallas comparten el título de la pestaña", "El original tenía un archivo .html por pantalla, cada uno con su título. Bajo React el título sale del único index.html, así que el historial y las pestañas del navegador dicen lo mismo en todas. La página del código QR es la excepción: el servidor le inyecta el título del negocio y React no lo toca."],
     ["Safari de verdad", "El proyecto Móvil usa Chromium con el viewport y el user agent de un iPhone, porque este entorno no pudo instalar un WebKit real. Lo que se mide —media queries, cajas, contraste— no depende del motor; un fallo propio de WebKit sí se escaparía."],
-    ["El doble paso de StrictMode, en el navegador", "Solo ocurre en desarrollo, y las de extremo a extremo corren contra el paquete compilado. Ese caso lo cubre Vitest."]
-  ] }
+    ["El doble paso de StrictMode, en el navegador", "Solo ocurre en desarrollo, y las de extremo a extremo corren contra el paquete compilado. Ese caso lo cubre Vitest."],
+    ["La vista pública no separa las secciones", "La API devuelve el contenido agrupado por sección —porSeccion— y la pantalla lo dibuja en una sola lista plana. El panel sí organiza el contenido en tres pestañas (Menú principal, Promociones, Reservaciones), así que quien publica las usa y quien visita no las ve separadas."],
+    ["No hay pantalla de menú", "El original tenía una página de menú digital propia, con su enlace desde el perfil público, que es la parte del RF-05 que la separa del resto del contenido. En React no existe esa ruta. Es consecuencia de lo anterior, pero es una pantalla entera menos."]
+  ] },
+
+  { t: "nota", v: "Las dos últimas se encontraron comparando pantalla por pantalla los dos frontends, al preguntar si el de React estaba terminado. No lo estaba: una comparación de lo que cada uno sabe hacer dice más que la suma de las pruebas que pasan." }
 ];
