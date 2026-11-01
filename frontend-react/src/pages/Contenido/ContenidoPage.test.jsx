@@ -304,3 +304,69 @@ describe("reordenar", () => {
     expect(espia).toHaveBeenCalledTimes(2);
   });
 });
+
+// --- Cuando la API responde algo que no se espera ---
+//
+// REGRESION doble. La pantalla de usuarios comprobaba que lo que llega sea
+// una lista y esta no, salvo al recargar despues de guardar: una respuesta
+// con otra forma dejaba un valor cualquiera en el estado y la pantalla
+// reventaba al dibujar, con un .filter sobre algo que no es un arreglo. Y el
+// aviso decia "GET /contenido no devolvio una lista", que es un mensaje para
+// quien programa, no para quien atiende una panaderia.
+describe("si la API responde algo que no es una lista", () => {
+  function montarCon(respuestas) {
+    simularFetch(respuestas);
+
+    render(<MemoryRouter><ContenidoPage /></MemoryRouter>);
+  }
+
+  it("lo dice al abrir, en lugar de quedarse en blanco", async () => {
+    const consola = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    montarCon([
+      respuesta({ data: { bloques: BLOQUES } }), // envuelto, no una lista
+      respuesta({ data: CATEGORIAS })
+    ]);
+
+    const aviso = await screen.findByRole("alert");
+
+    expect(aviso).toHaveTextContent("No se pudo leer tu contenido");
+    consola.mockRestore();
+  });
+
+  it("sin hablar de endpoints, que el detalle va a la consola", async () => {
+    const consola = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    montarCon([
+      respuesta({ data: { bloques: BLOQUES } }),
+      respuesta({ data: CATEGORIAS })
+    ]);
+
+    expect(await screen.findByRole("alert")).not.toHaveTextContent("GET");
+
+    expect(consola).toHaveBeenCalledWith(
+      "GET /contenido no devolvió una lista:",
+      expect.anything()
+    );
+
+    consola.mockRestore();
+  });
+
+  // La misma comprobacion al recargar despues de guardar, que era el unico
+  // sitio donde ya estaba.
+  it("tambien al recargar despues de guardar un bloque", async () => {
+    const consola = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await montar([
+      respuesta({ message: "Bloque actualizado", data: BLOQUES[0] }),
+      respuesta({ data: { bloques: BLOQUES } })
+    ]);
+
+    await userEvent.click(within(screen.getByText("Escríbenos").closest("li"))
+      .getByRole("button", { name: "Editar" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo leer tu contenido");
+    consola.mockRestore();
+  });
+});

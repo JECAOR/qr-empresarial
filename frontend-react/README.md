@@ -363,9 +363,44 @@ que pida `/contenido` recibe un **200** y no un 404. Sin reglas, indexaría el
 panel entero —pantallas que piden sesión y se verían vacías en un resultado de
 búsqueda—. Lo que sí interesa indexar es `/p/`, que es el producto.
 
+## Lo que dicen las pantallas cuando algo falla
+
+Cada formulario enseña **el mensaje del servidor**, no uno propio: si el
+backend cambia una regla, la pantalla lo cuenta sin que haya que tocarla.
+Todos limpian el error anterior antes de reintentar, reactivan el botón en un
+`finally` y conservan lo que se escribió —si cambiar el correo falla porque
+la contraseña no era esa, el correo nuevo sigue en su campo—.
+
+Un repaso de los textos y de los estados de error encontró cuatro cosas:
+
+**Dos mensajes escritos para quien programa.** `GET /contenido no devolvió una
+lista` y su gemelo de `/usuarios` se enseñaban tal cual a quien atiende un
+negocio. Ahora el detalle va a la consola, que es donde sirve, y en pantalla
+se lee algo que se puede hacer: «No se pudo leer tu contenido: el servidor
+respondió algo inesperado. Vuelve a intentarlo en un momento».
+
+**Una comprobación que solo estaba en la mitad.** La pantalla de usuarios
+verificaba que lo que llega sea una lista; la de contenido, solo al recargar
+después de guardar. Al abrir no, así que una respuesta con otra forma dejaba
+un valor cualquiera en el estado y la pantalla reventaba al dibujar, con un
+`.filter` sobre algo que no es un arreglo: pantalla en blanco en lugar de
+aviso.
+
+**Dos mensajes a la vez.** Las dos formas de copiar la dirección del código QR
+no limpiaban lo anterior, así que copiar después de una descarga fallida
+dejaba «Enlace copiado» y el error de la descarga uno debajo del otro. Es el
+mismo defecto que ya se había corregido en la pantalla de entrar.
+
+**Un fallo que desaparecía.** Después de guardar, Configuración vuelve a
+preguntar quién eres para que la barra enseñe el nombre nuevo. Esa segunda
+petición no estaba atendida: si fallaba quedaba un rechazo sin capturar, la
+barra se quedaba con el nombre viejo y nadie decía nada. Ahora el éxito sigue
+siendo éxito —los datos **sí** se guardaron, decir lo contrario sería mentir—
+y el aviso añade que la barra seguirá con el nombre anterior hasta recargar.
+
 ## Las pruebas
 
-**541 en jsdom y 226 en un navegador de verdad.** Las primeras, con
+**548 en jsdom y 226 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -385,7 +420,7 @@ de un vistazo qué tiene pruebas y qué no.
 
 | Qué se prueba | Pruebas |
 |---|---:|
-| Las dieciséis pantallas | 237 |
+| Las dieciséis pantallas | 244 |
 | Los trece componentes | 137 |
 | Los once servicios | 99 |
 | El mapa de rutas | 30 |

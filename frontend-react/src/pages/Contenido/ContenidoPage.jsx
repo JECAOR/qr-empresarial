@@ -44,7 +44,14 @@ export default function ContenidoPage() {
     const resultado = await listarContenido();
 
     if (!Array.isArray(resultado?.data)) {
-      throw new Error("GET /contenido no devolvió una lista");
+      // El detalle tecnico va a la consola, que es donde sirve. Lo que se
+      // ensena en pantalla tiene que poder leerlo quien atiende un negocio:
+      // "GET GET /contenido no devolvio una lista" no le dice que hacer.
+      console.error("GET /contenido no devolvió una lista:", resultado);
+
+      throw new Error(
+        "No se pudo leer tu contenido: el servidor respondió algo inesperado. Vuelve a intentarlo en un momento."
+      );
     }
 
     setBloques(resultado.data);
@@ -53,11 +60,16 @@ export default function ContenidoPage() {
   useEffect(() => {
     let vigente = true;
 
-    Promise.all([listarContenido(), listarCategorias()])
-      .then(([contenido, cats]) => {
+    // Por cargar() y no por listarContenido() a secas: es donde esta la
+    // comprobacion de que lo que llega es una lista. Sin ella, una respuesta
+    // con otra forma dejaba un valor cualquiera en `bloques` y la pantalla
+    // reventaba al dibujar, con un .filter sobre algo que no es un arreglo.
+    // La pantalla de usuarios ya lo hacia asi; esta no.
+    // eslint-disable-next-line react/set-state-in-effect
+    Promise.all([cargar(), listarCategorias()])
+      .then(([, cats]) => {
         if (!vigente) return;
 
-        setBloques(contenido.data);
         setCategorias(cats.data);
       })
       .catch((fallo) => {
@@ -70,7 +82,7 @@ export default function ContenidoPage() {
     return () => {
       vigente = false;
     };
-  }, []);
+  }, [cargar]);
 
   // Los de esta pestana, en su orden. El servidor ya los manda ordenados.
   const deLaSeccion = bloques.filter((b) => b.seccion === seccion);

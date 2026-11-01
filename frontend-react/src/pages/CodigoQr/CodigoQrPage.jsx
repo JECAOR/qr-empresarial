@@ -173,14 +173,28 @@ export default function CodigoQrPage() {
     }
   }
 
-  async function copiarEnlace() {
+  /**
+   * Copia la direccion, con el aviso que corresponda.
+   *
+   * Las dos formas de copiar empiezan limpiando los dos mensajes. Sin eso,
+   * copiar el enlace despues de que fallara una descarga dejaba en pantalla
+   * «Enlace copiado» y el error de la descarga a la vez, uno debajo del
+   * otro: dos mensajes que se contradicen. Es el mismo defecto que ya se
+   * corrigio en la pantalla de entrar.
+   */
+  async function copiar(mensajeExito) {
+    setError("");
+    setAviso("");
+
     try {
       await navigator.clipboard.writeText(direccion);
-      setAviso("Enlace copiado");
+      setAviso(mensajeExito);
     } catch {
       setError("El navegador no dejó copiar el enlace");
     }
   }
+
+  const copiarEnlace = () => copiar("Enlace copiado");
 
   /**
    * Instagram no admite compartir una direccion por enlace: no hay un
@@ -189,14 +203,8 @@ export default function CodigoQrPage() {
    *
    * Se avisa de eso en lugar de ofrecer un boton que no haria nada.
    */
-  async function copiarParaInstagram() {
-    try {
-      await navigator.clipboard.writeText(direccion);
-      setAviso("Enlace copiado para tu biografía de Instagram");
-    } catch {
-      setError("El navegador no dejó copiar el enlace");
-    }
-  }
+  const copiarParaInstagram = () =>
+    copiar("Enlace copiado para tu biografía de Instagram");
 
   if (cargando) {
     return (
