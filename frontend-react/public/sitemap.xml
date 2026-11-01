@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  sitemap.xml — QR Empresarial
+
+  Reemplace "https://qr-empresarial.example.com" por el dominio real una vez
+  desplegado.
+
+  Solo las paginas publicas; las del panel se excluyen a proposito, igual que
+  en robots.txt. Las de cada negocio -/p/:slug- no se pueden enumerar aqui
+  porque nacen cuando alguien se registra: un sitemap que las incluyera
+  tendria que generarlo el servidor consultando los perfiles publicables.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://qr-empresarial.example.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <url>
+    <loc>https://qr-empresarial.example.com/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://qr-empresarial.example.com/registro</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://qr-empresarial.example.com/recuperar</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+</urlset>

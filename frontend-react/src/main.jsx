@@ -31,3 +31,21 @@ createRoot(document.getElementById("root")).render(
     </BrowserRouter>
   </StrictMode>
 );
+
+// --- Service worker ---
+//
+// Es lo que hace la aplicacion instalable y lo que la deja abrir sin
+// conexion. La estrategia es "red primero": ver public/service-worker.js.
+//
+// Solo en el paquete compilado. En desarrollo interceptaria las peticiones
+// del servidor de Vite y la recarga en caliente dejaria de funcionar, que es
+// un rato perdido buscando por que no se ve un cambio que si esta guardado.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch((fallo) => {
+      // Sin service worker la aplicacion funciona igual: solo deja de poder
+      // instalarse y de abrir sin conexion.
+      console.warn("No se pudo registrar el service worker:", fallo.message);
+    });
+  });
+}

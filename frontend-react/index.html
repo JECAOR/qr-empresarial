@@ -4,6 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- El icono de la pestana. Sin estas etiquetas el navegador solo busca
+         /favicon.ico, que no existe, y la pestana sale sin icono: los
+         archivos estaban en public/assets desde el principio y nada los
+         enlazaba. Van fuera de las marcas METADATOS porque el servidor
+         reemplaza lo que hay entre ellas al servir /p/:slug. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+
+    <!-- Lo que hace la aplicacion instalable: ver public/manifest.json -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- El color de la barra del navegador en Android. Es el del tema por
+         defecto: el de marca lo elige cada negocio y se aplica con una
+         variable CSS, que esta etiqueta no entiende. -->
+    <meta name="theme-color" content="#4F46E5" />
+
+    <!-- Las tres tipografias de los temas (RF-12). La hoja que devuelve
+         Google trae las reglas @font-face de las tres, pero el navegador
+         solo descarga los archivos de la familia que de verdad se usa al
+         dibujar, que es una sola por tema. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap"
+    />
+
     <!-- Al servir /p/:slug, el servidor reemplaza lo que hay entre las marcas
          METADATOS por las etiquetas de ese negocio. Hace falta porque los
          robots que leen las vistas previas -WhatsApp, Telegram, Google- no
@@ -13,7 +41,7 @@
          Lo que sigue es lo que se ve en el resto de la aplicación. No se
          quiten las marcas: el servidor las busca y avisa si no están. -->
     <!-- METADATOS:INICIO -->
-    <title>QR Empresarial — perfil público</title>
+    <title>QR Empresarial</title>
     <meta name="description" content="Perfil empresarial publicado con QR Empresarial." />
 
     <meta property="og:type" content="website" />

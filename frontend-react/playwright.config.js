@@ -38,6 +38,16 @@ export default defineConfig({
     baseURL: 'http://localhost:4174',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+
+    // Estas pruebas corren contra el paquete compilado, donde main.jsx SI
+    // registra el service worker. Un service worker activo responderia a las
+    // peticiones desde su cache y las sacaria del alcance de page.route(),
+    // con lo que los datos simulados de ayudas.js dejarian de aplicarse y
+    // los fallos no tendrian nada que ver con lo que la prueba mira.
+    //
+    // Que se registra de verdad lo comprueba pwa.spec.js, que lo hace en su
+    // propio contexto con los service workers permitidos.
+    serviceWorkers: 'block',
   },
 
   projects: [
