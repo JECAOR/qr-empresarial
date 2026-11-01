@@ -1,6 +1,6 @@
 # Pruebas de extremo a extremo — frontend en React
 
-**226 pruebas en 12 archivos**, con [Playwright](https://playwright.dev) sobre
+**241 pruebas en 14 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium. Corren contra el **paquete compilado**, en un navegador de verdad.
 
 ```bash
@@ -21,7 +21,7 @@ Y en modo interactivo, útil mientras se programa:
 npm run test:e2e:ui
 ```
 
-## Por qué existen, si ya hay 548 pruebas
+## Por qué existen, si ya hay 553 pruebas
 
 Las de Vitest corren en **jsdom, que no es un navegador**. No aplica CSS, no
 tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene
@@ -79,6 +79,8 @@ redibujado, no porque haga falta.
 | `tema.spec.js` (19) | El color de marca (RF-12): que la barra se pinte con él, que cambie sin recargar, que no haya parpadeo al recargar, y que quien escanea vea los colores del negocio | jsdom puede ver el atributo, pero no que PINTE: Vitest corre con `css: false` |
 | `titulos.spec.js` (18) | El título de la pestaña en cada pantalla, al navegar y al volver atrás | lo que falla aquí es el cambio al NAVEGAR, y en jsdom cada pantalla se monta sola |
 | `pwa.spec.js` (15) | Que el icono, el manifiesto, `robots.txt` y el sitemap se sirvan de verdad, y que el service worker se registre y abra la aplicación sin conexión | jsdom no pide archivos ni registra service workers |
+| `teclado.spec.js` (8) | Los flujos largos sin ratón: agregar, reordenar, apagar y borrar un bloque, y a dónde va el foco después de cada paso | el foco de jsdom es una simulación: no lo suelta al deshabilitar un botón, así que allí el defecto no existe |
+| `red.spec.js` (7) | La red lenta o caída a mitad: qué se dice, si se conserva lo escrito y si se puede mandar algo dos veces | el `fetch` de jsdom es un doble que responde al instante: no hay «lento» ni «a medias» |
 | `desarrollo.spec.js` (8) | El doble paso de `StrictMode`: que ocurra, y que aun así una visita se cuente una sola vez | React quita `StrictMode` al compilar, así que corre contra el servidor de desarrollo |
 | `menu.spec.js` (20) | El recorrido del menú (RF-05): que el botón navegue sin recargar, que la pantalla aguante un enlace directo y una recarga, que Atrás vuelva al perfil, y que el clic en un enlace del menú salga contado | que el contenido quede AGRUPADO es estructura del DOM y se prueba en jsdom; el recorrido y `sendBeacon` no |
 | `ayudas.js` | No es una prueba: es la API simulada y la sesión sembrada | — |

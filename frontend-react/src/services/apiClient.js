@@ -24,10 +24,47 @@ const CLAVE_USUARIO = "qre_usuario";
  * @returns {Promise<object|null>} El cuerpo ya convertido, o null en un 204.
  * @throws {Error} Con el mensaje del servidor y su `status`.
  */
+/**
+ * fetch, con el fallo de red dicho en castellano.
+ *
+ * Cuando no hay conexion -o el servidor no esta levantado, o lo corta un
+ * cortafuegos-, fetch rechaza con un TypeError cuyo mensaje lo pone el
+ * navegador: "Failed to fetch" en Chrome, "Load failed" en Safari, "NetworkError
+ * when attempting to fetch resource" en Firefox. Ese texto acababa en pantalla
+ * tal cual, en ingles y sin decir que hacer, porque las pantallas ensenan el
+ * mensaje del error.
+ *
+ * Se distingue por el tipo y no por el texto: comparar cadenas significaria
+ * acertar en un navegador y fallar en los otros dos.
+ *
+ * Se exporta porque no todas las llamadas pasan por peticion(): la descarga
+ * del codigo QR devuelve un Blob y la consulta publica no lleva token, y las
+ * dos tienen que fallar igual de claro.
+ */
+export async function pedir(url, opciones) {
+  try {
+    return await fetch(url, opciones);
+  } catch (fallo) {
+    if (fallo instanceof TypeError) {
+      // El original, para quien revise la consola
+      console.error("La petición no salió:", url, fallo.message);
+
+      const error = new Error(
+        "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo."
+      );
+
+      error.esDeRed = true;
+      throw error;
+    }
+
+    throw fallo;
+  }
+}
+
 export async function peticion(ruta, opciones = {}) {
   const token = sessionStorage.getItem(CLAVE_TOKEN);
 
-  const respuesta = await fetch(`${API_URL}${ruta}`, {
+  const respuesta = await pedir(`${API_URL}${ruta}`, {
     ...opciones,
     headers: {
       "Content-Type": "application/json",
@@ -78,7 +115,7 @@ export function origenDelBackend() {
 export async function descargar(ruta) {
   const token = sessionStorage.getItem(CLAVE_TOKEN);
 
-  const respuesta = await fetch(`${API_URL}${ruta}`, {
+  const respuesta = await pedir(`${API_URL}${ruta}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
 

@@ -398,9 +398,50 @@ barra se quedaba con el nombre viejo y nadie decía nada. Ahora el éxito sigue
 siendo éxito —los datos **sí** se guardaron, decir lo contrario sería mentir—
 y el aviso añade que la barra seguirá con el nombre anterior hasta recargar.
 
+## El teclado solo, y la red a medias
+
+Dos repasos más, con la misma pregunta de siempre: no si funciona, sino qué
+pasa cuando no.
+
+**Con el teclado, cada acción perdía el foco.** Los botones de la lista de
+contenido se apagan mientras viaja la petición —`disabled`—, y un botón que se
+apaga teniendo el foco se lo deja al `<body>`: el navegador no puede dejárselo
+a algo deshabilitado. Con ratón no se nota. Con el teclado, después de cada
+flecha, de cada borrado y de cada guardado había que tabular **desde el
+principio de la página**.
+
+Importa más en las flechas que en el resto: son la *única* forma de reordenar
+con el teclado, porque el arrastre de HTML no responde a él —que es justo por
+lo que existen—. Mover un bloque dos puestos eran dos recorridos completos de
+la página.
+
+Ahora cada acción devuelve el foco a donde se estaba:
+
+| Acción | Dónde queda el foco |
+|---|---|
+| Subir o bajar | la misma flecha, lista para pulsarla otra vez |
+| Activar o desactivar | el mismo botón, que ahora dice lo contrario |
+| Eliminar | la lista — **no** el «Eliminar» del siguiente, que dejaría el dedo sobre un botón destructivo |
+| Guardar o cancelar | «Agregar bloque», el ancla de la pantalla |
+| Una flecha que se apaga al llegar al extremo | la lista |
+
+**Sin conexión, la pantalla decía «Failed to fetch».** El texto lo pone el
+navegador —«Load failed» en Safari, otro en Firefox— y las pantallas enseñan
+el mensaje del error, así que acababa delante de quien atiende un negocio, en
+inglés y sin decir qué hacer. Ahora se traduce en el cliente de la API, que es
+por donde pasan todas las llamadas, y el original va a la consola. Se
+distingue **por el tipo del error y no por su texto**: comparar cadenas
+acertaría en un navegador y fallaría en los otros dos.
+
+Lo que ya estaba bien y ahora queda sujeto: no se puede mandar dos veces el
+mismo bloque aunque se insista con la red lenta —el botón se apaga y dice
+«Guardando…»—, una petición que no contesta nunca deja ese estado en lugar de
+parecer que no pasó nada, y lo escrito se conserva para reintentar sin volver
+a teclearlo.
+
 ## Las pruebas
 
-**548 en jsdom y 226 en un navegador de verdad.** Las primeras, con
+**553 en jsdom y 241 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -422,7 +463,7 @@ de un vistazo qué tiene pruebas y qué no.
 |---|---:|
 | Las dieciséis pantallas | 244 |
 | Los trece componentes | 137 |
-| Los once servicios | 99 |
+| Los once servicios | 104 |
 | El mapa de rutas | 30 |
 | El color de marca y el título | 19 |
 | El contexto de sesión | 11 |
@@ -479,7 +520,7 @@ dice que manda.
 
 ## Las pruebas de extremo a extremo
 
-**226 pruebas en 12 archivos**, con [Playwright](https://playwright.dev) sobre
+**241 pruebas en 14 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium y WebKit, contra el paquete compilado:
 
 ```bash

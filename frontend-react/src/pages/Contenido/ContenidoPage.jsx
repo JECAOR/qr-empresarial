@@ -25,6 +25,10 @@ export default function ContenidoPage() {
 
   const [seccion, setSeccion] = useState("menu");
   const [editando, setEditando] = useState(null);
+
+  // Para devolverle el foco al cerrar el formulario: ver cerrarFormulario()
+  const abrirFormulario = useRef(null);
+  const volverAlBoton = useRef(false);
   const [formVisible, setFormVisible] = useState(false);
 
   const [cargando, setCargando] = useState(true);
@@ -116,10 +120,41 @@ export default function ContenidoPage() {
     );
 
     if (correcto) {
-      setFormVisible(false);
-      setEditando(null);
+      cerrarFormulario();
     }
   }
+
+  /**
+   * Cierra el formulario y devuelve el foco a lo que lo abrio.
+   *
+   * Sin esto el foco se quedaba en el <body>: el formulario se va de la
+   * pantalla con el boton que lo tenia dentro, y el navegador no puede
+   * dejarle el foco a algo que ya no esta. Con raton no se nota; con el
+   * teclado, despues de guardar un bloque habia que tabular desde el
+   * principio de la pagina.
+   *
+   * Vuelve a "Agregar bloque" tanto al crear como al editar: es el ancla de
+   * esta pantalla, esta siempre, y desde ahi el tabulador sigue hacia la
+   * lista. Volver a "Editar" del bloque que se acaba de guardar seria mas
+   * fino, pero ese boton tambien se redibuja y no siempre existe —el bloque
+   * puede haber cambiado de seccion al guardarse—.
+   */
+  function cerrarFormulario() {
+    setFormVisible(false);
+    setEditando(null);
+
+    // No se enfoca aqui: en este momento el boton sigue deshabilitado por
+    // `ocupado` y React todavia no ha redibujado. Se apunta, y lo hace el
+    // efecto de abajo cuando el boton vuelve a estar disponible.
+    volverAlBoton.current = true;
+  }
+
+  useEffect(() => {
+    if (!volverAlBoton.current || formVisible || ocupado) return;
+
+    volverAlBoton.current = false;
+    abrirFormulario.current?.focus();
+  }, [formVisible, ocupado]);
 
   function editar(bloque) {
     setEditando(bloque);
@@ -192,7 +227,13 @@ export default function ContenidoPage() {
             </p>
           </div>
 
-          <button type="button" className="boton-principal" onClick={nuevo} disabled={ocupado}>
+          <button
+            type="button"
+            className="boton-principal"
+            ref={abrirFormulario}
+            onClick={nuevo}
+            disabled={ocupado}
+          >
             Agregar bloque
           </button>
         </header>
@@ -229,10 +270,7 @@ export default function ContenidoPage() {
             categorias={categorias}
             guardando={ocupado}
             onGuardar={guardar}
-            onCancelar={() => {
-              setFormVisible(false);
-              setEditando(null);
-            }}
+            onCancelar={cerrarFormulario}
           />
         )}
 
