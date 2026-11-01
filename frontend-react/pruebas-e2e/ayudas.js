@@ -157,6 +157,9 @@ const PDF_MINIMO = '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\ntraile
  * @param {string} [opciones.errorAlDescargar] Mensaje del fallo en /qr/imagen.
  * @param {string} [opciones.tema] El color de marca del negocio (RF-12):
  *   indigo, teal o terracota. Por defecto el de PERFIL.
+ * @param {boolean} [opciones.sinMenu] El negocio no publico nada en la
+ *   seccion del menu. Es el caso en que no debe ofrecerse el boton que lleva
+ *   a esa pantalla.
  */
 export async function simularApi(page, opciones = {}) {
   const {
@@ -166,12 +169,13 @@ export async function simularApi(page, opciones = {}) {
     perfilPublicoNoDisponible = false,
     errorAlOrdenar = null,
     errorAlDescargar = null,
-    tema = PERFIL.tema
+    tema = PERFIL.tema,
+    sinMenu = false
   } = opciones;
 
   const cuenta = comoAdministrador ? ADMINISTRADOR : USUARIO;
 
-  let contenido = contenidoInicial();
+  let contenido = contenidoInicial().filter((b) => !sinMenu || b.seccion !== 'menu');
   let perfil = { ...PERFIL, tema };
   let qr = { idQr: 9, url: `/p/${PERFIL.slug}`, activo: true, fechaCreacion: '2026-09-18' };
 

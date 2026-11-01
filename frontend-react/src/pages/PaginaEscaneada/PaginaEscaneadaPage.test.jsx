@@ -61,6 +61,8 @@ function montar(ruta = "/p/panaderia-la-espiga") {
     <MemoryRouter initialEntries={[ruta]}>
       <Routes>
         <Route path="/p/:slug" element={<PaginaEscaneadaPage />} />
+        {/* Delata a dónde lleva el botón del menú */}
+        <Route path="/p/:slug/menu" element={<p>el menú del negocio</p>} />
       </Routes>
     </MemoryRouter>
   );
@@ -382,5 +384,50 @@ describe("las secciones", () => {
     expect(menu).toHaveTextContent("Escríbenos");
     expect(menu).not.toHaveTextContent("Combo desayuno");
     expect(promos).toHaveTextContent("Combo desayuno");
+  });
+});
+
+describe("el boton del menu completo", () => {
+  it("lleva al menu de este negocio", async () => {
+    simularFetch([PERFIL()]);
+
+    montar("/p/cafe-raices");
+
+    await userEvent.click(await screen.findByRole("link", { name: "Ver menú completo" }));
+
+    expect(await screen.findByText("el menú del negocio")).toBeInTheDocument();
+  });
+
+  // Un boton que lleva a una pantalla vacia es peor que no ofrecerlo.
+  it("no se ofrece si el negocio no publico nada en el menu", async () => {
+    simularFetch([PERFIL([BLOQUES[2]])]); // solo la promoción
+
+    montar();
+
+    await screen.findByRole("heading", { name: "Promociones" });
+    expect(screen.queryByRole("link", { name: "Ver menú completo" })).not.toBeInTheDocument();
+  });
+
+  it("ni cuando no hay contenido ninguno", async () => {
+    simularFetch([PERFIL([])]);
+
+    montar();
+
+    await screen.findByText(/todavía no tiene contenido publicado/);
+    expect(screen.queryByRole("link", { name: "Ver menú completo" })).not.toBeInTheDocument();
+  });
+
+  // Es un enlace de la propia aplicacion: abrirlo en otra pestaña dejaria la
+  // pagina del negocio detras, y no es a donde se quiere ir.
+  it("no cuenta como clic de un enlace del negocio", async () => {
+    simularFetch([PERFIL()]);
+
+    montar();
+
+    await userEvent.click(await screen.findByRole("link", { name: "Ver menú completo" }));
+
+    expect(await eventos()).toEqual([
+      expect.objectContaining({ tipo: "visita" })
+    ]);
   });
 });

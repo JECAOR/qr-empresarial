@@ -85,6 +85,24 @@ describe("las rutas abiertas", () => {
     await waitFor(() => expect(screen.queryByText("Perfil público")).not.toBeInTheDocument());
   });
 
+  // El menú del negocio (RF-05). Debajo de su perfil y no en /menu suelta: el
+  // menú es de un negocio, y sin el slug no se sabría de cuál.
+  it("/p/:slug/menu entrega el menu de ese negocio", async () => {
+    montar("/p/panaderia-la-espiga/menu");
+
+    expect(await screen.findByRole("link", { name: "Volver al perfil" }))
+      .toHaveAttribute("href", "/p/panaderia-la-espiga");
+  });
+
+  // Sin esto, /p/:slug/menu caeria en la pantalla del negocio -que ignoraria
+  // el segmento de mas- o en la de "no existe", y las dos parecen correctas.
+  it("y no se confunde con la pagina del negocio", async () => {
+    montar("/p/panaderia-la-espiga/menu");
+
+    await screen.findByRole("link", { name: "Volver al perfil" });
+    expect(screen.queryByText(/Dirección pública del negocio/)).not.toBeInTheDocument();
+  });
+
   it.each([
     ["/login", "Iniciar sesión"],
     ["/registro", "Crear una cuenta"],
