@@ -4,6 +4,7 @@ import { Link, Navigate } from "react-router-dom";
 import { registrar } from "../../services/cuentaService";
 import { useAuth } from "../../context/AuthContext";
 import CampoTexto from "../../components/Formulario/CampoTexto";
+import useTitulo from "../../hooks/useTitulo";
 import "./cuenta.css";
 
 const VACIO = {
@@ -15,6 +16,8 @@ const VACIO = {
 };
 
 export default function RegistroPage() {
+  useTitulo("Crear cuenta");
+
   const { usuario, cargando, entrar } = useAuth();
 
   const [form, setForm] = useState(VACIO);

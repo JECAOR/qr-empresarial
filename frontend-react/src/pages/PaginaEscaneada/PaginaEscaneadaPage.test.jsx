@@ -20,9 +20,9 @@ const BLOQUES = [
   { id: "elemento-7", titulo: "Horneamos cada mañana", detalle: "Pan de masa madre", categoria: "Texto", tipo: "texto" }
 ];
 
-const PERFIL = (contenido = BLOQUES) => respuesta({
+const PERFIL = (contenido = BLOQUES, tema) => respuesta({
   data: {
-    perfil: { nombreNegocio: "Panadería La Espiga", telefono: "+57 301 222 3344" },
+    perfil: { nombreNegocio: "Panadería La Espiga", telefono: "+57 301 222 3344", tema },
     contenido,
     porSeccion: {}
   }
@@ -271,5 +271,80 @@ describe("los eventos (RF-11)", () => {
 
       expect(await eventos()).toHaveLength(antes);
     });
+  });
+});
+
+// --- El color de marca del negocio (RF-12) ---
+//
+// Es el sentido del requisito: quien escanea el codigo ve los colores que
+// eligio el negocio, no los de la aplicacion. Ninguna pantalla de React los
+// aplicaba: el selector guardaba el color y no pintaba nada.
+describe("los colores del negocio", () => {
+  it("aplica el tema del negocio que se escaneo", async () => {
+    simularFetch([PERFIL(BLOQUES, "terracota")]);
+
+    montar();
+
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute("data-theme", "terracota"));
+  });
+
+  // Es el perfil de OTRO negocio. Guardar su color lo dejaria puesto en el
+  // panel propio la proxima vez que se abriera la aplicacion aqui.
+  it("no se queda guardado", async () => {
+    simularFetch([PERFIL(BLOQUES, "teal")]);
+
+    montar();
+
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute("data-theme", "teal"));
+    expect(localStorage.getItem("qre_tema")).toBeNull();
+  });
+
+  // Al volver al panel se repone el del negocio propio sin esperar a que
+  // llegue otra vez el perfil, que dejaria un instante con el color ajeno.
+  it("al salir de la pantalla se repone el que hubiera", async () => {
+    localStorage.setItem("qre_tema", "terracota");
+    simularFetch([PERFIL(BLOQUES, "teal")]);
+
+    const { unmount } = montar();
+
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute("data-theme", "teal"));
+
+    unmount();
+
+    expect(document.documentElement).toHaveAttribute("data-theme", "terracota");
+  });
+
+  it("un negocio sin tema se ve con el de defecto", async () => {
+    simularFetch([PERFIL()]);
+
+    montar();
+
+    await waitFor(() => screen.getByText("Panadería La Espiga"));
+    expect(document.documentElement).not.toHaveAttribute("data-theme");
+  });
+});
+
+describe("el titulo de la pestana", () => {
+  // Es el nombre del negocio, el mismo que el servidor ya escribio en el
+  // HTML para los robots que no ejecutan JavaScript.
+  it("es el nombre del negocio", async () => {
+    simularFetch([PERFIL()]);
+
+    montar();
+
+    await waitFor(() => expect(document.title).toBe("Panadería La Espiga · QR Empresarial"));
+  });
+
+  // Si lo pusiera mientras carga, borraria el que escribio el servidor.
+  it("no se toca mientras no se sabe de quien es el perfil", () => {
+    document.title = "Panadería La Espiga · QR Empresarial";
+    simularFetch(() => new Promise(() => {}));
+
+    montar();
+
+    expect(document.title).toBe("Panadería La Espiga · QR Empresarial");
   });
 });

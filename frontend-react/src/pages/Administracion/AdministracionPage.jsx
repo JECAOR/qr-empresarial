@@ -11,6 +11,7 @@ import {
   LARGO_MAXIMO_BUSQUEDA
 } from "../../services/adminService";
 import DetalleCuenta from "../../components/admin/DetalleCuenta/DetalleCuenta";
+import useTitulo from "../../hooks/useTitulo";
 import "./AdministracionPage.css";
 
 const CIFRAS = [
@@ -36,6 +37,8 @@ const fecha = (valor) => (valor
   : "—");
 
 export default function AdministracionPage() {
+  useTitulo("Administración");
+
   const [resumen, setResumen] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [paginacion, setPaginacion] = useState(null);

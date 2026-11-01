@@ -8,6 +8,7 @@ import {
   descargarImagen
 } from "../../services/qrService";
 import { origenDelBackend } from "../../services/apiClient";
+import useTitulo from "../../hooks/useTitulo";
 import "./CodigoQrPage.css";
 
 const COLORES = [
@@ -24,6 +25,8 @@ const FORMATOS = [
 ];
 
 export default function CodigoQrPage() {
+  useTitulo("Código QR");
+
   const [qr, setQr] = useState(null);
   const [vistaPrevia, setVistaPrevia] = useState(null);
 

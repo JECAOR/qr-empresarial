@@ -132,6 +132,71 @@ siCompilado('las pantallas', () => {
   });
 });
 
+// REGRESION. El index.html de React no enlazaba ningun icono, asi que el
+// navegador solo buscaba /favicon.ico -que no existe- y la pestana salia sin
+// icono. Tampoco habia manifiesto, ni robots.txt, ni sitemap: el frontend
+// original tenia los cuatro, y los archivos de los iconos estaban publicados
+// en dist/assets sin que nada los enlazara.
+siCompilado('el icono, el manifiesto y los archivos para los buscadores', () => {
+  it.each([
+    ['/favicon.svg', /image\/svg/],
+    ['/assets/favicon-32.png', /image\/png/],
+    ['/assets/apple-touch-icon.png', /image\/png/],
+    ['/assets/icon-192.png', /image\/png/],
+    ['/assets/icon-512.png', /image\/png/],
+    ['/manifest.json', /application\/json/],
+    ['/robots.txt', /text\/plain/],
+    ['/sitemap.xml', /(application|text)\/xml/],
+    ['/service-worker.js', /javascript/]
+  ])('%s se sirve', async (camino, tipo) => {
+    const respuesta = await request(app).get(camino);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.headers['content-type']).toMatch(tipo);
+  });
+
+  // El reenvio de rutas de React entrega el index.html a cualquier direccion
+  // sin extension. Estas si la tienen, asi que no puede taparlas: si alguna
+  // faltara, la respuesta seria un 404 y no una pagina HTML disfrazada de
+  // manifiesto, que es el fallo que no se ve hasta que el navegador se queja.
+  it('ninguno de estos devuelve el index.html por el reenvio', async () => {
+    for (const camino of ['/manifest.json', '/robots.txt', '/service-worker.js']) {
+      const respuesta = await request(app).get(camino);
+
+      expect(respuesta.text).not.toContain('id="root"');
+    }
+  });
+
+  it('el HTML publicado enlaza el icono y el manifiesto', () => {
+    const html = fs.readFileSync(path.join(frontend.CARPETA, 'index.html'), 'utf8');
+
+    expect(html).toContain('rel="icon"');
+    expect(html).toContain('rel="apple-touch-icon"');
+    expect(html).toContain('rel="manifest"');
+  });
+
+  // El titulo lo pone cada pantalla al dibujarse, pero el del HTML es el que
+  // ve un robot y el que se lee antes de que React monte. Decia «perfil
+  // público» en las trece pantallas.
+  it('el titulo del HTML no habla de una pantalla concreta', () => {
+    const html = fs.readFileSync(path.join(frontend.CARPETA, 'index.html'), 'utf8');
+
+    expect(html).toContain('<title>QR Empresarial</title>');
+  });
+
+  // El panel se sirve con un 200 en todas sus direcciones -las resuelve el
+  // enrutador-, asi que sin reglas un buscador lo indexaria entero.
+  it('robots.txt deja el panel fuera de los buscadores', async () => {
+    const robots = (await request(app).get('/robots.txt')).text;
+
+    for (const privada of ['/contenido', '/usuarios', '/api/']) {
+      expect(robots).toContain(`Disallow: ${privada}`);
+    }
+
+    expect(robots).toContain('Allow: /p/');
+  });
+});
+
 describe('la API no la tapa el frontend', () => {
   it('/api/health responde JSON', async () => {
     const respuesta = await request(app).get('/api/health');

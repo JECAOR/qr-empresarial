@@ -1,0 +1,32 @@
+# robots.txt — QR Empresarial
+#
+# Las direcciones no son archivos: las resuelve el enrutador de React y el
+# servidor entrega el mismo index.html para todas. Un robot que pida
+# /contenido recibe un 200, no un 404, asi que sin estas reglas indexaria las
+# pantallas del panel: piden sesion, se verian vacias en un resultado de
+# busqueda y no le sirven a nadie.
+#
+# Lo que si interesa indexar son las paginas publicas, y sobre todo /p/ —
+# el perfil de cada negocio, que es el producto.
+
+User-agent: *
+
+Allow: /$
+Allow: /p/
+Allow: /login
+Allow: /registro
+Allow: /recuperar
+
+Disallow: /perfil
+Disallow: /contenido
+Disallow: /codigo-qr
+Disallow: /actividad
+Disallow: /configuracion
+Disallow: /usuarios
+Disallow: /administracion
+Disallow: /acceso-denegado
+Disallow: /restablecer
+Disallow: /api/
+
+# Reemplace este dominio por el real una vez desplegado.
+Sitemap: https://qr-empresarial.example.com/sitemap.xml

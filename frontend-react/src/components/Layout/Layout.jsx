@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
+import useTemaPropio from "../../hooks/useTemaPropio";
 import "./Layout.css";
 
 /**
@@ -10,10 +11,16 @@ import "./Layout.css";
  * rol que autoriza usuario.routes.js. Un enlace visible no concede permisos
  * -el servidor sigue mandando-, pero ofrecer una puerta que va a dar 403 es
  * una mala pantalla.
+ *
+ * Aqui se aplica tambien el color de marca (RF-12), y no en cada pantalla:
+ * esta barra envuelve a todas las del panel y se monta una sola vez por
+ * sesion, asi que el perfil se pide una vez y no en cada navegacion.
  */
 export default function Layout() {
   const { usuario, salir } = useAuth();
   const navegar = useNavigate();
+
+  useTemaPropio();
 
   async function cerrar() {
     await salir();

@@ -155,6 +155,8 @@ const PDF_MINIMO = '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\ntraile
  * @param {boolean} [opciones.perfilPublicoNoDisponible] /publico/:slug da 404.
  * @param {string} [opciones.errorAlOrdenar] Mensaje del fallo al reordenar.
  * @param {string} [opciones.errorAlDescargar] Mensaje del fallo en /qr/imagen.
+ * @param {string} [opciones.tema] El color de marca del negocio (RF-12):
+ *   indigo, teal o terracota. Por defecto el de PERFIL.
  */
 export async function simularApi(page, opciones = {}) {
   const {
@@ -163,13 +165,14 @@ export async function simularApi(page, opciones = {}) {
     sinQr = false,
     perfilPublicoNoDisponible = false,
     errorAlOrdenar = null,
-    errorAlDescargar = null
+    errorAlDescargar = null,
+    tema = PERFIL.tema
   } = opciones;
 
   const cuenta = comoAdministrador ? ADMINISTRADOR : USUARIO;
 
   let contenido = contenidoInicial();
-  let perfil = { ...PERFIL };
+  let perfil = { ...PERFIL, tema };
   let qr = { idQr: 9, url: `/p/${PERFIL.slug}`, activo: true, fechaCreacion: '2026-09-18' };
 
   // Deja de faltar en cuanto se genera: la pantalla vuelve a pedirlo despues

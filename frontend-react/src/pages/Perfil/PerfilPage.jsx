@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { consultarMiPerfil, guardarMiPerfil, guardarMiTema } from "../../services/perfilService";
 import CampoTexto from "../../components/Formulario/CampoTexto";
 import SelectorTema from "../../components/perfil/SelectorTema/SelectorTema";
+import useTitulo from "../../hooks/useTitulo";
+import { aplicarTema } from "../../styles/tema";
 import "./PerfilPage.css";
 
 // Los limites son los del validador del backend. Se repiten aqui para que el
@@ -33,6 +35,8 @@ function aFormulario(perfil) {
 }
 
 export default function PerfilPage() {
+  useTitulo("Mi negocio");
+
   const [perfil, setPerfil] = useState(null);
   const [form, setForm] = useState(VACIO);
 
@@ -114,6 +118,15 @@ export default function PerfilPage() {
       const resultado = await guardarMiTema(tema);
 
       setPerfil(resultado.data);
+
+      // Se aplica con lo que confirma el servidor, no con lo que se pulso:
+      // si el backend normalizara el valor, lo que se ve seria lo guardado.
+      //
+      // Sin recargar la pagina, a diferencia del frontend original: los
+      // colores son variables CSS y cambiarlas repinta la barra, los botones
+      // y la grafica sin volver a dibujar ningun componente.
+      aplicarTema(resultado.data?.tema ?? tema);
+
       setAviso("Color de marca actualizado");
     } catch (fallo) {
       setError(fallo.message);
@@ -258,7 +271,7 @@ export default function PerfilPage() {
       <section className="panel">
         <h2 className="panel__titulo panel__titulo--chico">Color de marca</h2>
         <p className="panel__sub">
-          Se aplica a tu página pública. Se guarda al elegirlo.
+          Se aplica a tu página pública y a este panel. Se guarda al elegirlo.
         </p>
 
         <SelectorTema

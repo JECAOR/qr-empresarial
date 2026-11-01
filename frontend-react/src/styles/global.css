@@ -6,18 +6,51 @@
    ============================================ */
 
 :root {
+  /* Tema por defecto: Indigo. No tiene bloque data-theme propio justamente
+     porque es este. */
   --color-primary: #4F46E5;
   --color-primary-dark: #4338CA;
   --color-primary-light: #EEF2FF;
   --color-primary-mid: #A5B4FC;
+  --font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, sans-serif;
 
+  /* Paleta neutra: fija, no cambia con el tema */
   --slate-900: #1E293B;
   --slate-600: #475569;
   --slate-500: #556880;
+  --slate-400: #5C6980;
   --slate-300: #CBD5E1;
   --slate-200: #E2E8F0;
+  --slate-100: #F1F5F9;
   --slate-50: #F8FAFC;
   --white: #FFFFFF;
+}
+
+/* --- El color de marca del negocio (RF-12) ---
+
+   Lo pone src/styles/tema.js en el <html>, con el valor que guarda el perfil
+   empresarial. Al cambiar el atributo se repinta todo lo que usa estas
+   variables -la barra, los botones, las barras de la grafica- sin volver a
+   dibujar ningun componente.
+
+   Cada tema lleva su propia tipografia, igual que en el frontend original:
+   el color solo no distingue bastante dos negocios. Las tres familias se
+   cargan en index.html. */
+
+html[data-theme="teal"] {
+  --color-primary: #0B7D73;
+  --color-primary-dark: #0F766E;
+  --color-primary-light: #F0FDFA;
+  --color-primary-mid: #5EEAD4;
+  --font-family: "DM Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+html[data-theme="terracota"] {
+  --color-primary: #C2410C;
+  --color-primary-dark: #9A3412;
+  --color-primary-light: #FFF7ED;
+  --color-primary-mid: #FDBA74;
+  --font-family: "Poppins", system-ui, -apple-system, Segoe UI, sans-serif;
 }
 
 * {
@@ -28,7 +61,7 @@ body {
   margin: 0;
   background: var(--slate-50);
   color: var(--slate-900);
-  font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  font-family: var(--font-family);
   font-size: 15px;
   line-height: 1.4;
 }

@@ -3,9 +3,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { comprobarEnlace, restablecerContrasena } from "../../services/cuentaService";
 import CampoTexto from "../../components/Formulario/CampoTexto";
+import useTitulo from "../../hooks/useTitulo";
 import "./cuenta.css";
 
 export default function RestablecerPage() {
+  useTitulo("Nueva contraseña");
+
   const [parametros] = useSearchParams();
   const navegar = useNavigate();
 

@@ -182,3 +182,33 @@ test.describe('el teclado', () => {
     expect(seDistingue).toBe(true);
   });
 });
+
+// --- Los otros dos colores de marca (RF-12) ---
+//
+// Las auditorias de arriba corren con el tema de defecto, que es el unico
+// que habia cuando se midio el contraste de la barra. Desde que el color de
+// marca del negocio pinta esa barra hay tres fondos distintos, y lo que pasa
+// el contraste sobre uno no lo pasa sobre los tres: la etiqueta del rol
+// estaba al 85% de opacidad y daba 5,00:1 sobre el indigo, 4,09:1 sobre el
+// esmeralda y 4,15:1 sobre el terracota, con el minimo en 4,5:1.
+//
+// Se audita en las dos pantallas que mas color llevan: la barra con la
+// sesion y la pagina que ve quien escanea el codigo.
+for (const tema of ['teal', 'terracota']) {
+  test(`el panel con el tema ${tema} no tiene faltas de accesibilidad`, async ({ page }) => {
+    await prepararSesion(page, { tema });
+    await page.goto('/contenido');
+    await expect(page.getByRole('heading', { name: 'Contenido del perfil' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', tema);
+
+    expect(await auditar(page)).toEqual([]);
+  });
+
+  test(`la pagina publica con el tema ${tema} tampoco`, async ({ page }) => {
+    await simularApi(page, { tema });
+    await page.goto('/p/panaderia-la-espiga');
+    await expect(page.getByRole('heading', { name: 'Panadería La Espiga' })).toBeVisible();
+
+    expect(await auditar(page)).toEqual([]);
+  });
+}

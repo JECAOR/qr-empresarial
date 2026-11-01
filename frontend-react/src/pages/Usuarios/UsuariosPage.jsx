@@ -11,9 +11,12 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import TablaUsuarios from "../../components/usuarios/TablaUsuarios/TablaUsuarios";
 import FormularioUsuario from "../../components/usuarios/FormularioUsuario/FormularioUsuario";
+import useTitulo from "../../hooks/useTitulo";
 import "./UsuariosPage.css";
 
 export default function UsuariosPage() {
+  useTitulo("Usuarios");
+
   const { usuario: yo } = useAuth();
 
   const [usuarios, setUsuarios] = useState([]);

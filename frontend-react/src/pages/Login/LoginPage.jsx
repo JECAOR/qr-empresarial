@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
+import useTitulo from "../../hooks/useTitulo";
 import "./LoginPage.css";
 
 /**
@@ -17,6 +18,8 @@ function destino(usuario) {
 }
 
 export default function LoginPage() {
+  useTitulo("Iniciar sesión");
+
   const { usuario, cargando, entrar } = useAuth();
   const ubicacion = useLocation();
 
