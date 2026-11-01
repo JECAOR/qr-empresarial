@@ -280,3 +280,11 @@ describe("el color de marca", () => {
     expect(document.documentElement).not.toHaveAttribute("data-theme", "terracota");
   });
 });
+
+describe("el titulo de la pestana", () => {
+  it("dice en que pantalla se esta", async () => {
+    await montar([respuesta({ data: PERFIL() })]);
+
+    expect(document.title).toBe("Mi negocio · QR Empresarial");
+  });
+});

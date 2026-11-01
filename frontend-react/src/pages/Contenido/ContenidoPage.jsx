@@ -11,6 +11,7 @@ import {
 } from "../../services/contenidoService";
 import FormularioBloque from "../../components/contenido/FormularioBloque/FormularioBloque";
 import ListaBloques from "../../components/contenido/ListaBloques/ListaBloques";
+import useTitulo from "../../hooks/useTitulo";
 import "./ContenidoPage.css";
 
 // Las mismas tres del frontend original, para que un perfil se vea igual en
@@ -22,6 +23,8 @@ const SECCIONES = [
 ];
 
 export default function ContenidoPage() {
+  useTitulo("Contenido");
+
   const [bloques, setBloques] = useState([]);
   const [categorias, setCategorias] = useState({ enlaces: [], elementos: [] });
 

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { consultarMisEstadisticas, RANGOS } from "../../services/estadisticaService";
 import GraficaActividad from "../../components/estadisticas/GraficaActividad/GraficaActividad";
+import useTitulo from "../../hooks/useTitulo";
 import "./EstadisticasPage.css";
 
 const MEDIDAS = [
@@ -15,6 +16,8 @@ const MEDIDAS = [
 const numero = (valor) => new Intl.NumberFormat("es-CO").format(valor);
 
 export default function EstadisticasPage() {
+  useTitulo("Actividad");
+
   const [dias, setDias] = useState(7);
   const [datos, setDatos] = useState(null);
 

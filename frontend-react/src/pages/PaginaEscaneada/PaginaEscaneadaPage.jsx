@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { obtenerPerfilPublico, informarEvento } from "../../services/perfilPublicoService";
 import FichaNegocio from "../../components/FichaNegocio/FichaNegocio";
 import TarjetaContenido from "../../components/TarjetaContenido/TarjetaContenido";
+import useTitulo from "../../hooks/useTitulo";
 import { aplicarTema, temaGuardado } from "../../styles/tema";
 import "../PerfilPublico/PerfilPublicoPage.css";
 import "./PaginaEscaneadaPage.css";
@@ -75,6 +76,11 @@ export default function PaginaEscaneadaPage() {
       vigente = false;
     };
   }, [slug, tipo]);
+
+  // El titulo de la pestana es el nombre del negocio, el mismo que el
+  // servidor ya escribio en el HTML para los robots. Mientras no se sabe,
+  // useTitulo no toca nada y ese titulo sigue en pie.
+  useTitulo(datos?.perfil?.nombreNegocio);
 
   // --- El color de marca del negocio (RF-12) ---
   //

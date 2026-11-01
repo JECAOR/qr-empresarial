@@ -326,3 +326,25 @@ describe("los colores del negocio", () => {
     expect(document.documentElement).not.toHaveAttribute("data-theme");
   });
 });
+
+describe("el titulo de la pestana", () => {
+  // Es el nombre del negocio, el mismo que el servidor ya escribio en el
+  // HTML para los robots que no ejecutan JavaScript.
+  it("es el nombre del negocio", async () => {
+    simularFetch([PERFIL()]);
+
+    montar();
+
+    await waitFor(() => expect(document.title).toBe("Panadería La Espiga · QR Empresarial"));
+  });
+
+  // Si lo pusiera mientras carga, borraria el que escribio el servidor.
+  it("no se toca mientras no se sabe de quien es el perfil", () => {
+    document.title = "Panadería La Espiga · QR Empresarial";
+    simularFetch(() => new Promise(() => {}));
+
+    montar();
+
+    expect(document.title).toBe("Panadería La Espiga · QR Empresarial");
+  });
+});

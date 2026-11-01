@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import useTitulo from "../../hooks/useTitulo";
 
 /**
  * Una direccion que no existe.
@@ -8,6 +9,8 @@ import { Link } from "react-router-dom";
  * queria.
  */
 export default function NoEncontradaPage() {
+  useTitulo("Página no encontrada");
+
   return (
     <main className="aviso-pagina">
       <h1>Esta página no existe</h1>

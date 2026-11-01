@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { obtenerPerfilPublico } from "../../services/perfilPublicoService";
 import FichaNegocio from "../../components/FichaNegocio/FichaNegocio";
 import TarjetaContenido from "../../components/TarjetaContenido/TarjetaContenido";
+import useTitulo from "../../hooks/useTitulo";
 import "./PerfilPublicoPage.css";
 
 // El perfil que se consulta al abrir. Sale de .env para no dejar escrito en
@@ -11,6 +12,8 @@ import "./PerfilPublicoPage.css";
 const SLUG_INICIAL = import.meta.env.VITE_SLUG_DEMO ?? "";
 
 function PerfilPublicoPage() {
+  useTitulo("Perfil público");
+
   const [parametros] = useSearchParams();
 
   // La direccion manda sobre el valor por defecto: asi se puede enlazar a un

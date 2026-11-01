@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { pedirEnlaceDeRecuperacion } from "../../services/cuentaService";
 import CampoTexto from "../../components/Formulario/CampoTexto";
+import useTitulo from "../../hooks/useTitulo";
 import "./cuenta.css";
 
 /**
@@ -22,6 +23,8 @@ function tokenDe(enlace) {
 }
 
 export default function RecuperarPage() {
+  useTitulo("Recuperar contraseña");
+
   const [correo, setCorreo] = useState("");
   const [respuesta, setRespuesta] = useState(null);
   const [error, setError] = useState("");

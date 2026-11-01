@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { consultarMiPerfil, guardarMiPerfil, guardarMiTema } from "../../services/perfilService";
 import CampoTexto from "../../components/Formulario/CampoTexto";
 import SelectorTema from "../../components/perfil/SelectorTema/SelectorTema";
+import useTitulo from "../../hooks/useTitulo";
 import { aplicarTema } from "../../styles/tema";
 import "./PerfilPage.css";
 
@@ -34,6 +35,8 @@ function aFormulario(perfil) {
 }
 
 export default function PerfilPage() {
+  useTitulo("Mi negocio");
+
   const [perfil, setPerfil] = useState(null);
   const [form, setForm] = useState(VACIO);
 

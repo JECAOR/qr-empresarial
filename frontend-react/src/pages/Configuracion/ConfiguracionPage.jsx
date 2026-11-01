@@ -10,6 +10,7 @@ import {
 } from "../../services/cuentaPropiaService";
 import { useAuth } from "../../context/AuthContext";
 import CampoTexto from "../../components/Formulario/CampoTexto";
+import useTitulo from "../../hooks/useTitulo";
 import "./ConfiguracionPage.css";
 
 const AVISOS = [
@@ -26,6 +27,8 @@ const AVISOS = [
 ];
 
 export default function ConfiguracionPage() {
+  useTitulo("Configuración");
+
   const { usuario, salir, refrescar } = useAuth();
   const navegar = useNavigate();
 

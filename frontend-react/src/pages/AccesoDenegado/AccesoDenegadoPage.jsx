@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
+import useTitulo from "../../hooks/useTitulo";
 
 export default function AccesoDenegadoPage() {
+  useTitulo("Acceso denegado");
+
   const { usuario } = useAuth();
 
   return (
