@@ -363,9 +363,8 @@ base de datos de desarrollo.
 ### Cada prueba se falsificó
 
 Una prueba que pasa no demuestra nada si también pasaría con el código roto.
-Los cinco defectos que documenta
-[`evidencias/`](evidencias) se volvieron a meter, uno a uno, para comprobar que
-su prueba fallaba. Por ejemplo, devolver la fecha de la gráfica a `new Date()`
+Los cinco defectos que destapó construir estas pantallas se volvieron a meter,
+uno a uno, para comprobar que su prueba fallaba. Por ejemplo, devolver la fecha de la gráfica a `new Date()`
 hace que la etiqueta diga «30 sep» en lugar de «1 oct», que es exactamente el
 día de menos que se vio en pantalla; y fiarse del campo `success` del ejemplo
 de la guía tumba diez de las dieciocho de `apiClient`.
@@ -552,13 +551,6 @@ mandando— pero evita ofrecer un botón que solo puede dar error.
 `RutaProtegida` **no es seguridad**: quien escriba la dirección a mano o llame a
 la API con `curl` se la salta entera. La seguridad la aplica Express en cada
 endpoint. Lo que hace el guardia es no enseñar puertas que van a dar 403.
-
-### Pruebas
-
-La [matriz de pruebas](evidencias/guia-02/matriz-de-pruebas.md) recoge los 23
-casos ejecutados contra el servidor real, con su resultado esperado, el obtenido
-y la evidencia. Dos fallaron a la primera y están documentados con su
-corrección.
 
 ## El módulo 1, completo
 
