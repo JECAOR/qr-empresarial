@@ -134,18 +134,20 @@ describe("reordenar arrastrando", () => {
     expect(p.onMover).toHaveBeenCalledWith(0, 2);
   });
 
-  // REGRESION, por la via indirecta. El indice de origen vivia en estado de
-  // React y el arrastre fallaba al ser rapido: los tres eventos caen en el
-  // mismo tic y el estado todavia no se ha aplicado cuando llega el drop.
+  // El indice de origen vivia en estado de React, y el comentario del
+  // componente decia que con estado el arrastre rapido fallaba. No es
+  // cierto, y se midio: ni aqui ni en Chromium -ver
+  // pruebas-e2e/arrastrar.spec.js, con los tres eventos uno detras de otro-
+  // la version con useState reordena mal. React trata dragstart y drop como
+  // eventos discretos y aplica el cambio antes del siguiente evento.
   //
-  // Esa carrera NO se puede reproducir aqui: fireEvent envuelve cada evento
-  // en act(), que vacia la cola de React, de modo que con estado la prueba
-  // tambien pasaria. Se comprobo volviendo a poner el useState: las dieciseis
-  // pruebas seguian en verde.
+  // Lo que si distingue las dos versiones es el redibujado, y es lo unico
+  // que esta prueba afirma: guardar el origen no tiene nada nuevo que
+  // enseñar, asi que no debe costar un commit de la lista entera.
   //
-  // Lo que si distingue las dos versiones es que una ref no redibuja. Si
-  // empezar un arrastre provoca un redibujado, el indice ha vuelto al estado
-  // y la carrera vuelve con el.
+  // Dicho de otro modo: esta prueba defiende una decision de rendimiento,
+  // no arregla una carrera. Dejarla con el nombre anterior habria hecho
+  // creer que cubre un defecto que no existe.
   it("empezar un arrastre no redibuja la lista", () => {
     let dibujos = 0;
 

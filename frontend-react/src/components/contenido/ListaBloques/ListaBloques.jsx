@@ -15,10 +15,19 @@ const NOMBRE_DEL_TIPO = { enlace: "Enlace", texto: "Texto", boton: "Botón" };
 export default function ListaBloques({
   bloques, onEditar, onEstado, onEliminar, onMover, ocupado
 }) {
-  // En una ref y no en estado: los tres eventos del arrastre -dragstart,
-  // dragover, drop- pueden ocurrir en el mismo tic, y el estado de React no
-  // se ha aplicado todavia cuando llega el drop. Con una ref el valor esta
-  // disponible al instante y no hace falta un redibujado para leerlo.
+  // En una ref y no en estado porque el origen no se dibuja: se guarda al
+  // empezar el arrastre y se lee al soltar.
+  //
+  // El motivo que decia antes este comentario -que los tres eventos pueden
+  // caer en el mismo tic y el estado no estaria aplicado al llegar el drop-
+  // era falso, y se comprobo: con el componente cambiado a useState, un
+  // arrastre en Chromium reordena igual, tanto despacio como con los tres
+  // eventos uno detras de otro. React trata dragstart y drop como eventos
+  // discretos y aplica el cambio antes de entregar el siguiente.
+  //
+  // La ref se queda porque ahorra un redibujado de la lista entera cada vez
+  // que empieza un arrastre, sin nada nuevo que enseñar. No porque haga
+  // falta para que funcione.
   const origen = useRef(null);
 
   function soltarEn(destino) {
