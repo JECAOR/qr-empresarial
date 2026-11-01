@@ -26,13 +26,30 @@ export default defineConfig({
   // dist viejo daria por buena una pantalla que ya no existe. Lo segundo
   // porque dist/ es lo que publica Express: dejarselo con la configuracion de
   // las pruebas le cambiaria la direccion de la API sin avisar.
-  webServer: {
-    command: 'npm run build -- --mode e2e --outDir dist-e2e'
-      + ' && npx vite preview --mode e2e --outDir dist-e2e --port 4174 --strictPort',
-    url: 'http://localhost:4174/login',
-    reuseExistingServer: false,
-    timeout: 120000,
-  },
+  webServer: [
+    {
+      command: 'npm run build -- --mode e2e --outDir dist-e2e'
+        + ' && npx vite preview --mode e2e --outDir dist-e2e --port 4174 --strictPort',
+      url: 'http://localhost:4174/login',
+      reuseExistingServer: false,
+      timeout: 120000,
+    },
+
+    // El servidor de DESARROLLO, solo para el proyecto del mismo nombre.
+    //
+    // Hace falta porque StrictMode duplica los efectos unicamente en
+    // desarrollo: React lo quita del paquete compilado, asi que contra el
+    // servidor de arriba no hay doble paso que mirar. Es el unico sitio
+    // donde estas pruebas no corren contra lo que se publica, y es a
+    // proposito: lo que se comprueba aqui es precisamente una conducta que
+    // solo existe mientras se programa.
+    {
+      command: 'npx vite --mode e2e-dev --port 5174 --strictPort',
+      url: 'http://localhost:5174/login',
+      reuseExistingServer: false,
+      timeout: 120000,
+    },
+  ],
 
   use: {
     baseURL: 'http://localhost:4174',
@@ -54,21 +71,31 @@ export default defineConfig({
     {
       name: 'Escritorio',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } },
-      testIgnore: /movil\.spec\.js/,
+      testIgnore: /(movil|desarrollo)\.spec\.js/,
     },
-    // Igual que en la suite del frontend original: devices["iPhone 13"] emula
-    // WebKit, y este entorno no pudo instalar un WebKit real. Se queda el
-    // viewport y el "es un movil", que es lo que necesitan las pruebas del
-    // CSS, con el motor que si hay.
+    // WebKit de verdad, que es el motor de Safari y el unico que hay en un
+    // iPhone: alli hasta Chrome y Firefox lo usan por dentro. Durante varias
+    // versiones este proyecto corrio con Chromium y el viewport del telefono,
+    // porque el entorno no habia podido instalar WebKit, y quedo escrito que
+    // un fallo propio de WebKit se escaparia. Ya no: devices["iPhone 13"]
+    // trae browserName webkit, y esto ya no lo sobrescribe.
     {
       name: 'Movil',
-      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+      use: { ...devices['iPhone 13'] },
 
       // Las del CSS, y de paso la auditoria de accesibilidad: en una
       // pantalla estrecha cambian el contraste de algunos fondos, el orden
       // visual y el tamaño de lo que hay que pulsar, que son tres de las
       // cosas que axe mide.
       testMatch: /(movil|accesibilidad)\.spec\.js/,
+    },
+
+    // Contra el servidor de desarrollo, no contra el paquete compilado: es
+    // donde StrictMode monta cada componente dos veces.
+    {
+      name: 'Desarrollo',
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:5174' },
+      testMatch: /desarrollo\.spec\.js/,
     },
   ],
 });
