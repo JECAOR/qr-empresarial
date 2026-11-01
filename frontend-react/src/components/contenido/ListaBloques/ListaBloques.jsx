@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import "./ListaBloques.css";
 
@@ -30,6 +30,45 @@ export default function ListaBloques({
   // falta para que funcione.
   const origen = useRef(null);
 
+  // --- Devolver el foco despues de una accion ---
+  //
+  // Todos estos botones se apagan mientras viaja la peticion -disabled={ocupado}-
+  // y un boton que se apaga teniendo el foco se lo deja al <body>: el navegador
+  // no puede dejarselo a algo deshabilitado. Con raton no se nota; con el
+  // teclado, cada vez que se pulsaba una flecha habia que tabular desde el
+  // principio de la pagina para volver. Y las flechas son la UNICA forma de
+  // reordenar con el teclado, porque el arrastre de HTML no responde a el.
+  //
+  // Se apunta a donde hay que volver antes de llamar, y se vuelve cuando la
+  // lista ya esta dibujada de nuevo.
+  const lista = useRef(null);
+  const volverA = useRef(null);
+
+  useEffect(() => {
+    if (ocupado || !volverA.current) return;
+
+    const destino = lista.current?.querySelector(`[data-foco="${volverA.current}"]`);
+
+    volverA.current = null;
+
+    // Puede haber quedado deshabilitado -la flecha de subir del que acaba de
+    // llegar al primer puesto- o haber desaparecido, si se elimino el bloque.
+    if (destino && !destino.disabled) {
+      destino.focus();
+      return;
+    }
+
+    // Entonces el foco va a la lista, que es el sitio del que se venia: desde
+    // ahi el siguiente tabulador sigue por donde toca, y no desde el
+    // principio de la pagina.
+    lista.current?.focus();
+  }, [ocupado, bloques]);
+
+  const alPulsar = (marca, accion) => () => {
+    volverA.current = marca;
+    accion();
+  };
+
   function soltarEn(destino) {
     const desde = origen.current;
 
@@ -41,7 +80,9 @@ export default function ListaBloques({
   }
 
   return (
-    <ol className="bloques">
+    // tabIndex -1: no entra en el recorrido del tabulador, pero puede recibir
+    // el foco por codigo cuando el boton al que habria que volver ya no esta.
+    <ol className="bloques" ref={lista} tabIndex={-1}>
       {bloques.map((bloque, posicion) => (
         <li
           key={bloque.id}
@@ -56,8 +97,9 @@ export default function ListaBloques({
             <button
               type="button"
               aria-label={`Subir ${bloque.titulo}`}
+              data-foco={`subir-${bloque.id}`}
               disabled={ocupado || posicion === 0}
-              onClick={() => onMover(posicion, posicion - 1)}
+              onClick={alPulsar(`subir-${bloque.id}`, () => onMover(posicion, posicion - 1))}
             >
               ↑
             </button>
@@ -67,8 +109,9 @@ export default function ListaBloques({
             <button
               type="button"
               aria-label={`Bajar ${bloque.titulo}`}
+              data-foco={`bajar-${bloque.id}`}
               disabled={ocupado || posicion === bloques.length - 1}
-              onClick={() => onMover(posicion, posicion + 1)}
+              onClick={alPulsar(`bajar-${bloque.id}`, () => onMover(posicion, posicion + 1))}
             >
               ↓
             </button>
@@ -93,14 +136,27 @@ export default function ListaBloques({
               Editar
             </button>
 
-            <button type="button" onClick={() => onEstado(bloque)} disabled={ocupado}>
+            {/* El bloque sigue ahi, solo cambia su estado: se vuelve al mismo
+                boton, que es lo que permite apagarlo y encenderlo sin perder
+                el sitio. */}
+            <button
+              type="button"
+              data-foco={`estado-${bloque.id}`}
+              onClick={alPulsar(`estado-${bloque.id}`, () => onEstado(bloque))}
+              disabled={ocupado}
+            >
               {bloque.activo ? "Desactivar" : "Activar"}
             </button>
 
+            {/* Al eliminar, el boton desaparece con su bloque: el efecto de
+                arriba no lo encuentra y deja el foco en la lista. A proposito
+                no se pasa al Eliminar del bloque siguiente, que dejaria el
+                dedo encima de un boton destructivo. */}
             <button
               type="button"
               className="peligro"
-              onClick={() => onEliminar(bloque)}
+              data-foco={`eliminar-${bloque.id}`}
+              onClick={alPulsar(`eliminar-${bloque.id}`, () => onEliminar(bloque))}
               disabled={ocupado}
             >
               Eliminar

@@ -176,3 +176,71 @@ describe("descargar()", () => {
     });
   });
 });
+
+// REGRESION. Cuando no hay conexion, fetch rechaza con un TypeError cuyo
+// mensaje lo pone el navegador: "Failed to fetch" en Chrome, "Load failed" en
+// Safari, "NetworkError when attempting to fetch resource" en Firefox. Las
+// pantallas ensenan el mensaje del error, asi que ese texto acababa delante
+// de quien atiende un negocio, en ingles y sin decir que hacer.
+describe("cuando la peticion no sale", () => {
+  const sinRed = () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+  };
+
+  it("lo cuenta en castellano", async () => {
+    const silencio = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    sinRed();
+
+    await expect(peticion("/usuarios/me")).rejects.toThrow(/No se pudo conectar con el servidor/);
+
+    silencio.mockRestore();
+  });
+
+  it("sin colar el texto del navegador", async () => {
+    const silencio = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    sinRed();
+
+    await expect(peticion("/usuarios/me")).rejects.not.toThrow(/fetch/);
+
+    silencio.mockRestore();
+  });
+
+  // Para quien revise la consola, que es donde ese detalle si sirve.
+  it("pero deja el original en la consola", async () => {
+    const consola = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    sinRed();
+
+    await expect(peticion("/usuarios/me")).rejects.toThrow();
+
+    expect(consola).toHaveBeenCalledWith(
+      "La petición no salió:",
+      expect.stringContaining("/usuarios/me"),
+      "Failed to fetch"
+    );
+
+    consola.mockRestore();
+  });
+
+  // Se distingue por el TIPO del error y no por su texto: comparar cadenas
+  // acertaria en un navegador y fallaria en los otros dos.
+  it("se fija en el tipo del error, no en lo que dice", async () => {
+    const silencio = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Load failed")));
+
+    await expect(peticion("/usuarios/me")).rejects.toThrow(/No se pudo conectar/);
+
+    silencio.mockRestore();
+  });
+
+  // Un error que no sea de red -uno que lance el propio codigo- tiene que
+  // llegar tal cual: taparlo todo con "no hay conexion" seria mentir.
+  it("un error que no es de red pasa sin tocarse", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Algo muy raro")));
+
+    await expect(peticion("/usuarios/me")).rejects.toThrow("Algo muy raro");
+  });
+});

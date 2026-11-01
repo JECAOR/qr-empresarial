@@ -5,6 +5,8 @@
 // ni como se llaman los campos del JSON: recibe datos ya comprobados.
 // ============================================
 
+import { pedir } from "./apiClient";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 /**
@@ -30,7 +32,7 @@ export async function obtenerPerfilPublico(slug) {
     throw new Error("Escriba la dirección de un negocio para consultarlo");
   }
 
-  const respuesta = await fetch(`${API_URL}/publico/${encodeURIComponent(slug)}`);
+  const respuesta = await pedir(`${API_URL}/publico/${encodeURIComponent(slug)}`);
 
   if (!respuesta.ok) {
     // El backend explica el motivo en el cuerpo. Se prefiere su mensaje al
