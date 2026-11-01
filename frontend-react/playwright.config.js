@@ -56,13 +56,15 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } },
       testIgnore: /movil\.spec\.js/,
     },
-    // Igual que en la suite del frontend original: devices["iPhone 13"] emula
-    // WebKit, y este entorno no pudo instalar un WebKit real. Se queda el
-    // viewport y el "es un movil", que es lo que necesitan las pruebas del
-    // CSS, con el motor que si hay.
+    // WebKit de verdad, que es el motor de Safari y el unico que hay en un
+    // iPhone: alli hasta Chrome y Firefox lo usan por dentro. Durante varias
+    // versiones este proyecto corrio con Chromium y el viewport del telefono,
+    // porque el entorno no habia podido instalar WebKit, y quedo escrito que
+    // un fallo propio de WebKit se escaparia. Ya no: devices["iPhone 13"]
+    // trae browserName webkit, y esto ya no lo sobrescribe.
     {
       name: 'Movil',
-      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+      use: { ...devices['iPhone 13'] },
 
       // Las del CSS, y de paso la auditoria de accesibilidad: en una
       // pantalla estrecha cambian el contraste de algunos fondos, el orden
