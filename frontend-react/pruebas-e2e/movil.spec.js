@@ -162,6 +162,24 @@ test.describe('las pantallas que cambian de forma', () => {
     expect(opciones.y).toBeGreaterThan(lienzo.y + lienzo.height - 1);
   });
 
+  // Compartir es lo siguiente que se hace despues de generar el codigo, y se
+  // hace desde el telefono: los tres tienen que poder pulsarse con el pulgar.
+  // El minimo son los 24 px del criterio 2.5.8 de la WCAG 2.2.
+  test('las formas de compartir se pueden pulsar con el dedo', async ({ page }) => {
+    await simularApi(page);
+    await prepararSesion(page);
+    await page.goto('/codigo-qr');
+
+    await expect(page.getByAltText('Vista previa del código QR')).toBeVisible();
+
+    for (const nombre of ['WhatsApp', 'Correo', 'Instagram']) {
+      const caja = await page.getByRole(nombre === 'Instagram' ? 'button' : 'link',
+        { name: nombre, exact: true }).boundingBox();
+
+      expect(caja.height, nombre).toBeGreaterThanOrEqual(24);
+    }
+  });
+
   // Los tres botones de formato tambien, por el mismo motivo: en una fila
   // de 375 px el texto de ayuda de cada uno no cabria.
   test('los formatos de descarga quedan uno por fila', async ({ page }) => {

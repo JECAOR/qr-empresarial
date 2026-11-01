@@ -290,3 +290,86 @@ describe("publicar y retirar", () => {
     expect(JSON.parse(espia.mock.calls[2][1].body)).toEqual({ activo: false });
   });
 });
+
+// --- Compartir la direccion ---
+//
+// REGRESION. Esta pantalla ofrecia «Copiar enlace» y nada mas. El frontend
+// original ofrece cuatro formas de compartir, y es lo siguiente que se hace
+// despues de generar el codigo: pegarlo en el local esta bien, pero el
+// enlace se manda. Para una PyME aqui, se manda por WhatsApp.
+describe("compartir la direccion", () => {
+  const DIRECCION = "http://api.de.pruebas.invalido/p/panaderia-la-espiga";
+  const INVITACION = `Esta es nuestra página: ${DIRECCION}`;
+
+  it("por WhatsApp, con el enlace dentro del mensaje", async () => {
+    await montar([respuesta({ data: QR() }), imagen()]);
+
+    expect(screen.getByRole("link", { name: "WhatsApp" }))
+      .toHaveAttribute("href", `https://wa.me/?text=${encodeURIComponent(INVITACION)}`);
+  });
+
+  it("por correo, con asunto y cuerpo", async () => {
+    await montar([respuesta({ data: QR() }), imagen()]);
+
+    const enlace = screen.getByRole("link", { name: "Correo" }).getAttribute("href");
+
+    expect(enlace).toContain("mailto:?subject=");
+    expect(enlace).toContain(encodeURIComponent(INVITACION));
+  });
+
+  // Un mensaje que solo trae una direccion parece de los que se mandan solos.
+  it("el mensaje lleva una linea de texto, no el enlace a secas", async () => {
+    await montar([respuesta({ data: QR() }), imagen()]);
+
+    const enlace = screen.getByRole("link", { name: "WhatsApp" }).getAttribute("href");
+
+    expect(decodeURIComponent(enlace)).toContain("Esta es nuestra página:");
+  });
+
+  // Instagram no admite compartir una direccion por enlace: no hay a donde
+  // mandar nada. Lo que sirve es copiarla para la biografia.
+  it("para Instagram copia el enlace, y lo dice", async () => {
+    const escribir = vi.fn().mockResolvedValue(undefined);
+
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText: escribir } });
+
+    await montar([respuesta({ data: QR() }), imagen()]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Instagram" }));
+
+    expect(await screen.findByRole("status"))
+      .toHaveTextContent("Enlace copiado para tu biografía de Instagram");
+    expect(escribir).toHaveBeenCalledWith(DIRECCION);
+  });
+
+  it("avisa si el navegador no deja copiar", async () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error("no")) }
+    });
+
+    await montar([respuesta({ data: QR() }), imagen()]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Instagram" }));
+
+    expect(await screen.findByRole("alert"))
+      .toHaveTextContent("El navegador no dejó copiar el enlace");
+  });
+
+  // Compartir una pagina retirada lleva a quien la abra a un aviso de «no
+  // disponible»: el enlace sigue a la vista para el dueño, pero no se ofrece
+  // mandarlo.
+  it("no se ofrece mientras la pagina esta retirada", async () => {
+    await montar([respuesta({ data: QR({ activo: false }) }), imagen()]);
+
+    expect(screen.queryByRole("link", { name: "WhatsApp" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Correo" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Instagram" })).not.toBeInTheDocument();
+  });
+
+  it("pero copiar el enlace si, que es para el dueño", async () => {
+    await montar([respuesta({ data: QR({ activo: false }) }), imagen()]);
+
+    expect(screen.getByText("Copiar enlace")).toBeInTheDocument();
+  });
+});
