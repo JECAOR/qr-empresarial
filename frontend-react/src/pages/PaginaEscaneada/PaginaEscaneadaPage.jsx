@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { obtenerPerfilPublico, informarEvento } from "../../services/perfilPublicoService";
 import FichaNegocio from "../../components/FichaNegocio/FichaNegocio";
 import TarjetaContenido from "../../components/TarjetaContenido/TarjetaContenido";
+import { aplicarTema, temaGuardado } from "../../styles/tema";
 import "../PerfilPublico/PerfilPublicoPage.css";
 import "./PaginaEscaneadaPage.css";
 
@@ -74,6 +75,26 @@ export default function PaginaEscaneadaPage() {
       vigente = false;
     };
   }, [slug, tipo]);
+
+  // --- El color de marca del negocio (RF-12) ---
+  //
+  // Es el sentido del requisito: quien escanea el codigo ve los colores que
+  // eligio el negocio, no los de la aplicacion.
+  //
+  // No se recuerda. Esta pantalla es la de OTRO negocio, y guardar su color
+  // pintaria con el el panel propio la proxima vez que se abriera la
+  // aplicacion en este navegador. Al salir se repone el que hubiera
+  // guardado -el del negocio propio, si hay sesion-, para que volver al
+  // panel no deje un instante con los colores de otro.
+  const temaDelNegocio = datos?.perfil?.tema;
+
+  useEffect(() => {
+    if (!temaDelNegocio) return undefined;
+
+    aplicarTema(temaDelNegocio, { recordar: false });
+
+    return () => aplicarTema(temaGuardado(), { recordar: false });
+  }, [temaDelNegocio]);
 
   /**
    * Cuenta los clics en los enlaces (RF-11).

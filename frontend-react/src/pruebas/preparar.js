@@ -16,6 +16,12 @@ beforeEach(() => {
   // viaja a la siguiente y aparecen fallos que dependen del orden.
   sessionStorage.clear();
   localStorage.clear();
+
+  // Lo mismo con el color de marca y el titulo de la pestana: viven en el
+  // <html> y en el document, que cleanup() no toca porque no son nodos que
+  // haya montado ninguna prueba.
+  document.documentElement.removeAttribute("data-theme");
+  document.title = "QR Empresarial";
 });
 
 afterEach(() => {

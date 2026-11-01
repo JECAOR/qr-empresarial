@@ -231,4 +231,52 @@ describe("el color de marca", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Tema no válido");
   });
+
+  // REGRESION. El color se guardaba en la base y no se aplicaba en ninguna
+  // parte: se elegia y no cambiaba nada. El texto de la pantalla decia "se
+  // aplica a tu página pública", que no era cierto.
+  //
+  // Sin recargar, a diferencia del frontend original: los colores son
+  // variables CSS, asi que cambiar el atributo repinta la barra, los botones
+  // y la grafica de actividad sin volver a dibujar ningun componente.
+  it("se ve aplicado en el momento, sin recargar", async () => {
+    await montar([
+      respuesta({ data: PERFIL() }),
+      respuesta({ data: PERFIL({ tema: "terracota" }) })
+    ]);
+
+    expect(document.documentElement).not.toHaveAttribute("data-theme");
+
+    await userEvent.click(screen.getByRole("button", { name: /Terracota/ }));
+
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute("data-theme", "terracota"));
+  });
+
+  // Se aplica lo que confirma el servidor y no lo que se pulso: si el
+  // backend normalizara el valor, lo que se ve seria lo guardado.
+  it("aplica lo que confirma el servidor", async () => {
+    await montar([
+      respuesta({ data: PERFIL() }),
+      respuesta({ data: PERFIL({ tema: "teal" }) }) // contesta otro
+    ]);
+
+    await userEvent.click(screen.getByRole("button", { name: /Terracota/ }));
+
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute("data-theme", "teal"));
+  });
+
+  // Si se rechaza, lo que se ve tiene que seguir siendo lo que hay guardado.
+  it("un rechazo no cambia el color", async () => {
+    await montar([
+      respuesta({ data: PERFIL({ tema: "teal" }) }),
+      respuesta({ message: "Tema no válido" }, { status: 400 })
+    ]);
+
+    await userEvent.click(screen.getByRole("button", { name: /Terracota/ }));
+
+    await screen.findByRole("alert");
+    expect(document.documentElement).not.toHaveAttribute("data-theme", "terracota");
+  });
 });

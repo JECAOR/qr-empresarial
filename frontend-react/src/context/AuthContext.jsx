@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { iniciarSesion, cerrarSesion, consultarMiPerfil } from "../services/authService";
 import { CLAVE_TOKEN } from "../services/apiClient";
+import { olvidarTema } from "../styles/tema";
 
 const ContextoAuth = createContext(null);
 
@@ -79,6 +80,12 @@ export function ProveedorAuth({ children }) {
   async function salir() {
     await cerrarSesion();
     setUsuario(null);
+
+    // El color de marca es del negocio, no del navegador. En un equipo
+    // compartido -el caso de la panaderia con un computador en el mostrador-
+    // dejarlo puesto pintaria con los colores de un negocio la pantalla de
+    // quien entre despues.
+    olvidarTema();
   }
 
   /**

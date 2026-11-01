@@ -1,11 +1,9 @@
+import { TEMAS } from "../../../styles/tema";
 import "./SelectorTema.css";
 
-// Los tres que acepta el validador del backend. Cualquier otro da 400.
-const TEMAS = [
-  { valor: "indigo", nombre: "Índigo", color: "#4F46E5" },
-  { valor: "teal", nombre: "Esmeralda", color: "#0B7D73" },
-  { valor: "terracota", nombre: "Terracota", color: "#C2410C" }
-];
+// La lista vive en styles/tema.js, que es quien aplica el color: tenerla dos
+// veces dejaria que la muestra de un boton ensenara un color distinto del
+// que se acaba pintando.
 
 /**
  * El color de marca del negocio.
@@ -13,6 +11,10 @@ const TEMAS = [
  * Se guarda al instante con su propia ruta, sin esperar al boton de guardar
  * del formulario: elegir un color es una decision de un clic, y obligar a
  * confirmarla aparte seria raro.
+ *
+ * El color se ve aplicado en el momento, sin recargar: quien lo elige mira
+ * la barra cambiar de color mientras pulsa. Lo hace PerfilPage llamando a
+ * aplicarTema() en cuanto el servidor confirma.
  */
 export default function SelectorTema({ valor, onElegir, guardando }) {
   return (

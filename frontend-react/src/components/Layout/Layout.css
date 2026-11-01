@@ -22,23 +22,38 @@
   flex-wrap: wrap;
 }
 
+/* Los enlaces van en blanco completo. Estuvieron al 80% de opacidad, para
+   que el de la pantalla actual -que va al 100%- destacara, y a ese valor el
+   contraste solo llegaba sobre el indigo:
+
+     indigo    #4F46E5 → 4,63:1
+     esmeralda #0B7D73 → 3,80:1
+     terracota #C2410C → 3,85:1
+
+   Con los tres temas (RF-12) la barra tiene tres fondos, y a 14px hacen
+   falta 4,5:1. El minimo que habria servido para los tres era 0.92, con el
+   que la diferencia ya no se ve.
+
+   Se queda el subrayado, que es lo que de verdad marca donde estas y no es
+   una diferencia de color: la WCAG pide justamente eso (1.4.1), porque quien
+   no distingue dos tonos de blanco no veria cual es la pantalla actual. */
 .barra__nav a {
   color: var(--white);
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
-  opacity: 0.8;
   padding-bottom: 2px;
   border-bottom: 2px solid transparent;
 }
 
+/* Al pasar por encima se insinua el subrayado en lugar de aclarar el texto:
+   asi el aviso de «esto se puede pulsar» no toca el contraste. */
 .barra__nav a:hover {
-  opacity: 1;
+  border-bottom-color: rgba(255, 255, 255, 0.55);
 }
 
 /* react-router marca con .active el enlace de la pantalla actual */
 .barra__nav a.active {
-  opacity: 1;
   border-bottom-color: var(--white);
 }
 
@@ -62,13 +77,23 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 
-  /* Estaba en 0.75, y a ese valor el blanco sobre el indigo de la barra
-     queda en 4,27:1 —por debajo del 4,5:1 que pide la WCAG para texto
-     pequeño—. A 0.85 son 5,00:1, y sigue leyendose mas apagado que el
-     nombre, que es para lo que estaba la opacidad.
-     Lo encontro la auditoria de axe en pruebas-e2e/accesibilidad.spec.js:
-     la misma falta salia en las nueve pantallas que llevan la barra. */
-  opacity: 0.85;
+  /* Sin opacidad, a proposito.
+
+     Estuvo en 0.75 (4,27:1 sobre el indigo de la barra, por debajo del
+     4,5:1 que pide la WCAG para texto pequeño) y luego en 0.85 (5,00:1).
+     Ese 0.85 se midio cuando la barra era siempre indigo. Desde que la
+     pinta el color de marca del negocio (RF-12) hay tres fondos, y sobre
+     los otros dos no llegaba:
+
+       indigo    #4F46E5 → 5,00:1
+       esmeralda #0B7D73 → 4,09:1
+       terracota #C2410C → 4,15:1
+
+     A opacidad completa son 6,29:1, 5,01:1 y 5,18:1. El valor minimo que
+     habria servido para los tres era 0.92, con el esmeralda en 4,51:1:
+     demasiado justo, y a esa opacidad ya no se nota apagado. El rol se
+     distingue del nombre por lo que de verdad lo distingue —10px, negrita,
+     mayusculas y espaciado—, no por un gris que no se ve. */
 }
 
 .barra__salir,
