@@ -1,6 +1,6 @@
 # Pruebas de extremo a extremo — frontend en React
 
-**189 pruebas en 10 archivos**, con [Playwright](https://playwright.dev) sobre
+**212 pruebas en 11 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium. Corren contra el **paquete compilado**, en un navegador de verdad.
 
 ```bash
@@ -21,7 +21,7 @@ Y en modo interactivo, útil mientras se programa:
 npm run test:e2e:ui
 ```
 
-## Por qué existen, si ya hay 474 pruebas
+## Por qué existen, si ya hay 519 pruebas
 
 Las de Vitest corren en **jsdom, que no es un navegador**. No aplica CSS, no
 tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene
@@ -74,11 +74,12 @@ redibujado, no porque haga falta.
 | `descargar.spec.js` (14) | PNG, SVG, PDF y el CSV de la administración: nombre y primeros bytes del archivo; la vista previa en `blob:`; el portapapeles | jsdom no descarga nada; `createObjectURL` es de pega |
 | `recargar.spec.js` (17) | Recargar cada pantalla, enlaces directos, direcciones que no existen, la sesión al arrancar en frío | no hay recarga, ni pestañas, ni `sessionStorage` entre pruebas |
 | `escaneada.spec.js` (14) | Escaneos, visitas y clics del RF-11, y que el panel del dueño no cuente nada | `sendBeacon` no existe en jsdom |
-| `movil.spec.js` (19) | Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa | Vitest corre con `css: false` y jsdom no maqueta |
-| `accesibilidad.spec.js` (23 × 2) | Auditoría de axe-core en 13 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible | la mitad de las reglas de axe miden contraste y tamaños |
+| `movil.spec.js` (20) | Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa | Vitest corre con `css: false` y jsdom no maqueta |
+| `accesibilidad.spec.js` (24 × 2) | Auditoría de axe-core en 14 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible | la mitad de las reglas de axe miden contraste y tamaños |
 | `tema.spec.js` (19) | El color de marca (RF-12): que la barra se pinte con él, que cambie sin recargar, que no haya parpadeo al recargar, y que quien escanea vea los colores del negocio | jsdom puede ver el atributo, pero no que PINTE: Vitest corre con `css: false` |
 | `titulos.spec.js` (18) | El título de la pestaña en cada pantalla, al navegar y al volver atrás | lo que falla aquí es el cambio al NAVEGAR, y en jsdom cada pantalla se monta sola |
 | `pwa.spec.js` (15) | Que el icono, el manifiesto, `robots.txt` y el sitemap se sirvan de verdad, y que el service worker se registre y abra la aplicación sin conexión | jsdom no pide archivos ni registra service workers |
+| `menu.spec.js` (20) | El recorrido del menú (RF-05): que el botón navegue sin recargar, que la pantalla aguante un enlace directo y una recarga, que Atrás vuelva al perfil, y que el clic en un enlace del menú salga contado | que el contenido quede AGRUPADO es estructura del DOM y se prueba en jsdom; el recorrido y `sendBeacon` no |
 | `ayudas.js` | No es una prueba: es la API simulada y la sesión sembrada | — |
 
 Once de las quince de `pwa.spec.js` solo comprueban que los archivos

@@ -207,7 +207,7 @@
     <tr><td>Ficha</td><td>3336250</td></tr>
     <tr><td>Guías</td><td>Frontend N.º 1 y N.º 2, más los ocho módulos del proyecto</td></tr>
     <tr><td>Repositorio</td><td>github.com/JECAOR/qr-empresarial</td></tr>
-    <tr><td>Versión</td><td>v3.5.0</td></tr>
+    <tr><td>Versión</td><td>v3.6.0</td></tr>
     <tr><td>Fecha</td><td>31 de octubre de 2026</td></tr>
   </table>
   <p class="portada__pie">Todas las capturas de este documento se tomaron contra el servidor real,<br>
@@ -244,6 +244,7 @@
     Formulario/CampoTexto        Etiqueta, campo y ayuda, en una sola pieza
     FichaNegocio/                Datos del negocio; omite los campos vacíos
     TarjetaContenido/            Un bloque: enlace o texto, según su tipo
+    ContenidoPublico/            El contenido publicado, por secciones
     contenido/ListaBloques       Los bloques con su orden y sus acciones
     contenido/FormularioBloque   Alta y edición de un bloque
     usuarios/TablaUsuarios       El listado; en móvil se vuelve fichas
@@ -251,7 +252,7 @@
     perfil/SelectorTema          El color de marca
     estadisticas/GraficaActividad La gráfica diaria, en SVG
     admin/DetalleCuenta          La actividad reciente de una cuenta
-  pages/                         Trece pantallas
+  pages/                         Dieciséis pantallas
   services/                      Once servicios, uno por módulo de la API
   hooks/
     useTemaPropio                El color de marca del negocio con sesión
@@ -301,6 +302,10 @@ carpeta aparte: asi se ve de un vistazo que tiene pruebas y que no.</pre>
     <tr>
       <td>TablaUsuarios</td>
       <td>Bajo 780 px cada fila se convierte en una ficha con el nombre de la columna delante de su valor. Una tabla de siete columnas en un móvil obliga a desplazar la pantalla a lo ancho para alcanzar los botones.</td>
+    </tr>
+    <tr>
+      <td>ContenidoPublico</td>
+      <td>Lo usan las dos pantallas públicas —la portada y la que ve quien escanea el código—, que tienen que enseñar lo mismo: si una separara el contenido por secciones y la otra no, la vista previa del dueño mentiría sobre lo que ve su cliente.</td>
     </tr>
   </table>
   <h3>2.3 Dependencias</h3>
@@ -362,7 +367,7 @@ carpeta aparte: asi se ve de un vistazo que tiene pruebas y que no.</pre>
       <td>Auditoría de accesibilidad sobre la pantalla ya dibujada</td>
     </tr>
   </table>
-  <p>Las de desarrollo no entran en lo que se descarga el visitante. Resultado: <strong>103 KB comprimidos</strong> para trece pantallas —98 de JavaScript y 5 de estilos—, medidos con <code>npm run build</code>.</p>
+  <p>Las de desarrollo no entran en lo que se descarga el visitante. Resultado: <strong>105 KB comprimidos</strong> para dieciséis pantallas —100 de JavaScript y 5 de estilos—, medidos con <code>npm run build</code>.</p>
 </section>
 <section>
   <h2>3. Evidencia de integración con la API</h2>
@@ -566,8 +571,11 @@ Guia React — Frontend N.2   15 peticiones   31 pruebas</pre>
     </tr>
   </table>
   <h3>5.1 Historial de commits del frontend</h3>
-  <p>Treinta commits sobre <code>frontend-react/</code>, del 21 al 31 de octubre de 2026, dentro de un repositorio con <strong>140 commits y 54 etiquetas</strong>. Cada módulo se desarrolló en su propia rama y se integró con <code>merge --no-ff</code>, de modo que la rama queda en el historial en lugar de aplanarse. Debajo, los veinticinco últimos; faltan los primeros, por espacio.</p>
-  <pre>2026-10-31  feat(frontend-react): icono, manifiesto, service worker     v3.5.0
+  <p>Treinta y tres commits sobre <code>frontend-react/</code>, del 21 al 31 de octubre de 2026, dentro de un repositorio con <strong>145 commits y 55 etiquetas</strong>. Cada módulo se desarrolló en su propia rama y se integró con <code>merge --no-ff</code>, de modo que la rama queda en el historial en lugar de aplanarse. Debajo, los veintiocho últimos; faltan los primeros, por espacio.</p>
+  <pre>2026-10-31  feat(backend): el menu lleva sus etiquetas de vista previa  v3.6.0
+2026-10-31  feat(frontend-react): la pantalla del menu del negocio
+2026-10-31  feat(frontend-react): la vista publica separa las secciones
+2026-10-31  feat(frontend-react): icono, manifiesto, service worker     v3.5.0
 2026-10-31  feat(frontend-react): un titulo de pestana por pantalla
 2026-10-31  feat(frontend-react): aplicar el color de marca (RF-12)
 2026-10-31  test(frontend-react): 129 pruebas de extremo a extremo        v3.4.0
@@ -599,11 +607,11 @@ Guia React — Frontend N.2   15 peticiones   31 pruebas</pre>
 cd backend        &amp;&amp; npm install &amp;&amp; npm run dev    # http://localhost:3000
 cd frontend-react &amp;&amp; npm install &amp;&amp; npm run dev    # http://localhost:5173</pre>
   <p>Las pruebas del frontend no necesitan ninguna de las dos cosas: ni base de datos ni servidor. Las de extremo a extremo compilan la aplicacion y la sirven ellas mismas.</p>
-  <pre>cd frontend-react &amp;&amp; npm test          # las 474 en jsdom
+  <pre>cd frontend-react &amp;&amp; npm test          # las 519 en jsdom
 cd frontend-react &amp;&amp; npm run coverage  # con el informe de cobertura
 
 npx playwright install chromium        # solo la primera vez
-cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
+cd frontend-react &amp;&amp; npm run test:e2e  # las 212 en Chromium</pre>
   <p>Cuentas de demostración, las dos con la contraseña <code>Clave123*</code>: <code>admin@caferaices.co</code> (administrador) y <code>contacto@laespiga.co</code> (empresa).</p>
   <h3>5.3 Defectos encontrados y corregidos</h3>
   <p>Construir estas pantallas destapó cinco defectos, cuatro en el propio frontend y uno en el backend. Se documentan porque forman parte del proceso:</p>
@@ -634,7 +642,7 @@ cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
     </tr>
   </table>
   <h3>5.4 Las pruebas automáticas</h3>
-  <p><strong>474 pruebas en 28 archivos</strong>, que tardan medio minuto. Se ejecutan con <code>npm test</code> dentro de <code>frontend-react/</code>. El motor es <strong>Vitest</strong>, que usa la misma configuración que Vite, con <strong>Testing Library</strong> sobre <strong>jsdom</strong>: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS.</p>
+  <p><strong>519 pruebas en 31 archivos</strong>, que tardan medio minuto. Se ejecutan con <code>npm test</code> dentro de <code>frontend-react/</code>. El motor es <strong>Vitest</strong>, que usa la misma configuración que Vite, con <strong>Testing Library</strong> sobre <strong>jsdom</strong>: cada componente se monta de verdad y se consulta como lo haría una persona —por su etiqueta, por su texto, por su papel—, no por el nombre de sus clases CSS.</p>
   <table class="datos">
     <tr>
       <th style="width:40%">Qué se prueba</th>
@@ -642,23 +650,23 @@ cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
       <th>Lo que se comprueba</th>
     </tr>
     <tr>
-      <td>Las quince pantallas</td>
-      <td>204</td>
+      <td>Las dieciséis pantallas</td>
+      <td>230</td>
       <td>El recorrido entero: cargar, escribir, guardar, fallar y reintentar</td>
     </tr>
     <tr>
-      <td>Los doce componentes</td>
-      <td>114</td>
+      <td>Los trece componentes</td>
+      <td>122</td>
       <td>Lo que dibujan con cada dato y con qué avisan al pulsarlos</td>
     </tr>
     <tr>
       <td>Los once servicios</td>
-      <td>90</td>
+      <td>99</td>
       <td>La ruta, el método y el cuerpo de cada llamada, y qué pasa con cada error</td>
     </tr>
     <tr>
       <td>El mapa de rutas</td>
-      <td>28</td>
+      <td>30</td>
       <td>Que cada dirección lleve a su pantalla y que las protegidas lo estén</td>
     </tr>
     <tr>
@@ -765,8 +773,8 @@ cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
 </section>
 <section>
   <h3>5.8 Las pruebas de extremo a extremo</h3>
-  <p><strong>189 pruebas en 10 archivos</strong>, con <strong>Playwright</strong> sobre Chromium, contra el <strong>paquete compilado</strong>. Se ejecutan con <code>npm run test:e2e</code>: compilan la aplicación, la sirven y la apagan al terminar, y no necesitan ni el backend ni MySQL.</p>
-  <p>Existen por lo que dice 5.6. Las 474 de Vitest corren en jsdom, que no es un navegador: no aplica CSS, no tiene arrastre nativo, no descarga archivos, no tiene <code>sendBeacon</code>, no tiene historial ni pestañas, y envuelve cada evento en <code>act()</code>. <strong>Aquí no se repite nada que jsdom pueda contestar</strong>: solo lo que necesita un navegador.</p>
+  <p><strong>212 pruebas en 11 archivos</strong>, con <strong>Playwright</strong> sobre Chromium, contra el <strong>paquete compilado</strong>. Se ejecutan con <code>npm run test:e2e</code>: compilan la aplicación, la sirven y la apagan al terminar, y no necesitan ni el backend ni MySQL.</p>
+  <p>Existen por lo que dice 5.6. Las 519 de Vitest corren en jsdom, que no es un navegador: no aplica CSS, no tiene arrastre nativo, no descarga archivos, no tiene <code>sendBeacon</code>, no tiene historial ni pestañas, y envuelve cada evento en <code>act()</code>. <strong>Aquí no se repite nada que jsdom pueda contestar</strong>: solo lo que necesita un navegador.</p>
   <table class="datos">
     <tr>
       <th style="width:26%">Archivo</th>
@@ -799,13 +807,13 @@ cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
       <td>sendBeacon no existe en jsdom</td>
     </tr>
     <tr>
-      <td>movil (19)</td>
+      <td>movil (20)</td>
       <td>Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa</td>
       <td>Vitest corre con css: false y jsdom no maqueta</td>
     </tr>
     <tr>
-      <td>accesibilidad (23 x 2)</td>
-      <td>Auditoría de axe-core en 13 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible</td>
+      <td>accesibilidad (24 x 2)</td>
+      <td>Auditoría de axe-core en 14 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible</td>
       <td>la mitad de las reglas de axe miden contraste y tamaños</td>
     </tr>
     <tr>
@@ -822,6 +830,11 @@ cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
       <td>pwa (15)</td>
       <td>Que el icono, el manifiesto, robots.txt y el sitemap se sirvan, y que el service worker se registre y abra la aplicación sin conexión</td>
       <td>jsdom no pide archivos ni registra service workers</td>
+    </tr>
+    <tr>
+      <td>menu (20)</td>
+      <td>El recorrido del menú (RF-05): que el botón navegue sin recargar, que la pantalla aguante un enlace directo y una recarga, que Atrás vuelva al perfil y que el clic en un enlace del menú salga contado</td>
+      <td>que el contenido quede agrupado es estructura del DOM y se prueba en jsdom; el recorrido y sendBeacon, no</td>
     </tr>
   </table>
   <p>Las dos últimas corren además con el viewport de un teléfono, porque en una pantalla estrecha cambian el contraste de algunos fondos, el orden visual y el tamaño de lo que hay que pulsar.</p>
@@ -850,8 +863,8 @@ cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
   </table>
   <div class="nota">El primero es el que importa. La prueba de Vitest no podía verlo, y el comentario que acompañaba al código afirmaba —sin haberlo medido— que en el navegador funcionaba bien. Una suite que no puede fallar donde el código está roto no es una red de seguridad: es una afirmación sobre el código escrita en otro sitio.</div>
   <p>La API se simula dentro del navegador, con memoria: reordenar y volver a pedir la lista devuelve el orden nuevo, como haría el servidor. Sin esa memoria, una prueba de reordenar pasaría aunque la pantalla no mandara nada. Y la simulación sale de los servicios del backend, no de lo que le convendría a la prueba: <code>GET /contenido</code> devuelve <code>categoria</code> como objeto y <code>GET /publico/:slug</code> la aplana a una cadena, y simular las dos iguales dejó la pantalla pública en blanco la primera vez. El defecto estaba en la simulación —pero una simulación que no se parece a la API deja pasar exactamente eso en el otro sentido.</p>
-  <h3>5.9 Cuatro cosas que faltaban, y lo que sigue faltando</h3>
-  <p>La versión anterior de este documento declaraba cuatro huecos. Tres eran funcionalidad que el frontend original sí tenía y este no, y se cerraron en la v3.5.0; el cuarto, el título de la pestaña, era un defecto de la aplicación de una sola página. Se dejan escritos porque el valor de la lista era justamente haberlos encontrado.</p>
+  <h3>5.9 Lo que le faltaba a este frontend, y lo que sigue faltando</h3>
+  <p>Seis huecos, encontrados comparando este frontend con el original y cerrados en la v3.5.0 y la v3.6.0. Se dejan escritos en lugar de borrarlos, porque el valor de la lista era justamente haberlos encontrado: durante cinco versiones el servidor publicó una aplicación a la que le faltaban.</p>
   <table class="datos">
     <tr>
       <th style="width:30%">Lo que faltaba</th>
@@ -874,6 +887,40 @@ cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
       <td>El original tenía los cuatro. Con ellos la aplicación se puede instalar y abre sin conexión una vez visitada. El service worker va a red primero y caché de respaldo, y no guarda nada de /api/: son datos de una cuenta y en un equipo compartido la caché devolvería lo de quien usó el navegador antes. El robots.txt importa más aquí que en el original, porque las direcciones de React no son archivos: un robot que pida /contenido recibe un 200, no un 404, así que sin reglas indexaría el panel entero.</td>
     </tr>
   </table>
+  <p>Los dos últimos salieron de comparar pantalla por pantalla los dos frontends, al preguntar si el de React estaba terminado. No lo estaba, y las pruebas no podían decirlo: <strong>una comparación de lo que cada uno sabe hacer dice más que la suma de las pruebas que pasan</strong>.</p>
+  <table class="datos">
+    <tr>
+      <th style="width:30%">Lo que faltaba</th>
+      <th>Qué era y cómo se resolvió</th>
+    </tr>
+    <tr>
+      <td>La vista pública no separaba las secciones</td>
+      <td>La API devuelve el contenido dos veces: la lista plana y el mismo contenido agrupado por sección. Las dos pantallas públicas usaban la primera, así que el dueño repartía su contenido en tres pestañas —Menú principal, Promociones, Reservaciones— y quien visitaba la página no las veía separadas: una promoción y un dato de contacto salían con el mismo aspecto, en la misma lista. Ahora van separadas, con los mismos nombres y el mismo orden que las pestañas del panel, que salen de un único sitio para que no haya dos vocabularios.</td>
+    </tr>
+    <tr>
+      <td>No había pantalla de menú</td>
+      <td>El original tenía una página de menú digital propia —menu.html—, con su botón desde el perfil público: es la parte del RF-05 que separa el menú del resto del contenido. En React no existía esa ruta, y era una pantalla entera de menos. Ahora está en /p/{slug}/menu, con el slug en la dirección y no en la consulta, de modo que el enlace se lee y se puede guardar.</td>
+    </tr>
+  </table>
+  <p>La pantalla del menú no es una copia de la del original. Tres diferencias, y las tres deliberadas:</p>
+  <table class="datos">
+    <tr>
+      <th style="width:30%">Diferencia</th>
+      <th>Por qué</th>
+    </tr>
+    <tr>
+      <td>Los clics se cuentan</td>
+      <td>El original no los contaba: la misma lista de enlaces se medía en la página pública y se perdía al entrar al menú, que es justo donde un restaurante pone los suyos. Lo que no se cuenta es una visita, porque ya se contó en la página de la que se viene: contarla otra vez haría que un visitante apareciera como dos.</td>
+    </tr>
+    <tr>
+      <td>El menú lleva las etiquetas del negocio</td>
+      <td>Es una dirección pública que se comparte igual que el perfil. El reenvío de rutas bastaba para que la pantalla funcionara, pero los robots que leen la vista previa —WhatsApp, Telegram— no ejecutan JavaScript: sin esto, quien pegara el enlace del menú vería la vista previa genérica de la aplicación. El original tampoco las lleva.</td>
+    </tr>
+    <tr>
+      <td>El botón no está en la portada</td>
+      <td>La portada ya enseña todas las secciones enteras y es la herramienta del dueño. Llevarlo allí lo mandaría al recorrido público, donde sus propios clics sí se cuentan.</td>
+    </tr>
+  </table>
   <p><strong>Lo que sigue faltando</strong>, y no se ha resuelto:</p>
   <table class="datos">
     <tr>
@@ -888,16 +935,8 @@ cd frontend-react &amp;&amp; npm run test:e2e  # las 189 en Chromium</pre>
       <td>El doble paso de StrictMode, en el navegador</td>
       <td>Solo ocurre en desarrollo, y las de extremo a extremo corren contra el paquete compilado. Ese caso lo cubre Vitest.</td>
     </tr>
-    <tr>
-      <td>La vista pública no separa las secciones</td>
-      <td>La API devuelve el contenido agrupado por sección —porSeccion— y la pantalla lo dibuja en una sola lista plana. El panel sí organiza el contenido en tres pestañas (Menú principal, Promociones, Reservaciones), así que quien publica las usa y quien visita no las ve separadas.</td>
-    </tr>
-    <tr>
-      <td>No hay pantalla de menú</td>
-      <td>El original tenía una página de menú digital propia, con su enlace desde el perfil público, que es la parte del RF-05 que la separa del resto del contenido. En React no existe esa ruta. Es consecuencia de lo anterior, pero es una pantalla entera menos.</td>
-    </tr>
   </table>
-  <div class="nota">Las dos últimas se encontraron comparando pantalla por pantalla los dos frontends, al preguntar si el de React estaba terminado. No lo estaba: una comparación de lo que cada uno sabe hacer dice más que la suma de las pruebas que pasan.</div>
+  <div class="nota">Esta lista es lo que encontró la comparación con el frontend original, pantalla por pantalla. No es una declaración de que no quede nada: es lo que se buscó y lo que se halló.</div>
 </section>
 
 </body>

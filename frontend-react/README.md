@@ -56,6 +56,45 @@ los tres estados que exige la guía.
 El campo de texto permite consultar cualquier otro negocio, y sirve para
 provocar el error sin tocar el código.
 
+**El contenido va separado por secciones (RF-05).** La API lo devuelve dos
+veces: `contenido`, la lista plana, y `porSeccion`, el mismo contenido
+agrupado. Estas pantallas usaban la primera y pintaban los bloques uno detrás
+de otro, así que el dueño repartía su contenido en tres pestañas —Menú
+principal, Promociones, Reservaciones— y quien visitaba la página no las veía
+separadas: una promoción y un dato de contacto salían con el mismo aspecto, en
+la misma lista.
+
+Los nombres y el orden salen del mismo sitio que las pestañas del panel
+—`SECCIONES`, en `contenidoService`—, para que no haya dos vocabularios. Una
+sección vacía no saca su título, y una que esta lista no conozca se pinta con
+su nombre tal cual: el validador del backend acepta cualquier cadena en
+`seccion`, y el contenido está publicado aunque la etiqueta sea rara.
+
+**`/p/:slug/menu` — el menú del negocio** (RF-05), a donde lleva el botón «Ver
+menú completo». El frontend original la tenía —`menu.html`— y el de React no:
+era una pantalla entera de menos, con el servidor publicando ya el de React.
+
+Enseña solo los bloques de la sección «menu». No hay precios: el contenido del
+RF-05 son títulos y detalles, no artículos con tarifa, y poner una columna de
+precios obligaría a inventarlos.
+
+Tres decisiones que la separan del original:
+
+- **El slug va en la dirección y no en la consulta.** El original usaba
+  `/menu.html?slug=...`; aquí el menú cuelga del perfil del negocio, así que
+  el enlace se lee, se guarda como marcador y dice de quién es.
+- **Los clics se cuentan.** El original no los contaba: la misma lista de
+  enlaces se medía en la página pública y se perdía al entrar al menú, que es
+  justo donde un restaurante pone los suyos. Lo que no se cuenta es una
+  visita, porque ya se contó en la página de la que se viene: contarla otra
+  vez haría que un visitante apareciera como dos.
+- **El botón solo aparece si hay menú.** Uno que lleva a una pantalla vacía es
+  peor que no ofrecerlo.
+
+El botón no está en `/`, y es a propósito: esa pantalla ya enseña todas las
+secciones enteras y es la herramienta del dueño. Llevarlo allí lo mandaría al
+recorrido público, donde sus propios clics sí se cuentan.
+
 **`/login` — la entrada.** Guarda el token y el usuario en `sessionStorage`, de
 modo que la sesión muere al cerrar la pestaña. Al entrar manda a cada quien
 donde tiene algo que hacer: un administrador a la gestión de usuarios, una
@@ -234,7 +273,7 @@ no sabe limpiarse. En producción se ejecuta una sola vez.
 ## El título, el icono y la instalación
 
 Tres cosas que una aplicación de una sola página pierde sin darse cuenta,
-porque las trece pantallas comparten un `index.html`.
+porque las dieciséis pantallas comparten un `index.html`.
 
 **El título de la pestaña.** Decía `QR Empresarial — perfil público` en todas:
 en el login, en el panel y en la gestión de usuarios. El original tenía doce
@@ -284,7 +323,7 @@ búsqueda—. Lo que sí interesa indexar es `/p/`, que es el producto.
 
 ## Las pruebas
 
-**474 en jsdom y 189 en un navegador de verdad.** Las primeras, con
+**519 en jsdom y 212 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -304,10 +343,11 @@ de un vistazo qué tiene pruebas y qué no.
 
 | Qué se prueba | Pruebas |
 |---|---:|
-| Las quince pantallas | 194 |
-| Los doce componentes | 108 |
-| Los once servicios | 90 |
-| El mapa de rutas | 28 |
+| Las dieciséis pantallas | 230 |
+| Los trece componentes | 122 |
+| Los once servicios | 99 |
+| El mapa de rutas | 30 |
+| El color de marca y el título | 19 |
 | El contexto de sesión | 11 |
 | El guardia de rutas | 8 |
 
@@ -363,7 +403,7 @@ dice que manda.
 
 ## Las pruebas de extremo a extremo
 
-**189 pruebas en 10 archivos**, con [Playwright](https://playwright.dev) sobre
+**212 pruebas en 11 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium, contra el paquete compilado:
 
 ```bash
