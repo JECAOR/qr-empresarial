@@ -26,13 +26,30 @@ export default defineConfig({
   // dist viejo daria por buena una pantalla que ya no existe. Lo segundo
   // porque dist/ es lo que publica Express: dejarselo con la configuracion de
   // las pruebas le cambiaria la direccion de la API sin avisar.
-  webServer: {
-    command: 'npm run build -- --mode e2e --outDir dist-e2e'
-      + ' && npx vite preview --mode e2e --outDir dist-e2e --port 4174 --strictPort',
-    url: 'http://localhost:4174/login',
-    reuseExistingServer: false,
-    timeout: 120000,
-  },
+  webServer: [
+    {
+      command: 'npm run build -- --mode e2e --outDir dist-e2e'
+        + ' && npx vite preview --mode e2e --outDir dist-e2e --port 4174 --strictPort',
+      url: 'http://localhost:4174/login',
+      reuseExistingServer: false,
+      timeout: 120000,
+    },
+
+    // El servidor de DESARROLLO, solo para el proyecto del mismo nombre.
+    //
+    // Hace falta porque StrictMode duplica los efectos unicamente en
+    // desarrollo: React lo quita del paquete compilado, asi que contra el
+    // servidor de arriba no hay doble paso que mirar. Es el unico sitio
+    // donde estas pruebas no corren contra lo que se publica, y es a
+    // proposito: lo que se comprueba aqui es precisamente una conducta que
+    // solo existe mientras se programa.
+    {
+      command: 'npx vite --mode e2e-dev --port 5174 --strictPort',
+      url: 'http://localhost:5174/login',
+      reuseExistingServer: false,
+      timeout: 120000,
+    },
+  ],
 
   use: {
     baseURL: 'http://localhost:4174',
@@ -54,7 +71,7 @@ export default defineConfig({
     {
       name: 'Escritorio',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } },
-      testIgnore: /movil\.spec\.js/,
+      testIgnore: /(movil|desarrollo)\.spec\.js/,
     },
     // WebKit de verdad, que es el motor de Safari y el unico que hay en un
     // iPhone: alli hasta Chrome y Firefox lo usan por dentro. Durante varias
@@ -71,6 +88,14 @@ export default defineConfig({
       // visual y el tamaño de lo que hay que pulsar, que son tres de las
       // cosas que axe mide.
       testMatch: /(movil|accesibilidad)\.spec\.js/,
+    },
+
+    // Contra el servidor de desarrollo, no contra el paquete compilado: es
+    // donde StrictMode monta cada componente dos veces.
+    {
+      name: 'Desarrollo',
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:5174' },
+      testMatch: /desarrollo\.spec\.js/,
     },
   ],
 });
