@@ -363,3 +363,49 @@ describe("darse de baja", () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 });
+
+// REGRESION. Despues de guardar, la pantalla vuelve a preguntar quien eres
+// para que la barra ensene el nombre nuevo. Esa segunda peticion no estaba
+// atendida: si fallaba, quedaba un rechazo sin capturar, la barra se quedaba
+// con el nombre viejo y nada lo decia.
+describe("cuando guarda bien pero no puede releer la cuenta", () => {
+  it("no convierte el exito en error: los datos si se guardaron", async () => {
+    const silencio = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await montar([
+      respuesta({ data: {} }),                                    // el guardado, bien
+      respuesta({ message: "Sesión caducada" }, { status: 401 }), // el refresco, mal
+      respuesta(null, { status: 204 })                            // el logout que dispara
+    ]);
+
+    await userEvent.clear(screen.getByLabelText("Nombre"));
+    await userEvent.type(screen.getByLabelText("Nombre"), "La Espiga S.A.S");
+    await userEvent.click(screen.getByText("Guardar datos"));
+
+    const aviso = await screen.findByRole("status");
+
+    expect(aviso).toHaveTextContent("Datos guardados");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    silencio.mockRestore();
+  });
+
+  // Pero tampoco se calla: la barra se va a quedar con el nombre anterior.
+  it("avisa de que la barra seguira con el nombre viejo", async () => {
+    const silencio = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await montar([
+      respuesta({ data: {} }),
+      respuesta({ message: "Sesión caducada" }, { status: 401 }),
+      respuesta(null, { status: 204 })
+    ]);
+
+    await userEvent.clear(screen.getByLabelText("Nombre"));
+    await userEvent.type(screen.getByLabelText("Nombre"), "La Espiga S.A.S");
+    await userEvent.click(screen.getByText("Guardar datos"));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("hasta que recargues");
+
+    silencio.mockRestore();
+  });
+});

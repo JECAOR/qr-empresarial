@@ -88,7 +88,13 @@ describe("al abrir", () => {
 
   // Si la API volviera a devolver otra cosa -paso con las filas crudas de
   // MySQL-, es mejor decirlo que dejar la pantalla en blanco.
-  it("avisa si la API no devuelve una lista", async () => {
+  //
+  // REGRESION. El aviso decia "GET /usuarios no devolvio una lista", que es
+  // un mensaje para quien programa. Quien ve esta pantalla administra un
+  // sistema, no lo depura: el detalle tecnico va a la consola.
+  it("avisa si la API no devuelve una lista, sin hablar de endpoints", async () => {
+    const consola = vi.spyOn(console, "error").mockImplementation(() => {});
+
     sessionStorage.setItem(CLAVE_TOKEN, "jwt");
 
     simularFetch([
@@ -108,8 +114,18 @@ describe("al abrir", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole("alert"))
-      .toHaveTextContent("GET /usuarios no devolvió una lista");
+    const aviso = await screen.findByRole("alert");
+
+    expect(aviso).toHaveTextContent("No se pudo leer la lista de cuentas");
+    expect(aviso).not.toHaveTextContent("GET");
+
+    // El detalle sigue existiendo, donde sirve
+    expect(consola).toHaveBeenCalledWith(
+      "GET /usuarios no devolvió una lista:",
+      expect.anything()
+    );
+
+    consola.mockRestore();
   });
 });
 

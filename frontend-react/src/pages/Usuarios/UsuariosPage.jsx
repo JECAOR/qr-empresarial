@@ -33,7 +33,14 @@ export default function UsuariosPage() {
     const resultado = await listarUsuarios();
 
     if (!Array.isArray(resultado?.data)) {
-      throw new Error("GET /usuarios no devolvió una lista");
+      // El detalle tecnico va a la consola, que es donde sirve. Lo que se
+      // ensena en pantalla tiene que poder leerlo quien atiende un negocio:
+      // "GET /usuarios no devolvio una lista" no le dice que hacer.
+      console.error("GET /usuarios no devolvió una lista:", resultado);
+
+      throw new Error(
+        "No se pudo leer la lista de cuentas: el servidor respondió algo inesperado. Vuelve a intentarlo en un momento."
+      );
     }
 
     setUsuarios(resultado.data);

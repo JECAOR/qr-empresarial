@@ -118,7 +118,19 @@ export default function ConfiguracionPage() {
 
       // La barra de navegacion ensena el nombre: sin esto seguiria con el
       // viejo hasta recargar la pagina.
-      await refrescar();
+      //
+      // Va con su try: los datos YA quedaron guardados, asi que un fallo
+      // aqui no convierte el exito en error -decir "no se guardo" seria
+      // mentir- pero tampoco puede desaparecer. Sin esta captura era un
+      // rechazo sin atender: la barra se quedaba con el nombre viejo y nadie
+      // decia nada.
+      try {
+        await refrescar();
+      } catch (fallo) {
+        console.warn("No se pudo releer la cuenta tras guardarla:", fallo.message);
+
+        setAviso("Datos guardados. La barra seguirá con el nombre anterior hasta que recargues.");
+      }
     }
   }
 

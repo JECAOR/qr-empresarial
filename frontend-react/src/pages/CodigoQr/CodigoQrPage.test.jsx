@@ -373,3 +373,56 @@ describe("compartir la direccion", () => {
     expect(screen.getByText("Copiar enlace")).toBeInTheDocument();
   });
 });
+
+// REGRESION. Las dos formas de copiar no limpiaban los mensajes anteriores,
+// asi que copiar despues de un fallo dejaba el aviso bueno y el error viejo
+// en pantalla a la vez, uno debajo del otro. Es el mismo defecto que ya se
+// habia corregido en la pantalla de entrar.
+describe("un mensaje a la vez", () => {
+  it("copiar el enlace borra el error anterior", async () => {
+    const escribir = vi.fn().mockResolvedValue(undefined);
+
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText: escribir } });
+
+    const { espia } = await montar([
+      respuesta({ data: QR() }),
+      imagen(),
+      respuesta({ message: "El código no existe" }, { status: 404 })
+    ]);
+
+    // Se espera a que la vista previa termine: si no, el clic se lleva la
+    // respuesta que le tocaba a ella.
+    await waitFor(() => expect(espia).toHaveBeenCalledTimes(2));
+
+    // Primero se provoca un error con la descarga
+    await userEvent.click(screen.getByText("PNG"));
+    await screen.findByRole("alert");
+
+    await userEvent.click(screen.getByText("Copiar enlace"));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Enlace copiado");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("y el de Instagram tambien", async () => {
+    const escribir = vi.fn().mockResolvedValue(undefined);
+
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText: escribir } });
+
+    const { espia } = await montar([
+      respuesta({ data: QR() }),
+      imagen(),
+      respuesta({ message: "El código no existe" }, { status: 404 })
+    ]);
+
+    await waitFor(() => expect(espia).toHaveBeenCalledTimes(2));
+
+    await userEvent.click(screen.getByText("PNG"));
+    await screen.findByRole("alert");
+
+    await userEvent.click(screen.getByRole("button", { name: "Instagram" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("biografía de Instagram");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
