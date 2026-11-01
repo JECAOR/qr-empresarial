@@ -259,6 +259,35 @@ siCompilado('la pagina del codigo QR (/p/:slug)', () => {
     expect(respuesta.text).not.toContain('METADATOS:INICIO');
   });
 
+  // El menu es una direccion publica que se comparte igual que el perfil. Sin
+  // esto, quien pegara su enlace en WhatsApp veria la vista previa generica:
+  // el reenvio de rutas de React basta para que la pantalla funcione, pero
+  // los robots que leen la vista previa no ejecutan JavaScript.
+  it('el menu del negocio lleva las mismas etiquetas que su perfil', async () => {
+    const respuesta = await request(app).get(`/p/${slug}/menu`);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.text).toContain('og:title" content="Panaderia De Prueba"');
+    expect(respuesta.text).toContain('id="root"');
+  });
+
+  it('y tampoco revela si el negocio existe', async () => {
+    const respuesta = await request(app).get('/p/no-existe-este-negocio-de-prueba/menu');
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.text).toContain('noindex');
+  });
+
+  // Una direccion con un segmento de mas no es el menu de nada: la resuelve
+  // el enrutador de React, que dira que no existe.
+  it('un segmento de mas cae en el reenvio, sin etiquetas del negocio', async () => {
+    const respuesta = await request(app).get(`/p/${slug}/menu/otra-cosa`);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.text).toContain('id="root"');
+    expect(respuesta.text).not.toContain('og:title" content="Panaderia De Prueba"');
+  });
+
   it('el index.html compilado conserva las marcas', () => {
     const html = fs.readFileSync(path.join(frontend.CARPETA, 'index.html'), 'utf8');
 
