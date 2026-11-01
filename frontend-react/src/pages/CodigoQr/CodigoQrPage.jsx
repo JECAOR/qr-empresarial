@@ -18,6 +18,11 @@ const COLORES = [
   { valor: "#C2410C", nombre: "Terracota" }
 ];
 
+// El asunto del correo. Generico a proposito: esta pantalla no pide el
+// perfil, y traerlo solo para poner el nombre del negocio en un asunto seria
+// una peticion mas en cada carga.
+const ASUNTO = "Nuestra página";
+
 const FORMATOS = [
   { valor: "png", nombre: "PNG", ayuda: "Para redes y pantallas" },
   { valor: "svg", nombre: "SVG", ayuda: "Para imprimir a cualquier tamaño" },
@@ -177,6 +182,22 @@ export default function CodigoQrPage() {
     }
   }
 
+  /**
+   * Instagram no admite compartir una direccion por enlace: no hay un
+   * instagram.com/share al que mandar nada. Lo que sirve de verdad es copiar
+   * el enlace para pegarlo en la biografia, que es donde un negocio lo pone.
+   *
+   * Se avisa de eso en lugar de ofrecer un boton que no haria nada.
+   */
+  async function copiarParaInstagram() {
+    try {
+      await navigator.clipboard.writeText(direccion);
+      setAviso("Enlace copiado para tu biografía de Instagram");
+    } catch {
+      setError("El navegador no dejó copiar el enlace");
+    }
+  }
+
   if (cargando) {
     return (
       <main className="qr">
@@ -187,6 +208,11 @@ export default function CodigoQrPage() {
 
   // La API devuelve la ruta relativa; quien escanea necesita el enlace entero
   const direccion = qr ? `${origenDelBackend()}${qr.url}` : "";
+
+  // Lo que se manda al compartir. Con una linea de texto delante y no el
+  // enlace a secas: un mensaje que solo trae una direccion parece de los que
+  // se mandan solos.
+  const invitacion = `Esta es nuestra página: ${direccion}`;
 
   return (
     <main className="qr">
@@ -241,6 +267,34 @@ export default function CodigoQrPage() {
                 <button type="button" onClick={copiarEnlace}>Copiar enlace</button>
                 <a href={direccion} target="_blank" rel="noreferrer noopener">Abrirla</a>
               </div>
+
+              {/* Compartir la direccion, que es lo siguiente que se hace
+                  despues de generar el codigo: pegarlo en un local esta bien,
+                  pero el enlace se manda. Solo mientras la pagina este
+                  publicada: compartir una retirada lleva a quien la abra a un
+                  aviso de «no disponible». */}
+              {qr.activo && (
+                <>
+                  <p className="qr__etiqueta">Compartir</p>
+
+                  <div className="qr__acciones">
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(invitacion)}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      WhatsApp
+                    </a>
+
+                    <a href={`mailto:?subject=${encodeURIComponent(ASUNTO)}`
+                      + `&body=${encodeURIComponent(invitacion)}`}>
+                      Correo
+                    </a>
+
+                    <button type="button" onClick={copiarParaInstagram}>Instagram</button>
+                  </div>
+                </>
+              )}
 
               <p className="qr__etiqueta">Color</p>
               <div className="qr__colores">
