@@ -25,6 +25,7 @@ const PANTALLAS = [
   '/actividad',
   '/configuracion',
   '/p/panaderia-la-espiga',
+  '/p/panaderia-la-espiga/menu',
   '/login',
   '/registro'
 ];

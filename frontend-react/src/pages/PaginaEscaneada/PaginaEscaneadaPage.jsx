@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { obtenerPerfilPublico, informarEvento } from "../../services/perfilPublicoService";
 import FichaNegocio from "../../components/FichaNegocio/FichaNegocio";
-import TarjetaContenido from "../../components/TarjetaContenido/TarjetaContenido";
+import ContenidoPublico from "../../components/ContenidoPublico/ContenidoPublico";
+import { SECCION_MENU } from "../../services/contenidoService";
 import useTitulo from "../../hooks/useTitulo";
 import { aplicarTema, temaGuardado } from "../../styles/tema";
 import "../PerfilPublico/PerfilPublicoPage.css";
@@ -102,6 +103,10 @@ export default function PaginaEscaneadaPage() {
     return () => aplicarTema(temaGuardado(), { recordar: false });
   }, [temaDelNegocio]);
 
+  // El menu tiene pantalla propia (RF-05), igual que en el frontend
+  // original. Se ofrece solo si el negocio publico algo en esa seccion.
+  const hayMenu = datos?.porSeccion?.[SECCION_MENU]?.length > 0;
+
   /**
    * Cuenta los clics en los enlaces (RF-11).
    *
@@ -149,20 +154,21 @@ export default function PaginaEscaneadaPage() {
           Este perfil todavía no tiene contenido publicado.
         </p>
       ) : (
-        // El onClick va en el contenedor, no en cada tarjeta: ver contarClic
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
-        <div className="escaneada__bloques" onClick={contarClic}>
-          {datos.contenido.map((bloque) => (
-            <TarjetaContenido
-              key={bloque.id}
-              id={bloque.id}
-              titulo={bloque.titulo}
-              detalle={bloque.detalle}
-              categoria={bloque.categoria}
-              tipo={bloque.tipo}
-            />
-          ))}
-        </div>
+        <>
+          {/* Solo si hay menu: un boton que lleva a una pantalla vacia es
+              peor que no ofrecerlo. */}
+          {hayMenu && (
+            <Link className="escaneada__menu" to={`/p/${slug}/menu`}>
+              Ver menú completo
+            </Link>
+          )}
+
+          {/* El onClick va en el contenedor, no en cada tarjeta: ver contarClic */}
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
+          <div className="escaneada__bloques" onClick={contarClic}>
+            <ContenidoPublico porSeccion={datos.porSeccion} />
+          </div>
+        </>
       )}
     </main>
   );

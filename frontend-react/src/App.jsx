@@ -4,6 +4,7 @@ import Layout from "./components/Layout/Layout";
 import RutaProtegida from "./components/RutaProtegida/RutaProtegida";
 import PerfilPublicoPage from "./pages/PerfilPublico/PerfilPublicoPage";
 import PaginaEscaneadaPage from "./pages/PaginaEscaneada/PaginaEscaneadaPage";
+import MenuPage from "./pages/Menu/MenuPage";
 import LoginPage from "./pages/Login/LoginPage";
 import RegistroPage from "./pages/Cuenta/RegistroPage";
 import RecuperarPage from "./pages/Cuenta/RecuperarPage";
@@ -39,6 +40,12 @@ export default function App() {
           proposito: quien escanea no viene a navegar por la aplicacion, y una
           barra con "Mi negocio" y "Salir" solo le confundiria. */}
       <Route path="/p/:slug" element={<PaginaEscaneadaPage />} />
+
+      {/* El menu del negocio (RF-05). Debajo de su perfil y no en /menu
+          suelta: el menu es de un negocio, y sin el slug no se sabria de
+          cual. El frontend original lo pasaba por la consulta
+          -/menu.html?slug=...-, que no se puede leer ni guardar igual. */}
+      <Route path="/p/:slug/menu" element={<MenuPage />} />
 
       <Route element={<Layout />}>
         <Route path="/" element={<PerfilPublicoPage />} />

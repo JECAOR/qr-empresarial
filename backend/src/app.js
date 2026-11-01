@@ -75,7 +75,7 @@ app.use(express.static(frontend.CARPETA));
 // El slug no se toca aqui. Se entrega siempre la misma pantalla, exista el
 // perfil o no, y es la pantalla la que muestra el aviso si no hay nada: asi
 // esta ruta no revela que slugs estan registrados.
-app.get('/p/:slug', async (req, res, next) => {
+async function entregarPantallaPublica(req, res) {
   const archivo = frontend.PANTALLA_PUBLICA;
 
   try {
@@ -93,7 +93,25 @@ app.get('/p/:slug', async (req, res, next) => {
 
     res.sendFile(archivo);
   }
-});
+}
+
+app.get('/p/:slug', entregarPantallaPublica);
+
+// El menu del negocio (RF-05), que en el frontend en React es una pantalla
+// aparte: /p/:slug/menu.
+//
+// Lleva las mismas etiquetas que el perfil, y hace falta que las lleve: es
+// una direccion publica que se comparte igual que la otra, y sin esto quien
+// pegara el enlace del menu en WhatsApp veria la vista previa generica de la
+// aplicacion en lugar de la del negocio. Con el reenvio de rutas de React
+// bastaba para que la pantalla funcionara -entrega el index.html-, pero los
+// robots que leen la vista previa no ejecutan JavaScript.
+//
+// En el frontend original no aplica: alli el menu es menu.html, un archivo
+// que sirve express.static, y lleva la vista previa generica.
+if (frontend.EN_REACT) {
+  app.get('/p/:slug/menu', entregarPantallaPublica);
+}
 
 // Endpoint de comprobacion: verifica que la API esta en funcionamiento
 app.get('/api/health', (req, res) => {

@@ -44,6 +44,19 @@ function montar(ruta, usuario = null) {
       });
     }
 
+    // Las pantallas públicas leen data.perfil y data.porSeccion: con una
+    // lista vacía revientan antes de llegar a dibujarse, y la prueba diría
+    // que la ruta está mal cuando lo que falta es el dato.
+    if (url.includes("/publico/")) {
+      return respuesta({
+        data: {
+          perfil: { nombreNegocio: "Panadería La Espiga", slug: "panaderia-la-espiga" },
+          contenido: [],
+          porSeccion: {}
+        }
+      });
+    }
+
     return respuesta({ data: [] });
   });
 
@@ -70,6 +83,24 @@ describe("las rutas abiertas", () => {
     montar("/p/panaderia-la-espiga");
 
     await waitFor(() => expect(screen.queryByText("Perfil público")).not.toBeInTheDocument());
+  });
+
+  // El menú del negocio (RF-05). Debajo de su perfil y no en /menu suelta: el
+  // menú es de un negocio, y sin el slug no se sabría de cuál.
+  it("/p/:slug/menu entrega el menu de ese negocio", async () => {
+    montar("/p/panaderia-la-espiga/menu");
+
+    expect(await screen.findByRole("link", { name: "Volver al perfil" }))
+      .toHaveAttribute("href", "/p/panaderia-la-espiga");
+  });
+
+  // Sin esto, /p/:slug/menu caeria en la pantalla del negocio -que ignoraria
+  // el segmento de mas- o en la de "no existe", y las dos parecen correctas.
+  it("y no se confunde con la pagina del negocio", async () => {
+    montar("/p/panaderia-la-espiga/menu");
+
+    await screen.findByRole("link", { name: "Volver al perfil" });
+    expect(screen.queryByText(/Dirección pública del negocio/)).not.toBeInTheDocument();
   });
 
   it.each([

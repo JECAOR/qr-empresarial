@@ -7,7 +7,8 @@ import {
   actualizarContenido,
   cambiarEstadoContenido,
   eliminarContenido,
-  reordenarContenido
+  reordenarContenido,
+  SECCIONES
 } from "../../services/contenidoService";
 import FormularioBloque from "../../components/contenido/FormularioBloque/FormularioBloque";
 import ListaBloques from "../../components/contenido/ListaBloques/ListaBloques";
@@ -16,12 +17,6 @@ import "./ContenidoPage.css";
 
 // Las mismas tres del frontend original, para que un perfil se vea igual en
 // las dos aplicaciones.
-const SECCIONES = [
-  { id: "menu", nombre: "Menú principal" },
-  { id: "promos", nombre: "Promociones" },
-  { id: "reservas", nombre: "Reservaciones" }
-];
-
 export default function ContenidoPage() {
   useTitulo("Contenido");
 

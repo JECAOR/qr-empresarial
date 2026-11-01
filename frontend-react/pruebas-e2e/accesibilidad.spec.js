@@ -51,6 +51,7 @@ const SIN_SESION = [
   { ruta: '/registro', listo: (page) => page.getByRole('heading', { name: 'Crear una cuenta' }) },
   { ruta: '/recuperar', listo: (page) => page.getByRole('heading', { name: /contraseña/i }) },
   { ruta: '/p/panaderia-la-espiga', listo: (page) => page.getByRole('heading', { name: 'Panadería La Espiga' }) },
+  { ruta: '/p/panaderia-la-espiga/menu', listo: (page) => page.getByRole('heading', { level: 1, name: 'Panadería La Espiga' }) },
   { ruta: '/esto-no-existe', listo: (page) => page.getByRole('heading', { name: 'Esta página no existe' }) }
 ];
 

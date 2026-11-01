@@ -12,19 +12,22 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import PerfilPublicoPage from "./PerfilPublicoPage";
-import { respuesta, simularFetch } from "../../pruebas/ayudas";
+import { agruparPorSeccion, respuesta, simularFetch } from "../../pruebas/ayudas";
 
+// Las dos formas en que llega el contenido, igual que en publico.service.js:
+// la lista plana y la misma lista agrupada. La pantalla usa la agrupada.
 const PERFIL = (nombre = "Panadería La Espiga", contenido = []) => respuesta({
   data: {
     perfil: { nombreNegocio: nombre, categoria: "Panadería", telefono: "+57 301 222 3344" },
     contenido,
-    porSeccion: {}
+    porSeccion: agruparPorSeccion(contenido)
   }
 });
 
 const BLOQUES = [
-  { id: "enlace-1", titulo: "Escríbenos", detalle: "https://wa.me/57300", categoria: "WhatsApp", tipo: "enlace" },
-  { id: "elemento-2", titulo: "Horneamos cada mañana", detalle: "Pan de masa madre", categoria: "Texto", tipo: "texto" }
+  { id: "enlace-1", seccion: "menu", titulo: "Escríbenos", detalle: "https://wa.me/57300", categoria: "WhatsApp", tipo: "enlace" },
+  { id: "elemento-2", seccion: "menu", titulo: "Horneamos cada mañana", detalle: "Pan de masa madre", categoria: "Texto", tipo: "texto" },
+  { id: "enlace-3", seccion: "promos", titulo: "Combo desayuno", detalle: "https://laespiga.co/combo", categoria: "Sitio web", tipo: "enlace" }
 ];
 
 const montar = (ruta = "/") =>
@@ -217,5 +220,60 @@ describe("cuando el negocio no existe", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/Escriba la dirección/);
     expect(espia).toHaveBeenCalledTimes(1);
+  });
+});
+
+// --- El contenido por secciones (RF-05) ---
+//
+// Esta pantalla es la vista previa de lo que verá quien escanee el código, y
+// antes lo pintaba todo en una sola lista plana aunque la API lo devolviera
+// agrupado.
+describe("las secciones", () => {
+  it("separa el contenido con el nombre de cada seccion", async () => {
+    simularFetch([PERFIL("Panadería La Espiga", BLOQUES)]);
+
+    montar();
+
+    expect(await screen.findByRole("heading", { name: "Menú principal" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Promociones" })).toBeInTheDocument();
+  });
+
+  it("cada bloque queda dentro de su seccion", async () => {
+    simularFetch([PERFIL("Panadería La Espiga", BLOQUES)]);
+
+    montar();
+
+    await screen.findByRole("heading", { name: "Menú principal" });
+
+    const [menu, promos] = screen.getAllByRole("heading", { level: 2 })
+      .filter((h) => ["Menú principal", "Promociones"].includes(h.textContent))
+      .map((h) => h.closest("section"));
+
+    expect(menu).toHaveTextContent("Escríbenos");
+    expect(promos).toHaveTextContent("Combo desayuno");
+    expect(menu).not.toHaveTextContent("Combo desayuno");
+  });
+
+  // Aquí no hay botón «Ver menú completo», y es a propósito: esta pantalla ya
+  // enseña todas las secciones enteras, y es la herramienta del dueño. El
+  // botón vive en /p/:slug, que es donde una pantalla de teléfono se queda
+  // larga. Llevarlo aquí mandaría al dueño al recorrido público, donde sus
+  // propios clics sí se cuentan.
+  it("no ofrece el boton del menu: esta pantalla ya lo enseña todo", async () => {
+    simularFetch([PERFIL("Panadería La Espiga", BLOQUES)]);
+
+    montar();
+
+    await screen.findByRole("heading", { name: "Menú principal" });
+    expect(screen.queryByRole("link", { name: "Ver menú completo" })).not.toBeInTheDocument();
+  });
+
+  it("sin contenido lo dice, con su encabezado", async () => {
+    simularFetch([PERFIL("Panadería La Espiga", [])]);
+
+    montar();
+
+    expect(await screen.findByText(/todavía no tiene contenido publicado/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Contenido publicado" })).toBeInTheDocument();
   });
 });

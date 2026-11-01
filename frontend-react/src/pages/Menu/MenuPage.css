@@ -1,0 +1,39 @@
+/* Igual de estrecha que la pagina publica: se lee en un telefono. */
+.menu {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.menu__volver {
+  display: inline-block;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 16px;
+}
+
+.menu__volver::before {
+  content: "‹ ";
+}
+
+.menu__volver:hover {
+  text-decoration: underline;
+}
+
+.menu__titulo {
+  margin: 0;
+  font-size: 22px;
+  color: var(--slate-900);
+}
+
+.menu__sub {
+  margin: 4px 0 0;
+  color: var(--slate-600);
+  font-size: 14px;
+}
+
+.menu__lista {
+  margin-top: 20px;
+}

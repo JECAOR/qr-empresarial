@@ -13,18 +13,21 @@ import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import PaginaEscaneadaPage from "./PaginaEscaneadaPage";
-import { respuesta, simularFetch } from "../../pruebas/ayudas";
+import { agruparPorSeccion, respuesta, simularFetch } from "../../pruebas/ayudas";
 
 const BLOQUES = [
-  { id: "enlace-45", titulo: "Escríbenos", detalle: "https://wa.me/57300", categoria: "WhatsApp", tipo: "enlace" },
-  { id: "elemento-7", titulo: "Horneamos cada mañana", detalle: "Pan de masa madre", categoria: "Texto", tipo: "texto" }
+  { id: "enlace-45", seccion: "menu", titulo: "Escríbenos", detalle: "https://wa.me/57300", categoria: "WhatsApp", tipo: "enlace" },
+  { id: "elemento-7", seccion: "menu", titulo: "Horneamos cada mañana", detalle: "Pan de masa madre", categoria: "Texto", tipo: "texto" },
+  { id: "enlace-46", seccion: "promos", titulo: "Combo desayuno", detalle: "https://laespiga.co/combo", categoria: "Sitio web", tipo: "enlace" }
 ];
 
+// Las dos formas en que llega el contenido, igual que en publico.service.js:
+// la lista plana y la misma lista agrupada. La pantalla usa la agrupada.
 const PERFIL = (contenido = BLOQUES, tema) => respuesta({
   data: {
     perfil: { nombreNegocio: "Panadería La Espiga", telefono: "+57 301 222 3344", tema },
     contenido,
-    porSeccion: {}
+    porSeccion: agruparPorSeccion(contenido)
   }
 });
 
@@ -58,6 +61,8 @@ function montar(ruta = "/p/panaderia-la-espiga") {
     <MemoryRouter initialEntries={[ruta]}>
       <Routes>
         <Route path="/p/:slug" element={<PaginaEscaneadaPage />} />
+        {/* Delata a dónde lleva el botón del menú */}
+        <Route path="/p/:slug/menu" element={<p>el menú del negocio</p>} />
       </Routes>
     </MemoryRouter>
   );
@@ -346,5 +351,83 @@ describe("el titulo de la pestana", () => {
     montar();
 
     expect(document.title).toBe("Panadería La Espiga · QR Empresarial");
+  });
+});
+
+// --- El contenido por secciones (RF-05) ---
+//
+// REGRESION. La API devuelve el contenido agrupado -porSeccion- y esta
+// pantalla lo tiraba: recorria la lista plana y pintaba los bloques uno
+// detras de otro. El dueño reparte su contenido en tres pestañas y quien
+// escaneaba el codigo no las veia separadas.
+describe("las secciones", () => {
+  it("separa el contenido con el nombre de cada seccion", async () => {
+    simularFetch([PERFIL()]);
+
+    montar();
+
+    expect(await screen.findByRole("heading", { name: "Menú principal" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Promociones" })).toBeInTheDocument();
+  });
+
+  it("cada bloque queda dentro de su seccion", async () => {
+    simularFetch([PERFIL()]);
+
+    montar();
+
+    await screen.findByRole("heading", { name: "Menú principal" });
+
+    const [menu, promos] = screen.getAllByRole("heading", { level: 2 })
+      .filter((h) => ["Menú principal", "Promociones"].includes(h.textContent))
+      .map((h) => h.closest("section"));
+
+    expect(menu).toHaveTextContent("Escríbenos");
+    expect(menu).not.toHaveTextContent("Combo desayuno");
+    expect(promos).toHaveTextContent("Combo desayuno");
+  });
+});
+
+describe("el boton del menu completo", () => {
+  it("lleva al menu de este negocio", async () => {
+    simularFetch([PERFIL()]);
+
+    montar("/p/cafe-raices");
+
+    await userEvent.click(await screen.findByRole("link", { name: "Ver menú completo" }));
+
+    expect(await screen.findByText("el menú del negocio")).toBeInTheDocument();
+  });
+
+  // Un boton que lleva a una pantalla vacia es peor que no ofrecerlo.
+  it("no se ofrece si el negocio no publico nada en el menu", async () => {
+    simularFetch([PERFIL([BLOQUES[2]])]); // solo la promoción
+
+    montar();
+
+    await screen.findByRole("heading", { name: "Promociones" });
+    expect(screen.queryByRole("link", { name: "Ver menú completo" })).not.toBeInTheDocument();
+  });
+
+  it("ni cuando no hay contenido ninguno", async () => {
+    simularFetch([PERFIL([])]);
+
+    montar();
+
+    await screen.findByText(/todavía no tiene contenido publicado/);
+    expect(screen.queryByRole("link", { name: "Ver menú completo" })).not.toBeInTheDocument();
+  });
+
+  // Es un enlace de la propia aplicacion: abrirlo en otra pestaña dejaria la
+  // pagina del negocio detras, y no es a donde se quiere ir.
+  it("no cuenta como clic de un enlace del negocio", async () => {
+    simularFetch([PERFIL()]);
+
+    montar();
+
+    await userEvent.click(await screen.findByRole("link", { name: "Ver menú completo" }));
+
+    expect(await eventos()).toEqual([
+      expect.objectContaining({ tipo: "visita" })
+    ]);
   });
 });

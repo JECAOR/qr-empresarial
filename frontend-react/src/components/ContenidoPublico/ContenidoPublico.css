@@ -1,0 +1,15 @@
+.publicado__seccion {
+  margin-top: 24px;
+}
+
+/* El titulo de la seccion, con el mismo aspecto que el del panel: en
+   mayusculas y pequeño, porque separa y no compite con el nombre del
+   negocio ni con el titulo de cada bloque. */
+.publicado__titulo {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+  margin: 0 0 12px;
+}
