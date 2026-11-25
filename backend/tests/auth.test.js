@@ -282,3 +282,232 @@ describe('Proteccion de las rutas', () => {
     expect(respuesta.status).toBe(401);
   });
 });
+
+// ============================================
+// Las reglas de entrada, una por una
+//
+// Casi una cuarta parte de auth.validator.js no se habia ejecutado nunca, y
+// es el archivo donde un hueco no da un error visible: un 400 que se
+// convierte en 200 deja pasar datos, no rompe una pantalla.
+//
+// Los casos de la contrasena esperan el mismo mensaje a proposito: hay uno
+// solo para las cuatro condiciones. Lo que cambia no es el texto, es la
+// rama.
+// ============================================
+
+describe('entrar: lo que no se acepta', () => {
+  test.each([
+    ['sin correo', { contrasena: CLAVE }],
+    ['sin contrasena', { correo: 'ana@ejemplo.co' }],
+    ['con el cuerpo vacio', {}],
+    ['con el correo en blanco', { correo: '', contrasena: CLAVE }]
+  ])('%s', async (_, cuerpo) => {
+    const respuesta = await request(app).post('/api/auth/login').send(cuerpo);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/correo y la contrasena son obligatorios/);
+  });
+});
+
+describe('registrarse: cada regla rechaza lo suyo', () => {
+  const completo = () => ({
+    nombre: 'Persona Nueva',
+    correo: correoNuevo(),
+    contrasena: CLAVE
+  });
+
+  test.each([
+    ['sin nombre', { nombre: undefined }, /nombre, correo y contrasena son obligatorios/],
+    ['sin correo', { correo: undefined }, /nombre, correo y contrasena son obligatorios/],
+    ['sin contrasena', { contrasena: undefined }, /nombre, correo y contrasena son obligatorios/],
+    ['con el nombre de una letra', { nombre: 'A' }, /al menos 2 caracteres/],
+    ['con el nombre que no es texto', { nombre: 7 }, /al menos 2 caracteres/],
+    ['con un correo invalido', { correo: 'no-es-correo' }, /formato del correo/],
+    ['con la contrasena corta', { contrasena: 'Ab1*' }, /mínimo 8 caracteres/],
+    ['con la contrasena sin mayuscula', { contrasena: 'clave123*' }, /una mayúscula/],
+    ['con la contrasena sin numero', { contrasena: 'ClaveClave*' }, /un número/],
+    ['con la contrasena sin simbolo', { contrasena: 'Clave12345' }, /un símbolo/]
+  ])('no deja registrarse %s', async (_, cambio, mensaje) => {
+    const respuesta = await request(app).post('/api/auth/registro')
+      .send({ ...completo(), ...cambio });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(mensaje);
+  });
+
+  // El negocio es opcional, pero si llega tiene que ser un objeto: una
+  // cadena o una lista significan que quien llama entendio mal el contrato.
+  test.each([
+    ['una cadena', 'Mi Panaderia'],
+    ['una lista', ['Mi Panaderia']],
+    ['nulo', null]
+  ])('el negocio no puede ser %s', async (_, negocio) => {
+    const respuesta = await request(app).post('/api/auth/registro')
+      .send({ ...completo(), negocio });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/datos del negocio deben venir en un objeto/);
+  });
+
+  test('el nombre del negocio no puede ser de una letra', async () => {
+    const respuesta = await request(app).post('/api/auth/registro')
+      .send({ ...completo(), negocio: { nombreNegocio: 'A' } });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/negocio debe tener al menos 2 caracteres/);
+  });
+
+  test('ni pasar de 150 caracteres', async () => {
+    const respuesta = await request(app).post('/api/auth/registro')
+      .send({ ...completo(), negocio: { nombreNegocio: 'P'.repeat(151) } });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/no puede superar los 150/);
+  });
+
+  // Un negocio vacio es valido: el perfil nace con el nombre de la cuenta y
+  // se completa despues en Configuracion.
+  test('un negocio sin nombre se acepta, y el perfil toma el de la cuenta', async () => {
+    const correo = correoNuevo();
+
+    const respuesta = await request(app).post('/api/auth/registro')
+      .send({ nombre: 'Ana Perez', correo, contrasena: CLAVE, negocio: {} });
+
+    expect(respuesta.status).toBe(201);
+
+    const perfil = await como(await entrar(correo)).get('/api/perfiles/me');
+
+    expect(perfil.body.data.nombreNegocio).toBe('Ana Perez');
+  });
+
+  // Los demas campos del negocio tambien se guardan si llegan.
+  test('y si llegan los demas datos del negocio, se guardan', async () => {
+    const correo = correoNuevo();
+
+    await request(app).post('/api/auth/registro').send({
+      nombre: 'Ana Perez',
+      correo,
+      contrasena: CLAVE,
+      negocio: {
+        nombreNegocio: 'Panaderia Con Datos',
+        categoria: 'Panaderia',
+        direccion: 'Calle 1 #2-3',
+        telefono: '+57 300 000 0000'
+      }
+    });
+
+    const perfil = await como(await entrar(correo)).get('/api/perfiles/me');
+
+    expect(perfil.body.data.categoria).toBe('Panaderia');
+    expect(perfil.body.data.direccion).toBe('Calle 1 #2-3');
+    expect(perfil.body.data.telefono).toBe('+57 300 000 0000');
+  });
+});
+
+describe('recuperar la contrasena: lo que no se acepta', () => {
+  test.each([
+    ['sin correo', {}],
+    ['con el correo en blanco', { correo: '   ' }],
+    ['con un correo que no es texto', { correo: 42 }]
+  ])('pedir el enlace %s se rechaza', async (_, cuerpo) => {
+    const respuesta = await request(app).post('/api/auth/recuperar-contrasena').send(cuerpo);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/correo es obligatorio/);
+  });
+
+  // El token son 64 caracteres hexadecimales. Uno corto no se busca
+  // siquiera en la base: no puede ser de los que emite el sistema.
+  test.each([
+    ['corto', 'abc'],
+    ['vacio', ''],
+    ['que no es texto', 12345]
+  ])('un token %s se rechaza sin consultar nada', async (_, token) => {
+    const respuesta = await request(app).post('/api/auth/restablecer-contrasena')
+      .send({ token, contrasena: 'OtraClave1*' });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/enlace de recuperación no es válido/);
+  });
+
+  test('y una contrasena nueva floja tambien', async () => {
+    const respuesta = await request(app).post('/api/auth/restablecer-contrasena')
+      .send({ token: 'a'.repeat(64), contrasena: 'floja' });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/mínimo 8 caracteres/);
+  });
+
+  // Con el formato bueno pero sin existir en la base: es lo que pasa con un
+  // enlace ya usado o vencido.
+  test('un token bien formado pero desconocido no sirve', async () => {
+    const respuesta = await request(app).post('/api/auth/restablecer-contrasena')
+      .send({ token: 'b'.repeat(64), contrasena: 'OtraClave1*' });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/no es válido o ya expiró/);
+  });
+});
+
+describe('una cuenta restringida', () => {
+  /** Deja la cuenta restringida, como hace el administrador. */
+  async function restringir(correo) {
+    await pool.execute("UPDATE usuario SET estado = 'restringido' WHERE correo = ?", [correo]);
+  }
+
+  // Restringir tiene que servir de algo: si la sesion que ya tenia abierta
+  // siguiera funcionando, la medida no protegeria de nada hasta que cerrara
+  // el navegador.
+  //
+  // Lo para el middleware con un 401, antes de llegar a ningun servicio. Los
+  // servicios comprueban ademas el estado por su cuenta —auth.service lo
+  // hace en tres sitios—, y esas ramas no se pueden alcanzar por HTTP: son
+  // la segunda barrera, no la primera.
+  test('no puede usar la sesion que ya tenia abierta', async () => {
+    const { token, correo } = await crearCuenta();
+
+    expect((await como(token).get('/api/usuarios/me')).status).toBe(200);
+
+    await restringir(correo);
+
+    const respuesta = await como(token).get('/api/usuarios/me');
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.message).toMatch(/restringido/);
+  });
+
+  test('ni cambiar su contrasena', async () => {
+    const { token, correo } = await crearCuenta();
+
+    await restringir(correo);
+
+    const respuesta = await como(token).put('/api/usuarios/me/contrasena')
+      .send({ contrasenaActual: CLAVE, contrasenaNueva: 'OtraClave1*' });
+
+    expect(respuesta.status).toBe(401);
+  });
+
+  test('ni darse de baja', async () => {
+    const { token, correo } = await crearCuenta();
+
+    await restringir(correo);
+
+    const respuesta = await como(token).delete('/api/usuarios/me').send({ contrasena: CLAVE });
+
+    expect(respuesta.status).toBe(401);
+  });
+});
+
+describe('cambiar la contrasena propia', () => {
+  // Repetir la misma no es un cambio. Sin esto, quien crea que la cambio se
+  // quedaria con la de siempre creyendo lo contrario.
+  test('la nueva no puede ser la de ahora', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/usuarios/me/contrasena')
+      .send({ contrasenaActual: CLAVE, contrasenaNueva: CLAVE });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/distinta de la actual/);
+  });
+});
