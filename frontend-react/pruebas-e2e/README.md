@@ -122,7 +122,7 @@ Lo habitual es `prepararSesion(page)`, que hace las dos.
 reenvíe sus direcciones lo prueba
 [`backend/tests/frontend-publicado.test.js`](../../backend/tests/frontend-publicado.test.js),
 con Supertest. Que la API responda lo que debe, la colección de Postman en
-[`docs/postman/`](../../docs/postman) y las 171 pruebas del backend.
+[`docs/postman/`](../../docs/postman) y las 202 pruebas del backend.
 
 ### Que la simulación se parezca a la API no es un detalle
 

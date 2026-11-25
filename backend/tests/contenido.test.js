@@ -226,3 +226,108 @@ describe('No se deja vacio un perfil que ya tiene codigo QR', () => {
     expect((await como(token).delete(`/api/contenido/${id}`)).status).toBe(200);
   });
 });
+
+// ============================================
+// GET /api/contenido/categorias
+//
+// Era el unico endpoint del backend sin ninguna prueba. No lo llama ninguna
+// pantalla del panel por gusto: es el que llena el desplegable del
+// formulario de contenido, asi que lo que devuelva decide que puede elegir
+// el negocio al crear un bloque.
+// ============================================
+
+describe('Las categorias disponibles', () => {
+  test('vienen en dos listas: enlaces y elementos', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).get('/api/contenido/categorias');
+
+    expect(respuesta.status).toBe(200);
+    expect(Array.isArray(respuesta.body.data.enlaces)).toBe(true);
+    expect(Array.isArray(respuesta.body.data.elementos)).toBe(true);
+    expect(respuesta.body.data.enlaces.length).toBeGreaterThan(0);
+    expect(respuesta.body.data.elementos.length).toBeGreaterThan(0);
+  });
+
+  // La pantalla pinta el nombre y guarda el id. Sin el icono no sabe que
+  // dibujo poner al lado.
+  test('cada una trae id, nombre e icono', async () => {
+    const { token } = await crearCuenta();
+
+    const { enlaces, elementos } = (await como(token).get('/api/contenido/categorias')).body.data;
+
+    for (const categoria of [...enlaces, ...elementos]) {
+      expect(typeof categoria.id).toBe('number');
+      expect(typeof categoria.nombre).toBe('string');
+      expect(categoria).toHaveProperty('icono');
+    }
+  });
+
+  // Son las que pide el RF-05. Si faltara una, el negocio no podria publicar
+  // ese tipo de enlace aunque el resto del sistema lo soporte.
+  test('estan las de enlace que pide el requisito', async () => {
+    const { token } = await crearCuenta();
+
+    const { enlaces } = (await como(token).get('/api/contenido/categorias')).body.data;
+    const nombres = enlaces.map((c) => c.nombre);
+
+    expect(nombres).toEqual(expect.arrayContaining(['WhatsApp', 'Instagram', 'Google Maps']));
+  });
+
+  // El contrato de verdad: lo que ofrece este endpoint tiene que servir para
+  // crear. Si las dos listas se cruzaran -una categoria de elemento ofrecida
+  // como enlace-, el formulario ensenaria opciones que el POST rechaza.
+  test('lo que ofrece sirve para crear un bloque de ese tipo', async () => {
+    const { token } = await crearCuenta();
+
+    const { enlaces, elementos } = (await como(token).get('/api/contenido/categorias')).body.data;
+
+    const conEnlace = await como(token).post('/api/contenido').send({
+      tipo: 'enlace',
+      titulo: 'Probando la primera categoria de enlace',
+      detalle: 'https://ejemplo.co',
+      idCategoria: enlaces[0].id
+    });
+
+    expect(conEnlace.status).toBe(201);
+
+    const conElemento = await como(token).post('/api/contenido').send({
+      tipo: 'texto',
+      titulo: 'Probando la primera categoria de elemento',
+      detalle: 'Un parrafo cualquiera',
+      idCategoria: elementos[0].id
+    });
+
+    expect(conElemento.status).toBe(201);
+  });
+
+  // Las dos listas se numeran por separado, asi que un id de elemento puede
+  // coincidir con uno de enlace. Mandarlo como enlace tiene que fallar.
+  test('una categoria de elemento no vale como enlace', async () => {
+    const { token } = await crearCuenta();
+
+    const { enlaces, elementos } = (await como(token).get('/api/contenido/categorias')).body.data;
+
+    const soloDeElemento = elementos.find((e) => !enlaces.some((l) => l.id === e.id));
+
+    // Si todos los ids coincidieran no habria nada que comprobar aqui
+    if (!soloDeElemento) return;
+
+    const respuesta = await como(token).post('/api/contenido').send({
+      tipo: 'enlace',
+      titulo: 'Categoria equivocada',
+      detalle: 'https://ejemplo.co',
+      idCategoria: soloDeElemento.id
+    });
+
+    expect(respuesta.status).toBe(400);
+  });
+
+  // Van detras de autenticar(): las categorias son del panel, no de la
+  // pagina publica.
+  test('sin sesion no se devuelven', async () => {
+    const respuesta = await como(null).get('/api/contenido/categorias');
+
+    expect(respuesta.status).toBe(401);
+  });
+});
