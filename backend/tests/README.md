@@ -1,6 +1,6 @@
 # Pruebas automáticas del backend
 
-202 pruebas de integración sobre la API, con **Jest** y **Supertest**.
+295 pruebas de integración sobre la API, con **Jest** y **Supertest**.
 
 ```bash
 npm test
@@ -45,16 +45,17 @@ quedaron es la forma más rápida de entender por qué.
 
 | Archivo | Requisitos | Pruebas |
 |---|---|---|
-| `auth.test.js` | RF-01, RF-02, RF-03 | 20 |
-| `usuarios.test.js` | RF-01 (administración), RF-12 | 21 |
+| `auth.test.js` | RF-01, RF-02, RF-03 | 53 |
+| `usuarios.test.js` | RF-01 (administración), RF-12 | 65 |
 | `perfiles.test.js` | RF-04, RF-10, tema | 22 |
-| `contenido.test.js` | RF-05, RF-06 | 25 |
+| `contenido.test.js` | RF-05, RF-06 | 30 |
 | `qr-y-publico.test.js` | RF-07, RF-08, RF-09, RF-11 | 35 |
 | `admin.test.js` | RF-13, RF-14, RF-15 | 24 |
 | `frontend-publicado.test.js` | lo que publica Express | 41 |
 | `correo.test.js` | RF-03, el envío | 14 |
+| `arranque.test.js` | CORS, errores, avisos de despliegue | 11 |
 
-Cobertura: **89,7 % de las sentencias**, 80,7 % de las ramas y 98,2 % de las funciones de `src/`.
+Cobertura: **92,4 % de las sentencias**, 88,0 % de las ramas y 98,2 % de las funciones de `src/`.
 
 Las tres últimas subidas salieron de mirar **qué no se ejecutaba nunca**, no de añadir casos a lo que ya pasaba:
 
@@ -63,6 +64,11 @@ Las tres últimas subidas salieron de mirar **qué no se ejecutaba nunca**, no d
 | El reintento cuando dos negocios piden la misma dirección pública a la vez | 50 % de ramas | 93,8 % |
 | La elección de servidor de correo y el fallo al crearlo | 53,3 % de ramas | 100 % |
 | `GET /contenido/categorias`, el único endpoint sin ninguna prueba | — | cubierto |
+| Las reglas de `usuario.validator.js`, una por una | 76,3 % | 100 % |
+| Las de entrar y registrarse (`auth.validator.js`) | 77,8 % | 100 % |
+| El CORS de producción, que no se había ejecutado nunca | 70 % | 100 % |
+| El middleware de errores con un fallo inesperado | 50 % | 100 % |
+| Las escrituras del lado `elemento` del contenido | 63,6 % | 100 % |
 
 El acento está en lo que, si se rompe, **no da un error visible**. Un 401 que pasa a 200 no
 hace fallar ninguna pantalla: simplemente deja entrar a quien no debía. Por eso hay pruebas
@@ -127,6 +133,6 @@ Las tres se complementan y ninguna sobra:
 
 - **Postman** (232 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
   para explorar la API.
-- **Jest + Supertest** (202) es la red de seguridad automática del backend: corre entera en
+- **Jest + Supertest** (295) es la red de seguridad automática del backend: corre entera en
   medio minuto y avisa si un módulo nuevo rompe uno viejo.
 - **Playwright** (396) prueba las pantallas, con la API simulada.
