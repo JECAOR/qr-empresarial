@@ -347,3 +347,187 @@ describe('Un administrador no puede dejarse fuera a si mismo', () => {
     expect(respuesta.status).toBe(200);
   });
 });
+
+// ============================================
+// Las reglas del validador, una por una
+//
+// Cada rama de usuario.validator.js es una regla que protege los datos, y
+// tres cuartas partes no se habian ejecutado nunca: las pruebas entraban por
+// el camino bueno y por uno o dos malos, no por todos.
+//
+// Van en tablas porque es lo que son: una lista de reglas. Un caso por rama,
+// con el cuerpo que la dispara y el mensaje que debe salir.
+//
+// Los tres casos de la contrasena esperan el mismo mensaje a proposito: el
+// validador da uno solo para las cuatro condiciones. Lo que cambia entre
+// ellos no es el texto, es la rama que lo produce.
+// ============================================
+
+describe('crear una cuenta: cada regla rechaza lo suyo', () => {
+  const completo = () => ({
+    nombre: 'Persona Nueva',
+    correo: correoNuevo(),
+    contrasena: CLAVE,
+    rol: 'empresa'
+  });
+
+  const CASOS = [
+    ['sin nombre', { nombre: undefined }, /nombre, correo y contrasena son obligatorios/],
+    ['sin correo', { correo: undefined }, /nombre, correo y contrasena son obligatorios/],
+    ['sin contrasena', { contrasena: undefined }, /nombre, correo y contrasena son obligatorios/],
+    ['con el nombre de una letra', { nombre: 'A' }, /al menos 2 caracteres/],
+    ['con el nombre casi en blanco', { nombre: '   x' }, /al menos 2 caracteres/],
+    ['con el nombre que no es texto', { nombre: 12345 }, /al menos 2 caracteres/],
+    ['con un correo sin arroba', { correo: 'sinarroba.co' }, /formato del correo/],
+    ['con un correo sin punto', { correo: 'ana@ejemplo' }, /formato del correo/],
+    ['con un correo con espacios', { correo: 'a n@ejemplo.co' }, /formato del correo/],
+    ['con la contrasena corta', { contrasena: 'Cl4v*' }, /mínimo 8 caracteres/],
+    ['con la contrasena sin mayuscula', { contrasena: 'clave123*' }, /una mayúscula/],
+    ['con la contrasena sin numero', { contrasena: 'ClaveClave*' }, /un número/],
+    ['con la contrasena sin simbolo', { contrasena: 'Clave12345' }, /un símbolo/],
+    ['con la contrasena que no es texto', { contrasena: 12345678 }, /mínimo 8 caracteres/],
+    ['con un rol inventado', { rol: 'superusuario' }, /empresa o administrador/]
+  ];
+
+  test.each(CASOS)('no deja crearla %s', async (_, cambio, mensaje) => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    const respuesta = await como(token).post('/api/usuarios').send({ ...completo(), ...cambio });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(mensaje);
+  });
+
+  // El rol es opcional al crear: sin el, la cuenta nace como empresa.
+  test('sin rol la crea igual, como empresa', async () => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    const datos = completo();
+
+    delete datos.rol;
+
+    const respuesta = await como(token).post('/api/usuarios').send(datos);
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.data.rol).toBe('empresa');
+  });
+});
+
+describe('actualizar una cuenta: las mismas reglas, y el rol obligatorio', () => {
+  const CASOS = [
+    ['sin nombre', { nombre: undefined }, /nombre, correo y rol son obligatorios/],
+    ['sin correo', { correo: undefined }, /nombre, correo y rol son obligatorios/],
+    // Al crear es opcional; al actualizar no, porque cambiarlo es una de las
+    // cosas que se hacen desde esa pantalla.
+    ['sin rol', { rol: undefined }, /nombre, correo y rol son obligatorios/],
+    ['con el nombre de una letra', { nombre: 'A' }, /al menos 2 caracteres/],
+    ['con un correo invalido', { correo: 'no-es-correo' }, /formato del correo/],
+    ['con un rol inventado', { rol: 'jefe' }, /empresa o administrador/]
+  ];
+
+  test.each(CASOS)('no deja actualizarla %s', async (_, cambio, mensaje) => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+    const otra = await crearCuenta();
+
+    const respuesta = await como(token).put(`/api/usuarios/${otra.id}`).send({
+      nombre: 'Nombre Nuevo',
+      correo: correoNuevo(),
+      rol: 'empresa',
+      ...cambio
+    });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(mensaje);
+  });
+});
+
+describe('el identificador de la direccion', () => {
+  // Se convierte con Number y se exige entero positivo: "2.5" no cuela, que
+  // es lo que pasaria con parseInt.
+  test.each(['abc', '0', '-3', '2.5'])('%s no es un identificador', async (id) => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    const respuesta = await como(token).get(`/api/usuarios/${id}`);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/identificador del usuario no es válido/);
+  });
+});
+
+describe('el estado, la contrasena propia y los avisos', () => {
+  test.each(['inventado', '', 'ACTIVO'])('el estado "%s" se rechaza', async (estado) => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+    const otra = await crearCuenta();
+
+    const respuesta = await como(token).patch(`/api/usuarios/${otra.id}/estado`).send({ estado });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/activo o restringido/);
+  });
+
+  // Sin la actual, quien se sentara ante una sesion abierta podria cambiarla
+  // y quedarse con la cuenta.
+  test.each([undefined, '', 12345])(
+    'cambiar la contrasena sin la actual (%s) se rechaza',
+    async (contrasenaActual) => {
+      const { token } = await crearCuenta();
+
+      const respuesta = await como(token).put('/api/usuarios/me/contrasena')
+        .send({ contrasenaActual, contrasenaNueva: 'OtraClave1*' });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.message).toMatch(/contraseña actual es obligatoria/);
+    }
+  );
+
+  test.each([undefined, ''])('darse de baja sin confirmar (%s) se rechaza', async (contrasena) => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).delete('/api/usuarios/me').send({ contrasena });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/confirmar su contraseña/);
+  });
+
+  // Son dos interruptores. Guardar "si" o 1 seria guardar basura en una
+  // columna que luego alguien leera como booleano.
+  test.each([
+    { resumen: 'si', novedades: true },
+    { resumen: true, novedades: 1 },
+    { resumen: null, novedades: false },
+    { resumen: true }
+  ])('las preferencias %o se rechazan', async (preferencias) => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/usuarios/me/preferencias').send(preferencias);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/true o false/);
+  });
+});
+
+describe('los datos propios', () => {
+  const LARGO = 'a'.repeat(101);
+
+  test.each([
+    ['el nombre de una letra', { nombre: 'A' }, /al menos 2 caracteres/],
+    ['el nombre que no es texto', { nombre: null }, /al menos 2 caracteres/],
+    ['un correo invalido', { correo: 'sin-arroba' }, /formato del correo/],
+    ['un correo que no es texto', { correo: 99 }, /formato del correo/],
+    ['un nombre larguísimo', { nombre: LARGO }, /no pueden superar los 100/],
+    ['un correo larguísimo', { correo: `${LARGO}@ejemplo.co` }, /no pueden superar los 100/]
+  ])('no se guardan con %s', async (_, cambio, mensaje) => {
+    const { token, correo } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/usuarios/me')
+      .send({ nombre: 'Nombre Valido', correo, ...cambio });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(mensaje);
+  });
+});
