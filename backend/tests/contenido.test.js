@@ -2,7 +2,7 @@
 // TESTS/CONTENIDO.TEST.JS — RF-05 y RF-06
 // ============================================
 
-const { crearCuenta, agregarBloque, como } = require('./ayudas');
+const { app, request, crearCuenta, agregarBloque, como } = require('./ayudas');
 
 describe('Agregar contenido (RF-05)', () => {
   test('un enlace se guarda con su categoria y su seccion', async () => {
@@ -329,5 +329,117 @@ describe('Las categorias disponibles', () => {
     const respuesta = await como(null).get('/api/contenido/categorias');
 
     expect(respuesta.status).toBe(401);
+  });
+});
+
+// ============================================
+// Lo mismo, pero con textos y botones
+//
+// El esquema parte el contenido en dos tablas: `enlace` y `elemento`. Cada
+// operacion de escritura elige tabla y columna con un ternario, y las
+// pruebas solo habian entrado por el lado de los enlaces: activar, borrar y
+// reordenar un texto no se habia ejecutado nunca.
+//
+// Si el nombre de la columna estuviera mal en esa rama —id_elemento—, borrar
+// un texto no borraria nada y la pantalla diria que si, porque la respuesta
+// no depende de las filas afectadas hasta que alguien las mira.
+// ============================================
+
+describe('los textos y botones se manejan igual que los enlaces', () => {
+  /** Crea un bloque de texto y devuelve su identificador compuesto. */
+  async function unTexto(token, titulo = 'Horneamos cada mañana') {
+    const categorias = (await como(token).get('/api/contenido/categorias')).body.data;
+
+    const creado = await como(token).post('/api/contenido').send({
+      tipo: 'texto',
+      titulo,
+      detalle: 'Masa madre de fermentación lenta',
+      idCategoria: categorias.elementos[0].id
+    });
+
+    expect(creado.status).toBe(201);
+
+    return creado.body.data.id;
+  }
+
+  test('se desactiva y se vuelve a activar', async () => {
+    const { token } = await crearCuenta();
+    const id = await unTexto(token);
+
+    const apagado = await como(token).patch(`/api/contenido/${id}/estado`).send({ activo: false });
+
+    expect(apagado.status).toBe(200);
+
+    const tras = (await como(token).get('/api/contenido')).body.data.find((b) => b.id === id);
+
+    expect(tras.activo).toBe(false);
+
+    const encendido = await como(token).patch(`/api/contenido/${id}/estado`).send({ activo: true });
+
+    expect(encendido.status).toBe(200);
+  });
+
+  // Un texto desactivado no sale en la pagina publica, igual que un enlace.
+  test('desactivado desaparece de la pagina publica', async () => {
+    const cuenta = await crearCuenta();
+    const id = await unTexto(cuenta.token, 'Texto que se va a apagar');
+
+    await agregarBloque(cuenta.token);
+    await como(cuenta.token).post('/api/qr');
+
+    await como(cuenta.token).patch(`/api/contenido/${id}/estado`).send({ activo: false });
+
+    const publico = await request(app).get(`/api/publico/${cuenta.slug}`);
+    const titulos = publico.body.data.contenido.map((b) => b.titulo);
+
+    expect(titulos).not.toContain('Texto que se va a apagar');
+  });
+
+  test('se borra de verdad, no solo en la respuesta', async () => {
+    const { token } = await crearCuenta();
+    const id = await unTexto(token);
+
+    const borrado = await como(token).delete(`/api/contenido/${id}`);
+
+    expect(borrado.status).toBe(200);
+
+    const quedan = (await como(token).get('/api/contenido')).body.data.map((b) => b.id);
+
+    expect(quedan).not.toContain(id);
+  });
+
+  test('y se reordena dentro de su seccion', async () => {
+    const { token } = await crearCuenta();
+
+    const primero = await unTexto(token, 'Primero de todos');
+    const segundo = await unTexto(token, 'Segundo de todos');
+
+    const reordenado = await como(token).put('/api/contenido/orden')
+      .send({ ids: [segundo, primero] });
+
+    expect(reordenado.status).toBe(200);
+
+    const lista = (await como(token).get('/api/contenido')).body.data
+      .filter((b) => [primero, segundo].includes(b.id))
+      .map((b) => b.id);
+
+    expect(lista).toEqual([segundo, primero]);
+  });
+
+  // El contenido es de cada negocio: el identificador no basta, hace falta
+  // que sea suyo. Es la misma regla que ya se comprueba con los enlaces.
+  test('los de otro negocio no se pueden tocar', async () => {
+    const mia = await crearCuenta();
+    const ajena = await crearCuenta();
+
+    const id = await unTexto(ajena.token);
+
+    const borrado = await como(mia.token).delete(`/api/contenido/${id}`);
+
+    expect(borrado.status).toBe(404);
+
+    const estado = await como(mia.token).patch(`/api/contenido/${id}/estado`).send({ activo: false });
+
+    expect(estado.status).toBe(404);
   });
 });
