@@ -441,7 +441,7 @@ a teclearlo.
 
 ## Las pruebas
 
-**553 en jsdom y 241 en un navegador de verdad.** Las primeras, con
+**554 en jsdom y 241 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -916,9 +916,14 @@ al que llega el enlace de recuperación, de modo que quien se hiciera con una
 sesión abierta podría cambiarlo y después apropiarse de la cuenta. Pedirla para
 cambiar solo el nombre sería pedirla por nada.
 
-**Los avisos se guardan pero no se envían.** El sistema no tiene todavía la
-tarea que los manda, y la pantalla lo dice. Prometer correos que no llegan es
-peor que no ofrecerlos.
+**Queda un aviso, y ese sí se envía.** Durante un tiempo la pantalla ofrecía
+dos y advertía de que ninguno salía, porque era verdad. El de novedades se
+quitó —nada en el sistema guarda ni redacta anuncios, así que ese correo no
+podía existir— y el resumen de actividad lo manda ahora la tarea
+`avisos:semanal` del backend, los lunes. La pantalla dice cuándo llega y en
+qué caso no llega: si durante la semana no hubo ni un escaneo, no se escribe.
+Un correo que dice «cero» es la razón más común por la que alguien apaga los
+avisos.
 
 ### Dos defectos corregidos durante la prueba
 

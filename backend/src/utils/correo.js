@@ -142,7 +142,137 @@ async function enviarEnlaceRecuperacion(destinatario, enlace, expiraEn) {
   return { urlPrevisualizacion };
 }
 
+/**
+ * Escapa texto que va dentro del HTML del correo.
+ *
+ * El nombre del negocio y los titulos de los enlaces los escribe una
+ * persona, y aqui acaban dentro del cuerpo del mensaje. Sin escapar, un
+ * nombre con < o & romperia el HTML del correo, y los clientes de correo
+ * reaccionan a eso de formas distintas e impredecibles.
+ *
+ * No vale el escaparAtributo de publico.metadatos.js: ese es para lo que va
+ * dentro de content="…" y vive en otro modulo. Aqui el caso es un nodo de
+ * texto, y son cinco lineas que mantienen este util sin dependencias.
+ *
+ * @param {*} valor
+ * @returns {string}
+ */
+function escapar(valor) {
+  return String(valor === null || valor === undefined ? '' : valor)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
+ * Envia el resumen semanal de actividad (RF-12).
+ *
+ * Lo llama el proceso de src/tareas/resumen-semanal.js, no una peticion web:
+ * nadie esta esperando la respuesta, asi que un fallo aqui tiene que subir
+ * para que el proceso lo cuente y siga con los demas negocios.
+ *
+ * @param {string} destinatario - Correo de la cuenta.
+ * @param {object} datos
+ * @param {string} datos.negocio - Nombre del negocio, para el asunto.
+ * @param {number} datos.dias - Dias que abarca el resumen.
+ * @param {{escaneos: number, visitas: number, clics: number, conversion: number}} datos.totales
+ * @param {Array<{titulo: string, clics: number}>} datos.enlacesMasPulsados
+ * @returns {Promise<{urlPrevisualizacion: string|null}>}
+ */
+async function enviarResumenSemanal(destinatario, datos) {
+  const { transporte, esDePrueba } = await obtenerTransporte();
+
+  const remitente = process.env.CORREO_REMITENTE || 'QR Empresarial <no-responder@qrempresarial.co>';
+  const base = (process.env.APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
+  const ajustes = `${base}/configuracion`;
+
+  const { negocio, dias, totales, enlacesMasPulsados } = datos;
+
+  // Las dos versiones, por lo mismo que el correo de recuperacion: un
+  // mensaje que solo trae HTML le parece sospechoso a algunos filtros.
+  const lineasTexto = [
+    `Esto es lo que paso con ${negocio} en los ultimos ${dias} dias:`,
+    '',
+    `  Escaneos del codigo QR: ${totales.escaneos}`,
+    `  Visitas a la pagina:    ${totales.visitas}`,
+    `  Pulsaciones en enlaces: ${totales.clics}`,
+    `  De cada cien que vieron el perfil, ${totales.conversion} pulsaron algo.`
+  ];
+
+  if (enlacesMasPulsados.length > 0) {
+    lineasTexto.push('', 'Lo mas pulsado:');
+    enlacesMasPulsados.forEach((e) => {
+      lineasTexto.push(`  ${e.titulo}: ${e.clics}`);
+    });
+  }
+
+  lineasTexto.push(
+    '',
+    `Si no quiere recibir este resumen, apaguelo en ${ajustes}`
+  );
+
+  const filas = enlacesMasPulsados
+    .map((e) => `
+          <tr>
+            <td style="padding: 6px 0; color: #374151;">${escapar(e.titulo)}</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #111827;">${e.clics}</td>
+          </tr>`)
+    .join('');
+
+  const bloqueEnlaces = enlacesMasPulsados.length === 0
+    ? ''
+    : `
+        <h3 style="font-size: 15px; color: #111827; margin: 28px 0 6px;">Lo más pulsado</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          ${filas}
+        </table>`;
+
+  /** Una cifra con su etiqueta, en una celda. */
+  const cifra = (valor, etiqueta) => `
+          <td style="padding: 10px 14px; background: #f3f4f6; border-radius: 6px;">
+            <div style="font-size: 24px; font-weight: bold; color: #111827;">${valor}</div>
+            <div style="font-size: 12px; color: #6b7280;">${etiqueta}</div>
+          </td>`;
+
+  const informacion = await transporte.sendMail({
+    from: remitente,
+    to: destinatario,
+    subject: `Resumen de la semana · ${negocio}`,
+    text: lineasTexto.join('\n'),
+    html: `
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; color: #1f2937; line-height: 1.6;">
+        <h2 style="color: #111827; font-size: 20px;">Resumen de ${escapar(negocio)}</h2>
+        <p>Esto es lo que pasó en los últimos ${dias} días:</p>
+
+        <table style="border-collapse: separate; border-spacing: 8px 0; margin: 20px 0;">
+          <tr>
+            ${cifra(totales.escaneos, 'escaneos')}
+            ${cifra(totales.visitas, 'visitas')}
+            ${cifra(totales.clics, 'pulsaciones')}
+          </tr>
+        </table>
+
+        <p style="font-size: 14px; color: #374151;">
+          De cada cien personas que vieron el perfil,
+          <strong>${totales.conversion}</strong> pulsaron algo.
+        </p>
+        ${bloqueEnlaces}
+        <p style="font-size: 13px; color: #6b7280; margin-top: 28px;">
+          Si no quiere recibir este resumen, puede apagarlo en
+          <a href="${ajustes}" style="color: #2563eb;">la configuración de su cuenta</a>.
+        </p>
+      </div>
+    `
+  });
+
+  const urlPrevisualizacion = esDePrueba ? nodemailer.getTestMessageUrl(informacion) : null;
+
+  return { urlPrevisualizacion };
+}
+
 module.exports = {
   enviarEnlaceRecuperacion,
+  enviarResumenSemanal,
   haySmtpConfigurado
 };
+

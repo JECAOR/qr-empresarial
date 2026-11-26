@@ -187,7 +187,7 @@ async function correoUsadoPorOtro(correo, idUsuario) {
  */
 async function buscarPreferencias(idUsuario) {
   const [filas] = await pool.execute(
-    `SELECT aviso_resumen, aviso_novedades, fecha_actualizacion
+    `SELECT aviso_resumen, fecha_actualizacion
      FROM preferencia_usuario
      WHERE id_usuario = ?`,
     [idUsuario]
@@ -197,24 +197,23 @@ async function buscarPreferencias(idUsuario) {
 }
 
 /**
- * Guarda las preferencias de avisos.
+ * Guarda la preferencia de avisos.
  *
  * Un solo INSERT ... ON DUPLICATE KEY UPDATE en lugar de consultar y luego
  * decidir: la columna id_usuario es UNIQUE, asi que la base resuelve si toca
  * crear o actualizar, y no hay hueco entre la consulta y la escritura.
  *
  * @param {number} idUsuario
- * @param {{resumen: boolean, novedades: boolean}} prefs
+ * @param {{resumen: boolean}} prefs
  */
 async function guardarPreferencias(idUsuario, prefs) {
   await pool.execute(
     `INSERT INTO preferencia_usuario
-       (id_usuario, aviso_resumen, aviso_novedades)
-     VALUES (?, ?, ?)
+       (id_usuario, aviso_resumen)
+     VALUES (?, ?)
      ON DUPLICATE KEY UPDATE
-       aviso_resumen = VALUES(aviso_resumen),
-       aviso_novedades = VALUES(aviso_novedades)`,
-    [idUsuario, prefs.resumen ? 1 : 0, prefs.novedades ? 1 : 0]
+       aviso_resumen = VALUES(aviso_resumen)`,
+    [idUsuario, prefs.resumen ? 1 : 0]
   );
 }
 

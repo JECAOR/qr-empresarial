@@ -112,56 +112,64 @@ test.describe("Preferencias de avisos", () => {
     // Antes se leían de localStorage, que es de ese navegador y de nadie más
     await page.goto("/configuracion.html");
 
-    // Los valores por defecto que responde el servidor: resumen sí,
-    // novedades no
+    // El valor por defecto que responde el servidor: resumen sí. Queda un
+    // solo interruptor desde la migración 015.
     await expect.poll(async () => page.evaluate(() =>
       [...document.querySelectorAll(".settings-notif-toggle")]
         .map((b) => b.classList.contains("on")).join(",")
-    )).toBe("true,false");
+    )).toBe("true");
   });
 
-  // Había un tercer interruptor, «Nuevas reseñas — Cuando un cliente deja una
-  // calificación», que prometía avisos de algo que no existe: el esquema tiene
-  // once tablas y ninguna guarda calificaciones. Ofrecer avisar de lo que el
-  // sistema no puede detectar es peor que no ofrecerlo, porque quien lo deja
-  // encendido se queda esperando un correo que no va a llegar.
-  test("no queda rastro del interruptor de reseñas [regresión]", async ({ page }) => {
+  // Se fueron dos interruptores, y los dos por lo mismo: prometían avisar de
+  // algo que el sistema no tiene, así que el correo no habría salido nunca.
+  // «Nuevas reseñas» primero —ninguna de las once tablas guarda
+  // calificaciones— y «Novedades de QR Empresarial» después, con la
+  // migración 015: nada guarda ni redacta anuncios. Ofrecer avisar de lo que
+  // el sistema no puede detectar es peor que no ofrecerlo, porque quien lo
+  // deja encendido se queda esperando un correo que no va a llegar.
+  test("no queda rastro de los interruptores retirados [regresión]", async ({ page }) => {
     await prepararSesion(page);
     await page.goto("/configuracion.html");
 
     await expect(page.locator('[data-notif-key="reviews"]')).toHaveCount(0);
+    await expect(page.locator('[data-notif-key="updates"]')).toHaveCount(0);
     await expect(page.locator("text=Nuevas reseñas")).toHaveCount(0);
-    await expect(page.locator(".settings-notif-toggle")).toHaveCount(2);
+    await expect(page.locator("text=Novedades de QR Empresarial")).toHaveCount(0);
+    await expect(page.locator(".settings-notif-toggle")).toHaveCount(1);
 
-    // Y tampoco se le manda al servidor: el campo ya no existe en la API
+    // Y tampoco se le mandan al servidor: los campos ya no existen en la API
     const enviado = await page.evaluate(() => prefsParaLaApi({ weekly: true, updates: false }));
-    expect(enviado).toEqual({ resumen: true, novedades: false });
+    expect(enviado).toEqual({ resumen: true });
   });
 
-  // La pantalla prometía «avisos por correo» y ningún proceso los envía: el
-  // único correo del sistema es el enlace de recuperación. La preferencia se
-  // guarda de verdad, así que se dice eso y no otra cosa.
-  test("advierte que el envío automático todavía no existe", async ({ page }) => {
+  // Durante un tiempo esta nota avisaba de que ningún proceso mandaba los
+  // correos, porque era verdad. Ya lo manda la tarea avisos:semanal del
+  // backend, así que ahora dice cuándo llega y en qué caso no llega.
+  test("dice cuándo llega el resumen y cuándo no", async ({ page }) => {
     await prepararSesion(page);
     await page.goto("/configuracion.html");
 
-    await expect(page.locator(".settings-note")).toContainText("todavía no está disponible");
+    const nota = page.locator(".settings-note");
+
+    await expect(nota).toContainText("se envía los lunes");
+    await expect(nota).toContainText("no te escribimos");
+    await expect(nota).not.toContainText("todavía no está disponible");
   });
 
   test("al pulsar un interruptor se guarda en el servidor", async ({ page }) => {
     await prepararSesion(page);
     await page.goto("/configuracion.html");
 
-    const novedades = page.locator('[data-notif-key="updates"]');
-    await expect(novedades).not.toHaveClass(/on/);
+    const resumen = page.locator('[data-notif-key="weekly"]');
+    await expect(resumen).toHaveClass(/on/);
 
-    await novedades.click();
-    await expect(novedades).toHaveClass(/on/);
+    await resumen.click();
+    await expect(resumen).not.toHaveClass(/on/);
 
     // Se comprueba contra el servidor, no contra la pantalla
     await expect.poll(async () => page.evaluate(async () =>
-      (await Api.misPreferencias()).data.novedades
-    )).toBe(true);
+      (await Api.misPreferencias()).data.resumen
+    )).toBe(false);
   });
 
   test("si el servidor rechaza el cambio, el interruptor vuelve atrás", async ({ page }) => {
@@ -170,11 +178,15 @@ test.describe("Preferencias de avisos", () => {
     await sembrarSesion(page);
     await page.goto("/configuracion.html");
 
-    const novedades = page.locator('[data-notif-key="updates"]');
-    await novedades.click();
+    const resumen = page.locator('[data-notif-key="weekly"]');
 
-    // Dejarlo encendido en la pantalla y apagado en el servidor sería peor
-    await expect(novedades).not.toHaveClass(/on/);
+    // Empieza encendido, así que el intento es apagarlo
+    await expect(resumen).toHaveClass(/on/);
+    await resumen.click();
+
+    // Dejarlo apagado en la pantalla y encendido en el servidor sería peor:
+    // el negocio creería que dejó de recibirlo y le seguiría llegando
+    await expect(resumen).toHaveClass(/on/);
     await expect(page.locator("#notif-saved-toast")).toContainText("No se pudo guardar");
   });
 });

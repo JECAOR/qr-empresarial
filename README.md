@@ -12,7 +12,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
 | Base de datos MySQL `qr_empresarial` (11 tablas, 14 migraciones) | Implementada |
 | Frontend HTML/CSS/JS (12 pantallas, PWA, 396 pruebas Playwright) | Implementado y conectado a la API. Sigue en el repositorio; se publica con `FRONTEND=clasico` |
-| Frontend React (16 pantallas, PWA, 553 pruebas Vitest y 241 de extremo a extremo) | Terminado. **Es el que publica el servidor** desde `v3.3.0` |
+| Frontend React (16 pantallas, PWA, 554 pruebas Vitest y 241 de extremo a extremo) | Terminado. **Es el que publica el servidor** desde `v3.3.0` |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
@@ -30,15 +30,33 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | M8. Administración (RF-13 a RF-15) | Terminado (`v2.0.1`) |
 | **Los 15 requisitos funcionales** | **Implementados** |
 
-### Limitaciones conocidas
+### El aviso por correo, y los dos que se fueron
 
-**Los avisos de la cuenta se guardan, pero nadie los envía.** Las dos preferencias de
-Configuración —resumen semanal y novedades— persisten en el servidor y sobreviven al
-navegador, que es lo que pide el RF-12 con «personalizar opciones de la plataforma». Lo que
-no existe es el proceso programado que mandaría esos correos: el único que el sistema envía
-es el enlace de recuperación de contraseña. La propia pantalla lo advierte, para que nadie
-se quede esperando. Había un tercer aviso, «Nuevas reseñas», que se quitó en `v1.7.2`: el
-sistema no tiene reseñas en ninguna parte.
+Configuración ofrecía tres avisos y ninguno se enviaba. Hoy ofrece uno y ese sí sale.
+
+**Se fueron dos, los dos por lo mismo:** prometían avisar de algo que el sistema no tiene,
+así que el correo no habría salido nunca. «Nuevas reseñas» se quitó en `v1.7.2` —ninguna de
+las once tablas guarda calificaciones de clientes— y «Novedades del sistema» en `v3.15.0`,
+porque nada guarda ni redacta anuncios: enviarlo habría pedido un redactor en la
+administración y un registro de lo enviado, una funcionalidad entera que nadie pidió.
+Ofrecer avisar de lo que el sistema no puede detectar es peor que no ofrecerlo, porque
+quien lo deja encendido se queda esperando.
+
+**Queda el resumen de actividad, y se envía de verdad** desde `v3.15.0`. Lo manda la tarea
+`npm run avisos:semanal` del backend, con los escaneos, las visitas, las pulsaciones y los
+enlaces más pulsados de los últimos siete días. Si durante la semana no hubo ni un escaneo,
+no se escribe: un correo que dice «cero» es la razón más común por la que alguien apaga los
+avisos.
+
+Para que salga en producción hacen falta dos cosas, y si falta alguna se nota:
+
+- **Una entrada en el Programador de tareas de Windows**, los lunes, que ejecute
+  `node src/tareas/resumen-semanal.js` con «Iniciar en» apuntando a `backend`. Relanzarla no
+  manda nada dos veces: la tabla `aviso_enviado` lo impide, y cualquier ejecución de la
+  misma semana cae en el mismo periodo.
+- **`SMTP_HOST`, `SMTP_USER` y `SMTP_PASS` en el `.env`.** Sin ellos la tarea falla con un
+  mensaje que lo dice, en lugar de callarse. En desarrollo no hacen falta: el mensaje va a
+  Ethereal, que no lo entrega a nadie y lo publica en una URL que la tarea imprime.
 
 ### Versiones publicadas
 
@@ -92,8 +110,8 @@ Base: `http://localhost:3000/api`
 | POST | `/auth/restablecer-contrasena` | Público | Definir la nueva contraseña |
 | GET | `/usuarios/me` | Autenticado | Consultar el perfil propio |
 | PUT | `/usuarios/me` | Autenticado | Actualizar los datos personales |
-| GET | `/usuarios/me/preferencias` | Autenticado | Consultar los avisos de la cuenta |
-| PUT | `/usuarios/me/preferencias` | Autenticado | Guardar los avisos de la cuenta |
+| GET | `/usuarios/me/preferencias` | Autenticado | Consultar el aviso de la cuenta |
+| PUT | `/usuarios/me/preferencias` | Autenticado | Guardar el aviso de la cuenta |
 | PUT | `/usuarios/me/contrasena` | Autenticado | Cambiar la contraseña propia |
 | DELETE | `/usuarios/me` | Autenticado | Eliminar la cuenta propia |
 | GET | `/perfiles/me` | Autenticado | Consultar el perfil empresarial |
@@ -206,7 +224,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (250 peticiones), Jest + Supertest (372), Vitest (553) y Playwright + axe-core (396 del frontend original y 241 del de React) | En uso |
+| Pruebas | Postman (250 peticiones), Jest + Supertest (404), Vitest (554) y Playwright + axe-core (396 del frontend original y 241 del de React) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -299,7 +317,7 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 [`frontend-react/`](frontend-react) es un **segundo cliente de la misma API**,
 construido con React 19 y Vite 8 para las Guías Frontend N.º 1 y N.º 2 del
 programa. Cubre los ocho módulos en dieciséis pantallas y consume 39 de los 40
-endpoints, con pruebas propias en dos niveles: **553 en jsdom** (Vitest y
+endpoints, con pruebas propias en dos niveles: **554 en jsdom** (Vitest y
 Testing Library) y **241 en un navegador de verdad** (Playwright), estas
 ultimas solo para lo que jsdom no puede contestar.
 
@@ -458,17 +476,23 @@ npm run dev               # servidor con nodemon en http://localhost:3000
 # Si el paso 2 se salta, el servidor arranca igual y avisa de que falta
 # compilar. Para publicar el frontend original en su lugar: FRONTEND=clasico
 
-# 5. Pruebas automaticas del backend (372, Jest + Supertest)
+# 5. El resumen semanal por correo (opcional; en produccion va los lunes
+#    desde el Programador de tareas de Windows)
 # (se sigue en backend/, desde el paso 3)
+npm run avisos:semanal    # sin SMTP en el .env el mensaje va a Ethereal, que
+                          # no lo entrega e imprime una URL para verlo.
+                          # Relanzarlo no manda nada dos veces.
+
+# 6. Pruebas automaticas del backend (404, Jest + Supertest)
 npm test                  # crea su propia base qr_empresarial_test; no toca la suya
 
-# 6. Pruebas del frontend original (396, Playwright)
+# 7. Pruebas del frontend original (396, Playwright)
 cd ../frontend
 npm install
 npx playwright install chromium
 npm test                  # no necesita el backend encendido: simula la API
 
-# 7. Pruebas del frontend en React (553 en jsdom + 241 en Chromium y WebKit)
+# 8. Pruebas del frontend en React (554 en jsdom + 241 en Chromium y WebKit)
 cd ../frontend-react
 npm install
 npx playwright install chromium webkit

@@ -239,7 +239,7 @@ async function simularApi(page, opciones = {}) {
   // pantalla de administracion se quedaria sin su enlace en el menu y
   // tratando al administrador como si fuera otra cuenta.
   let cuentaActual = { ...(comoAdministrador ? ADMINISTRADOR : USUARIO) };
-  let preferenciasActuales = { resumen: true, novedades: false, guardadas: false };
+  let preferenciasActuales = { resumen: true, guardadas: false };
 
   // La administracion tambien recuerda: restringir una cuenta y volver a
   // listar tiene que devolverla restringida, como haria el servidor

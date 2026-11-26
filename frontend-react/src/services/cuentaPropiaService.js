@@ -44,20 +44,21 @@ export async function cambiarMiContrasena({ contrasenaActual, contrasenaNueva })
   return resultado;
 }
 
-/** Los avisos por correo de la cuenta. */
+/** El aviso por correo de la cuenta. */
 export const consultarMisPreferencias = () => peticion("/usuarios/me/preferencias");
 
 /**
- * Guarda los avisos.
+ * Guarda el aviso.
  *
- * Se guardan de verdad, pero HOY NO SE ENVIA NINGUNO: el sistema no tiene
- * todavia el trabajo que los mandaria. La pantalla lo dice en lugar de
- * prometer correos que no llegan.
+ * Es uno solo y se envia de verdad: lo manda el proceso semanal del backend
+ * (src/tareas/resumen-semanal.js) los lunes. Habia otros dos, resenas y
+ * novedades, que se quitaron porque anunciaban algo que el sistema no tiene
+ * y nunca habrian salido.
  */
-export const guardarMisPreferencias = ({ resumen, novedades }) =>
+export const guardarMisPreferencias = ({ resumen }) =>
   peticion("/usuarios/me/preferencias", {
     method: "PUT",
-    body: JSON.stringify({ resumen, novedades })
+    body: JSON.stringify({ resumen })
   });
 
 /**

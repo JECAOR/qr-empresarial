@@ -398,49 +398,59 @@ correo ya es de otra cuenta, RN-01).
 
 ### GET /api/usuarios/me/preferencias
 
-Los avisos que la cuenta quiere recibir (RF-12). Vivían solo en el navegador: quien entraba
-desde otro equipo los perdía.
+El aviso que la cuenta quiere recibir (RF-12). Vivía solo en el navegador: quien entraba
+desde otro equipo lo perdía.
 
 ```json
 {
   "data": {
     "resumen": true,
-    "novedades": false,
     "guardadas": false
   }
 }
 ```
 
-`guardadas: false` significa que esa cuenta nunca cambió nada y se están devolviendo los
-valores por defecto. **No es un 404**: la pantalla necesita algo que mostrar en los
-interruptores, y «no has cambiado nada» no es un error.
+`guardadas: false` significa que esa cuenta nunca cambió nada y se está devolviendo el valor
+por defecto. **No es un 404**: la pantalla necesita algo que mostrar en el interruptor, y
+«no has cambiado nada» no es un error.
 
-> **Son una preferencia guardada, no un envío programado.** Hoy ningún proceso las consulta
-> para mandar correos: el único que el sistema envía es el enlace de recuperación de
-> contraseña. Se guardan para que la elección de cada cuenta sobreviva al navegador, que es
-> lo que pide el RF-12 con «personalizar opciones de la plataforma». La pantalla de
-> Configuración lo dice también, para que nadie se quede esperando un correo.
+> **El valor por defecto es `true`, y eso importa.** La fila de `preferencia_usuario` no
+> existe hasta que alguien guarda algo en Configuración, así que la mayoría de las cuentas
+> no tiene fila. La consulta del proceso semanal trata esa ausencia como un sí, con un
+> `COALESCE(pr.aviso_resumen, 1)`, igual que el valor por defecto de la columna. Si aquí se
+> devolviera `false`, la pantalla diría una cosa y el correo haría otra.
 
-**Eran tres hasta la migración 012.** El tercero, `resenas`, avisaba de calificaciones nuevas
-de clientes, y en el sistema **no hay reseñas**: el esquema tiene once tablas y ninguna las
-guarda, ni el RF-12 ni ningún otro requisito las pide. Era el mismo problema que ya se
-corrigió en otras pantallas —un control que parece funcionar y no acciona nada—, así que se
-quitó en lugar de dejarlo.
+**Y sí se envía**, desde `v3.15.0`: lo manda la tarea `npm run avisos:semanal` del backend.
+Dejó de ser una preferencia guardada sin consecuencia.
+
+**Eran tres.** Los otros dos se quitaron, y los dos por lo mismo: prometían avisar de algo
+que el sistema no tiene, así que el correo no habría salido nunca.
+
+- `resenas`, en la migración **012**: avisaba de calificaciones nuevas de clientes, y en el
+  sistema **no hay reseñas**. El esquema tiene once tablas y ninguna las guarda.
+- `novedades`, en la migración **015**: avisaba de funciones nuevas de la plataforma, y
+  **nada guarda ni redacta anuncios**. Ninguna tabla los almacena, ninguna pantalla los
+  escribe, y ni el RF-12 ni ningún otro requisito pide un boletín. Enviarlo habría pedido un
+  redactor en la administración y un registro de lo enviado: una funcionalidad entera que
+  nadie pidió.
+
+Era el mismo problema que ya se corrigió en otras pantallas —un control que parece funcionar
+y no acciona nada—, así que se quitaron en lugar de dejarlos.
 
 ---
 
 ### PUT /api/usuarios/me/preferencias
 
-**Cuerpo:** `{ "resumen": false, "novedades": true }`
+**Cuerpo:** `{ "resumen": false }`
 
-**Los dos son obligatorios.** La pantalla manda siempre los dos interruptores, y aceptar un
-cuerpo a medias dejaría el que falta en su valor por defecto sin que nadie lo pidiera.
+**Es obligatorio.** Un cuerpo vacío dejaría la preferencia en su valor por defecto sin que
+nadie lo pidiera. Un `novedades` que llegue se ignora: la columna ya no existe.
 
 La fila se crea la primera vez que se guarda, con un `INSERT ... ON DUPLICATE KEY UPDATE`: la
 columna `id_usuario` es única, así que la base decide si toca crear o actualizar y no hay
 hueco entre consultar y escribir.
 
-**Errores:** 400 (falta algún aviso o no es booleano), 401.
+**Errores:** 400 (falta el aviso o no es booleano), 401.
 
 ---
 
@@ -1297,4 +1307,4 @@ Los quince requisitos funcionales están implementados. Queda lo que no es códi
 | Asunto | Requisito | Estado |
 |---|---|---|
 | Servidor SMTP propio | RF-03 | El envío funciona; en desarrollo usa una cuenta de prueba de Ethereal. Para producción basta configurar `SMTP_*` en el `.env` |
-| Envío de los avisos de la cuenta | RF-12 | Las dos preferencias se guardan y ningún proceso las consulta para mandar correos. Es una preferencia guardada, no un envío programado, y la pantalla lo advierte |
+| Programador del resumen semanal | RF-12 | El envío funciona y se prueba (`npm run avisos:semanal`). Lo que no puede estar en el repositorio es la entrada del Programador de tareas de Windows que lo lanza los lunes: se registra en el servidor, con «Iniciar en» apuntando a `backend` |

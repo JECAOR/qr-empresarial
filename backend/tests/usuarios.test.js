@@ -90,42 +90,66 @@ describe('Preferencias de avisos (RF-12)', () => {
     const respuesta = await como(token).get('/api/usuarios/me/preferencias');
 
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body.data).toEqual({ resumen: true, novedades: false, guardadas: false });
+    expect(respuesta.body.data).toEqual({ resumen: true, guardadas: false });
   });
 
-  test('ya no existe el aviso de resenas', async () => {
+  // El valor por defecto importa de verdad desde que el resumen se envia: la
+  // fila de preferencia_usuario no existe hasta que alguien guarda algo en
+  // Configuracion, y la consulta del proceso semanal trata "sin fila" como
+  // encendido. Si esto devolviera false, la pantalla diria una cosa y el
+  // correo haria otra.
+  test('y el valor por defecto es recibirlo', async () => {
     const { token } = await crearCuenta();
 
     const respuesta = await como(token).get('/api/usuarios/me/preferencias');
 
-    // El sistema no tiene resenas en ninguna parte: ninguna de las once
-    // tablas guarda calificaciones de clientes
-    expect(respuesta.body.data).not.toHaveProperty('resenas');
+    expect(respuesta.body.data.resumen).toBe(true);
   });
 
-  test('se guardan y se vuelven a leer igual', async () => {
+  // Quedaron fuera los dos que prometian correos imposibles: resenas en la
+  // migracion 012 (el sistema no tiene resenas) y novedades en la 015 (nada
+  // guarda ni redacta anuncios).
+  test.each(['resenas', 'novedades'])('ya no existe el aviso de %s', async (ido) => {
     const { token } = await crearCuenta();
-
-    await como(token).put('/api/usuarios/me/preferencias').send({ resumen: false, novedades: true });
 
     const respuesta = await como(token).get('/api/usuarios/me/preferencias');
 
-    expect(respuesta.body.data).toEqual({ resumen: false, novedades: true, guardadas: true });
+    expect(respuesta.body.data).not.toHaveProperty(ido);
   });
 
-  test('un cuerpo a medias se rechaza', async () => {
+  test('se guarda y se vuelve a leer igual', async () => {
     const { token } = await crearCuenta();
 
-    // Aceptarlo dejaria el que falta en su valor por defecto sin que nadie
-    // lo pidiera
-    expect((await como(token).put('/api/usuarios/me/preferencias').send({ resumen: true })).status)
-      .toBe(400);
+    await como(token).put('/api/usuarios/me/preferencias').send({ resumen: false });
 
-    expect(
-      (await como(token)
-        .put('/api/usuarios/me/preferencias')
-        .send({ resumen: 'si', novedades: false })).status
-    ).toBe(400);
+    const respuesta = await como(token).get('/api/usuarios/me/preferencias');
+
+    expect(respuesta.body.data).toEqual({ resumen: false, guardadas: true });
+  });
+
+  // Antes hacian falta los dos campos y un cuerpo con solo resumen se
+  // rechazaba. Ahora es el cuerpo completo.
+  test('un cuerpo con solo el resumen ya es completo', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token)
+      .put('/api/usuarios/me/preferencias')
+      .send({ resumen: true });
+
+    expect(respuesta.status).toBe(200);
+  });
+
+  // Mandar novedades no revive la columna: se ignora y se guarda lo unico
+  // que existe.
+  test('mandar un aviso que ya no existe no lo devuelve', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token)
+      .put('/api/usuarios/me/preferencias')
+      .send({ resumen: true, novedades: true });
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.data).not.toHaveProperty('novedades');
   });
 });
 
@@ -494,13 +518,15 @@ describe('el estado, la contrasena propia y los avisos', () => {
     expect(respuesta.body.message).toMatch(/confirmar su contraseña/);
   });
 
-  // Son dos interruptores. Guardar "si" o 1 seria guardar basura en una
-  // columna que luego alguien leera como booleano.
+  // Es un interruptor. Guardar "si" o 1 seria guardar basura en una columna
+  // que luego alguien leera como booleano.
   test.each([
-    { resumen: 'si', novedades: true },
-    { resumen: true, novedades: 1 },
-    { resumen: null, novedades: false },
-    { resumen: true }
+    { resumen: 'si' },
+    { resumen: 1 },
+    { resumen: 0 },
+    { resumen: null },
+    { resumen: 'true' },
+    {}
   ])('las preferencias %o se rechazan', async (preferencias) => {
     const { token } = await crearCuenta();
 

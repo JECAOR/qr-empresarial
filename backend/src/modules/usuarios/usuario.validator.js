@@ -217,23 +217,20 @@ function validarMisDatos(req, res, next) {
 /**
  * Valida el cuerpo de PUT /api/usuarios/me/preferencias.
  *
- * Los dos avisos son obligatorios: la pantalla manda siempre los dos
- * interruptores, y aceptar un cuerpo a medias dejaria el que falta en su
- * valor por defecto sin que nadie lo pidiera.
+ * Queda un solo aviso y es obligatorio: un cuerpo vacio dejaria la
+ * preferencia en su valor por defecto sin que nadie lo pidiera.
  *
- * Eran tres hasta la migracion 012. El tercero avisaba de resenas nuevas, y
- * en el sistema no hay resenas: se quito en lugar de dejar un interruptor que
- * promete un correo que nunca llegaria.
+ * Eran tres. El de resenas se quito en la migracion 012 y el de novedades en
+ * la 015, los dos por lo mismo: prometian un correo que el sistema no podia
+ * mandar porque no existe lo que anunciaban. El que queda si se envia, con
+ * el proceso semanal de src/tareas/resumen-semanal.js.
  */
 function validarPreferencias(req, res, next) {
-  const { resumen, novedades } = req.body || {};
+  const { resumen } = req.body || {};
 
-  const todosBooleanos = [resumen, novedades]
-    .every((valor) => typeof valor === 'boolean');
-
-  if (!todosBooleanos) {
+  if (typeof resumen !== 'boolean') {
     return res.status(400).json({
-      message: 'Los avisos resumen y novedades deben ser true o false'
+      message: 'El aviso resumen debe ser true o false'
     });
   }
 

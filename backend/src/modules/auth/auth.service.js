@@ -512,36 +512,36 @@ async function actualizarMisDatos(idUsuario, datos) {
 }
 
 /**
- * Preferencias de avisos de la cuenta (RF-12).
+ * Preferencia de avisos de la cuenta (RF-12).
  *
- * Si nunca se guardaron, se devuelven los valores por defecto en lugar de un
- * 404: la pantalla necesita algo que mostrar en los interruptores, y "no has
- * cambiado nada" no es un error.
+ * Si nunca se guardo, se devuelve el valor por defecto en lugar de un 404:
+ * la pantalla necesita algo que mostrar en el interruptor, y "no has
+ * cambiado nada" no es un error. El valor por defecto es true, el mismo de
+ * la columna, y por eso una cuenta sin fila recibe el resumen.
  *
- * Son una preferencia guardada, no un envio programado: hoy ningun proceso
- * las consulta para mandar correos. El unico que el sistema envia es el
- * enlace de recuperacion de contrasena. Se guardan para que la eleccion de
- * cada cuenta sobreviva al navegador, que es lo que pide el RF-12.
+ * Ya no es solo una preferencia guardada: el proceso de
+ * src/tareas/resumen-semanal.js la consulta para decidir a quien le manda el
+ * resumen de actividad. Habia otros dos avisos que no se enviaban nunca y se
+ * quitaron por eso mismo (migraciones 012 y 015).
  *
  * @param {number} idUsuario
- * @returns {Promise<{resumen: boolean, novedades: boolean}>}
+ * @returns {Promise<{resumen: boolean, guardadas: boolean}>}
  */
 async function obtenerMisPreferencias(idUsuario) {
   const fila = await usuarioRepository.buscarPreferencias(idUsuario);
 
   if (!fila) {
-    return { resumen: true, novedades: false, guardadas: false };
+    return { resumen: true, guardadas: false };
   }
 
   return {
     resumen: Boolean(fila.aviso_resumen),
-    novedades: Boolean(fila.aviso_novedades),
     guardadas: true
   };
 }
 
 /**
- * Guarda las preferencias de avisos.
+ * Guarda la preferencia de avisos.
  *
  * @param {number} idUsuario
  * @param {object} prefs - Ya validadas.

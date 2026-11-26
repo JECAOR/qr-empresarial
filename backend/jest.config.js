@@ -27,9 +27,14 @@ module.exports = {
 
   testMatch: ['<rootDir>/tests/**/*.test.js'],
 
+  // Los dos puntos de entrada quedan fuera. No tienen logica: leen el .env,
+  // arrancan lo suyo y cierran el pool. Lo que hacen de verdad vive en el
+  // Service correspondiente, que si se prueba; medirlos solo premiaria
+  // escribir una prueba que ejecuta un process.exit.
   collectCoverageFrom: [
     'src/**/*.js',
-    '!src/server.js'
+    '!src/server.js',
+    '!src/tareas/resumen-semanal.js'
   ],
 
   testTimeout: 15000

@@ -22,7 +22,7 @@ vi.mock("react-router-dom", async (original) => ({
 }));
 
 const PREFERENCIAS = (extra = {}) =>
-  respuesta({ data: { resumen: true, novedades: false, guardadas: false, ...extra } });
+  respuesta({ data: { resumen: true, guardadas: false, ...extra } });
 
 /**
  * Monta la pantalla detrás del guardia, como la monta la aplicación.
@@ -94,12 +94,6 @@ describe("al abrir", () => {
 
     expect(screen.getByLabelText("Nombre")).toHaveValue("Panadería La Espiga");
     expect(screen.getByLabelText("Correo electrónico")).toHaveValue("contacto@laespiga.co");
-  });
-
-  it("dice con todas las letras que los avisos todavia no se envian", async () => {
-    await montar();
-
-    expect(screen.getByText(/todavía no se envía ningún/i)).toBeInTheDocument();
   });
 });
 
@@ -247,36 +241,53 @@ describe("la contrasena", () => {
 });
 
 describe("los avisos por correo", () => {
-  it("enseña los dos interruptores con lo que dijo el servidor", async () => {
+  // Queda un solo interruptor. Eran tres: el de resenas se quito en la
+  // migracion 012 y el de novedades en la 015, los dos porque prometian un
+  // correo que el sistema no podia mandar. El que queda si se envia.
+  it("enseña el interruptor con lo que dijo el servidor", async () => {
     await montar();
 
     const lista = screen.getByRole("list");
-    const [resumen, novedades] = within(lista).getAllByRole("checkbox");
+    const interruptores = within(lista).getAllByRole("checkbox");
 
-    expect(resumen).toBeChecked();
-    expect(novedades).not.toBeChecked();
+    expect(interruptores).toHaveLength(1);
+    expect(interruptores[0]).toBeChecked();
+  });
+
+  it("ya no ofrece avisos que nadie manda", async () => {
+    await montar();
+
+    expect(screen.queryByText(/Novedades del sistema/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/todavía no se envía/)).not.toBeInTheDocument();
+  });
+
+  it("dice cuando llega y que no escribe si no hubo nada", async () => {
+    await montar();
+
+    expect(screen.getByText(/se envía los lunes/)).toBeInTheDocument();
+    expect(screen.getByText(/no te escribimos/)).toBeInTheDocument();
   });
 
   it("guarda en cuanto se pulsa, sin boton aparte", async () => {
-    const espia = await montar([PREFERENCIAS({ novedades: true, guardadas: true })]);
+    const espia = await montar([PREFERENCIAS({ resumen: false, guardadas: true })]);
 
-    await userEvent.click(screen.getAllByRole("checkbox")[1]);
+    await userEvent.click(screen.getAllByRole("checkbox")[0]);
 
     await screen.findByRole("status");
 
     expect(espia.mock.calls[2][1].method).toBe("PUT");
-    expect(cuerpoDe(espia, 2)).toMatchObject({ resumen: true, novedades: true });
+    expect(cuerpoDe(espia, 2)).toMatchObject({ resumen: false });
   });
 
   // REGRESION. La nota decia "estos son los valores de fabrica" aunque
   // acabaras de elegir, porque se guardaba lo que la pantalla habia pintado
   // y no lo que contesto el servidor, que es quien sabe que ya elegiste.
   it("la nota de valores de fabrica desaparece al elegir", async () => {
-    await montar([PREFERENCIAS({ novedades: true, guardadas: true })]);
+    await montar([PREFERENCIAS({ resumen: false, guardadas: true })]);
 
     expect(screen.getByText(/estos son los valores de fábrica/)).toBeInTheDocument();
 
-    await userEvent.click(screen.getAllByRole("checkbox")[1]);
+    await userEvent.click(screen.getAllByRole("checkbox")[0]);
 
     await waitFor(() =>
       expect(screen.queryByText(/estos son los valores de fábrica/)).not.toBeInTheDocument());
