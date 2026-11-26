@@ -362,26 +362,32 @@ qr-empresarial/
 ├── backend/
 │   ├── src/
 │   │   ├── config/
-│   │   │   └── database.js          # pool de conexiones a MySQL
+│   │   │   ├── database.js          # pool de conexiones a MySQL
+│   │   │   └── frontend.js          # cual de los dos clientes se publica
 │   │   ├── middlewares/
 │   │   │   ├── error.middleware.js  # manejo centralizado de errores
-│   │   │   ├── auth.middleware.js   # verifica el token JWT
+│   │   │   ├── auth.middleware.js   # verifica el token JWT; marca sus 401 con codigo
 │   │   │   ├── rol.middleware.js    # autorizacion por rol
 │   │   │   └── limite.middleware.js # limite de intentos (RN-03)
-│   │   ├── modules/
-│   │   │   ├── usuarios/            # route, validator, controller, service, repository
-│   │   │   ├── auth/                # login, registro publico y recuperacion
-│   │   │   ├── perfiles/            # route, validator, controller, service, repository
-│   │   │   ├── contenido/           # route, validator, controller, service, repository
-│   │   │   ├── qr/                  # route, validator, controller, service, repository
-│   │   │   ├── publico/             # route, controller, service, repository
-│   │   │   ├── estadisticas/        # route, validator, controller, service, repository
-│   │   │   ├── configuracion/       # pendiente
-│   │   │   └── admin/               # pendiente
+│   │   ├── modules/                 # cada uno: route, validator, controller, service, repository
+│   │   │   ├── usuarios/            # M1  RF-01, y las preferencias del RF-12
+│   │   │   ├── auth/                # M1  RF-02, RF-03, y el cambio de contraseña del RF-12
+│   │   │   ├── perfiles/            # M2  RF-04, RF-10, y el color de marca del RF-12
+│   │   │   ├── contenido/           # M3  RF-05, RF-06
+│   │   │   ├── qr/                  # M4  RF-07, RF-08
+│   │   │   ├── publico/             # M5  RF-09 (sin validator: no recibe cuerpo)
+│   │   │   ├── estadisticas/        # M6  RF-11
+│   │   │   ├── admin/               # M8  RF-13 a RF-15
+│   │   │   └── avisos/              # el resumen semanal (solo service y repository:
+│   │   │                           #   no tiene rutas, lo llama una tarea)
+│   │   ├── tareas/
+│   │   │   └── resumen-semanal.js   # lo lanza el Programador de tareas, no Express
 │   │   ├── utils/
 │   │   │   └── correo.js            # envio de correo con nodemailer
 │   │   ├── app.js                   # configuración de Express
 │   │   └── server.js                # arranque del servidor
+│   ├── tests/                       # Jest + Supertest, con su propio README
+│   ├── jest.config.js
 │   ├── .env                         # no se versiona
 │   ├── .env.example
 │   └── package.json
@@ -389,10 +395,13 @@ qr-empresarial/
 │   ├── js/api.js                    # cliente de la API y manejo de la sesion
 │   ├── js/guardia.js                # protege las pantallas privadas
 │   └── restablecer.html             # pantalla del enlace de recuperacion
-├── frontend-react/                  # segundo cliente de la misma API (Guia 01)
-│   └── src/                         # components/, pages/, services/, styles/
+├── frontend-react/                  # EL QUE PUBLICA EL SERVIDOR desde v3.3.0
+│   ├── src/                         # components/, pages/, services/, context/,
+│   │                                #   hooks/, styles/, assets/, pruebas/
+│   └── pruebas-e2e/                 # Playwright, con su propio README
 ├── database/
 │   ├── schema.sql
+│   ├── seed.sql
 │   └── migrations/
 ├── docs/
 │   ├── api.md
@@ -414,6 +423,28 @@ Route → Validator → Controller → Service → Repository → MySQL
 - **Controller:** recibe la petición y arma la respuesta; sin reglas ni SQL.
 - **Service:** reglas de negocio; no conoce `req` ni `res`.
 - **Repository:** única capa con consultas SQL.
+
+### Por qué el módulo 7 no tiene carpeta
+
+Son nueve carpetas para ocho módulos, y el que falta es el **M7, Configuración**. No
+está sin hacer —está terminado desde `v1.7.2`—: está **repartido**, porque lo que el
+RF-12 pide son tres cosas que pertenecen a tres sitios distintos.
+
+| Lo que pide el RF-12 | Dónde vive | Por qué ahí |
+|---|---|---|
+| Datos de la cuenta y el aviso por correo | `usuarios/` | son de la cuenta, en `usuario` y `preferencia_usuario` |
+| Cambiar la contraseña | `auth/` | es autenticación: cierra las demás sesiones |
+| El color de marca | `perfiles/` | es del **negocio**, no de la cuenta, y la vista pública lo aplica |
+
+Había una carpeta `configuracion/` vacía, con un `.gitkeep` que decía «se elimina al
+agregar sus archivos». Nunca se agregaron, y este mismo árbol la etiquetaba como
+**`# pendiente`** —igual que a `admin/`, que llevaba terminado desde `v2.0.1` con sus
+cinco archivos—. Quien leyera el árbol en lugar de la tabla de módulos concluía que
+faltaban dos módulos de ocho.
+
+Es el mismo defecto que el proyecto lleva corrigiendo en las pantallas, solo que en la
+documentación: algo que parece existir y no existe, o que parece faltar y no falta. La
+carpeta se borró y las etiquetas se corrigieron.
 
 ## Estándares de codificación
 
