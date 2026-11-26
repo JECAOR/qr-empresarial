@@ -9152,11 +9152,11 @@
                   "const d = pm.response.json().data;",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Avisa que son los de fabrica', () => pm.expect(d.guardadas).to.eql(false));",
-                  "pm.test('Resumen si, novedades no', () => {",
-                  "  pm.expect(d.resumen).to.eql(true);",
-                  "  pm.expect(d.novedades).to.eql(false);",
-                  "});",
-                  "pm.test('Ya no existe el aviso de resenas', () => pm.expect(d).to.not.have.property('resenas'));"
+                  "pm.test('El resumen viene encendido por defecto', () => pm.expect(d.resumen).to.eql(true));",
+                  "pm.test('Ya no existen los avisos retirados', () => {",
+                  "  pm.expect(d).to.not.have.property('resenas');",
+                  "  pm.expect(d).to.not.have.property('novedades');",
+                  "});"
                 ]
               }
             }
@@ -9196,7 +9196,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"resumen\": false,\n  \"novedades\": true\n}",
+              "raw": "{\n  \"resumen\": false\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -9213,10 +9213,8 @@
                 "exec": [
                   "const d = pm.response.json().data;",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Quedaron como se enviaron', () => {",
-                  "  pm.expect(d.resumen).to.eql(false);",
-                  "  pm.expect(d.novedades).to.eql(true);",
-                  "});"
+                  "pm.test('Quedo como se envio', () => pm.expect(d.resumen).to.eql(false));",
+                  "pm.test('Y queda constancia de que ya se eligio', () => pm.expect(d.guardadas).to.eql(true));"
                 ]
               }
             }
@@ -9355,7 +9353,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"resumen\": \"si\",\n  \"novedades\": false\n}",
+              "raw": "{\n  \"resumen\": \"si\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
