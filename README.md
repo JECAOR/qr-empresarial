@@ -328,7 +328,18 @@ repositorio y ninguno modifica al otro; cuál se sirve lo decide la variable
 | `FRONTEND` | Qué se publica en `http://localhost:3000` |
 |---|---|
 | `react` (por defecto) | `frontend-react/dist` — hay que compilarlo antes |
-| `clasico` | `frontend/` — el original, tal como estaba |
+| `clasico` | `frontend/` — el original, **congelado**; ver abajo |
+
+> **El original está congelado desde `v3.17.1`, y los dos ya no son equivalentes.**
+> Se conserva porque es la implementación de referencia de los módulos 1 a 8 y porque
+> sus 396 pruebas de Playwright siguen pasando, no porque siga al día. Las mejoras que
+> entraron después solo están en React, y una de ellas importa si alguien lo pusiera a
+> servir: **cuando la sesión se termina sola, el original se queda en pie.** No lleva el
+> manejo del 401 marcado con `codigo: "sesion"` que se añadió en `v3.16.0`, así que
+> quien lleve dos horas con una pestaña abierta se queda en una pantalla muerta en lugar
+> de volver al inicio de sesión. Se decidió no arreglarlo: arreglar dos veces cada cosa
+> en el cliente que no se usa es tiempo que no mejora el producto. Se deja dicho para que
+> nadie lo descubra sirviéndolo.
 
 Publicar React obliga a tres cosas que no hacían falta con el original, y que
 son las que de verdad distinguen servir una aplicación de una sola página:
