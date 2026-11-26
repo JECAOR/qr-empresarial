@@ -26,14 +26,24 @@
 .qr__lienzo img {
   display: block;
   width: 240px;
-  height: 240px;
+
+  /* La vista previa medía 240 px fijos, mas 18 de relleno a cada lado y el
+     borde: 278 px que no caben en los 238 que le deja la rejilla cuando la
+     pantalla tiene 320. Eran 3 px de desbordamiento, invisibles, y aun asi
+     la pagina se podia arrastrar de lado: justo lo que prohibe el criterio
+     1.4.10 de la WCAG a 320 px, que es el ancho equivalente a un zoom del
+     400 %. El codigo es cuadrado y lleva sus atributos width y height, asi
+     que con height: auto no se deforma al encogerse. */
+  max-width: 100%;
+  height: auto;
 }
 
 .qr__cargando {
   display: grid;
   place-items: center;
   width: 240px;
-  height: 240px;
+  max-width: 100%;
+  aspect-ratio: 1;
   color: var(--slate-500);
   font-size: 13px;
 }
@@ -75,6 +85,7 @@
   display: flex;
   gap: 8px;
   margin-top: 10px;
+
 }
 
 .qr__acciones button,

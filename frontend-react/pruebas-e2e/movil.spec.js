@@ -253,3 +253,167 @@ test.describe('las pantallas que cambian de forma', () => {
       .toBe('Cómo llegar');
   });
 });
+
+// ============================================
+// Y lo mismo con lo que una persona puede escribir de verdad
+//
+// La novena vara de medir, salida de preguntar que mantuvieron CONSTANTE las
+// ocho anteriores. El bloque de arriba comprueba el desbordamiento con los
+// datos de muestra, que son mansos a proposito: nombres cortos, una
+// descripcion de una linea, direcciones con espacios. Con ellos la prueba
+// pasa y no dice nada sobre lo que pasa cuando el negocio escribe lo suyo.
+//
+// Lo unico que de verdad no se puede partir es una DIRECCION PEGADA. La de
+// un mapa pasa de 170 caracteres sin un solo espacio, y pegarla en un bloque
+// de texto es de las cosas mas normales que puede hacer alguien.
+// ============================================
+
+/** Una URL de Google Maps de verdad: 176 caracteres y ni un espacio. */
+const URL_PEGADA = 'https://www.google.com/maps/place/Panader%C3%ADa+La+Espiga/@4.6486259,'
+  + '-74.0629936,17z/data=!3m1!4b1!4m6!3m5!1s0x8e3f9a5e5f5e5f5e:0x1234567890abcdef'
+  + '!8m2!3d4.6486259!4d-74.0604187';
+
+/** Nada inventado: lo que escribe un negocio que se toma en serio su ficha. */
+const PERFIL_LARGO = {
+  nombreNegocio: 'Panadería y Repostería Artesanal La Espiga de Oro de Chapinero Alto S.A.S.',
+  categoria: 'Panadería, repostería y productos de panificación artesanal',
+  descripcion: 'Pan de masa madre horneado cada mañana en Chapinero. '.repeat(30),
+  direccion: 'Carrera 7 # 53 - 22, Local 3, Edificio Torres del Parque, Chapinero Alto, Bogotá',
+  correoContacto: 'contacto.panaderia.la.espiga.de.oro.chapinero@miempresa.com.co',
+  instagram: '@panaderialaespigadeorochapinero',
+  horario: 'Lunes a viernes de 6:00 a.m. a 7:00 p.m., sábados de 7:00 a.m. a 5:00 p.m.'
+};
+
+const BLOQUES_LARGOS = [
+  {
+    id: 'enlace-1',
+    tipo: 'enlace',
+    titulo: 'Ver nuestra ubicación exacta en el mapa de Google',
+    detalle: URL_PEGADA,
+    seccion: 'menu',
+    categoria: 'Sitio web',
+    icono: 'web',
+    activo: true,
+    orden: 1,
+    clics: 3
+  },
+  {
+    // Este es el que lo encontro: un bloque de TEXTO con la direccion
+    // pegada dentro. El de enlace aguantaba -.tarjeta__enlace ya llevaba
+    // break-all-, pero el texto libre no.
+    id: 'elemento-1',
+    tipo: 'texto',
+    titulo: 'Cómo llegar',
+    detalle: 'Estamos a media cuadra del parque. ' + URL_PEGADA,
+    seccion: 'menu',
+    categoria: 'Texto',
+    icono: 'texto',
+    activo: true,
+    orden: 2,
+    clics: 0
+  }
+];
+
+/**
+ * El desbordamiento horizontal, medido como lo nota una persona.
+ *
+ * Es la MISMA medida del bloque de arriba, a proposito: lo que cambia aqui
+ * son los datos, no la forma de medir.
+ *
+ * Probe una mas estricta -quien tiene contenido mas ancho que su propia
+ * caja- y no sirve como afirmacion general: acusa a los siete campos del
+ * formulario del perfil, porque un <input> con un correo largo desplaza el
+ * texto por dentro, que es lo correcto; y acusa 4 px de .qr__opciones que no
+ * llegan a empujar la pagina y que nadie ve. Esa medida vale para
+ * DIAGNOSTICAR -con ella se encontro quien causaba esto- y no para decidir
+ * si una pantalla esta bien.
+ *
+ * El sintoma es que la pagina se pueda arrastrar de lado, y eso es
+ * scrollWidth del documento contra su clientWidth. Con el defecto que
+ * encontro este bloque, la pagina publica media 1305 px en una pantalla de
+ * 375: lo habria dicho sin ambiguedad.
+ */
+async function medirDesborde(page) {
+  return page.evaluate(() => ({
+    documento: document.documentElement.scrollWidth,
+    ventana: document.documentElement.clientWidth,
+    culpables: [...document.querySelectorAll('body *')]
+      .filter((el) => el.getBoundingClientRect().right > document.documentElement.clientWidth + 1)
+      .slice(0, 5)
+      .map((el) => `${el.tagName.toLowerCase()}.${el.className}`)
+  }));
+}
+
+test.describe('ni con lo que el negocio escribe de verdad', () => {
+  for (const ruta of PANTALLAS) {
+    test(ruta, async ({ page }) => {
+      await prepararSesion(page, { perfil: PERFIL_LARGO, contenido: BLOQUES_LARGOS });
+      await page.goto(ruta);
+
+      await expect(page.locator('main')).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      const desborde = await medirDesborde(page);
+
+      expect(desborde.culpables).toEqual([]);
+      expect(desborde.documento).toBeLessThanOrEqual(desborde.ventana);
+    });
+  }
+});
+
+test.describe('una direccion pegada en un bloque de texto', () => {
+  // REGRESION, y de las que se ven. La pagina publica -la que ve quien
+  // escanea el codigo, que es para lo que existe todo esto- se iba a 1305 px
+  // de ancho en una pantalla de 375: dos veces y media, con el texto saliendo
+  // por el lado derecho. El titulo tenia el mismo problema.
+  for (const [nombre, ruta] of [
+    ['la pagina publica', '/p/panaderia-la-espiga'],
+    ['el menu', '/p/panaderia-la-espiga/menu'],
+    ['la portada del panel', '/']
+  ]) {
+    test(`${nombre} parte la direccion en lugar de ensancharse`, async ({ page }) => {
+      await prepararSesion(page, { contenido: BLOQUES_LARGOS });
+      await page.goto(ruta);
+      await page.waitForLoadState('networkidle');
+
+      const texto = page.locator('.tarjeta__texto').first();
+
+      await expect(texto).toBeVisible();
+
+      const cabe = await texto.evaluate((el) => ({
+        contenido: el.scrollWidth,
+        caja: el.clientWidth,
+        parte: getComputedStyle(el).overflowWrap
+      }));
+
+      expect(cabe.parte).toBe('anywhere');
+      expect(cabe.contenido).toBeLessThanOrEqual(cabe.caja + 1);
+    });
+  }
+
+  // Y el titulo, con la misma regla y por el mismo motivo.
+  //
+  // Aqui hay que medir el DOCUMENTO y no la caja del titulo. El titulo vive
+  // en una fila flexible, asi que sin poder partirse su caja CRECE hasta
+  // caber el texto: contenido y caja siguen midiendo lo mismo y una medida
+  // interna pasa igual. Lo comprobe quitando la regla: la prueba seguia en
+  // verde mientras el documento se iba a 1432 px en una pantalla de 375.
+  test('y el titulo tambien se parte', async ({ page }) => {
+    await prepararSesion(page, {
+      contenido: [{
+        ...BLOQUES_LARGOS[1],
+        titulo: URL_PEGADA,
+        detalle: 'Un texto corto y normal, para que el culpable solo pueda ser el titulo.'
+      }]
+    });
+
+    await page.goto('/p/panaderia-la-espiga');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.locator('.tarjeta__titulo').first()).toBeVisible();
+
+    const desborde = await medirDesborde(page);
+
+    expect(desborde.documento).toBeLessThanOrEqual(desborde.ventana);
+  });
+});

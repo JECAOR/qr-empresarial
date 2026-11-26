@@ -12,7 +12,7 @@ Aplicación web responsive que permite a pymes y emprendedores crear un **perfil
 | Análisis y diseño (requisitos, casos de uso, modelo relacional, prototipos) | Terminado |
 | Base de datos MySQL `qr_empresarial` (11 tablas, 14 migraciones) | Implementada |
 | Frontend HTML/CSS/JS (12 pantallas, PWA, 396 pruebas Playwright) | Implementado y conectado a la API. Sigue en el repositorio; se publica con `FRONTEND=clasico` |
-| Frontend React (16 pantallas, PWA, 568 pruebas Vitest y 256 de extremo a extremo) | Terminado. **Es el que publica el servidor** desde `v3.3.0` |
+| Frontend React (16 pantallas, PWA, 568 pruebas Vitest y 335 de extremo a extremo) | Terminado. **Es el que publica el servidor** desde `v3.3.0` |
 | Backend — entorno y servidor Express | Terminado (`v0.2.0`) |
 | Backend — módulo Usuarios (CRUD completo) | Terminado (`v0.4.0`) |
 | Backend — autenticación con JWT, roles y registro público | Terminado (`v0.5.0`) |
@@ -224,7 +224,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (250 peticiones), Jest + Supertest (415), Vitest (568) y Playwright + axe-core (396 del frontend original y 256 del de React) | En uso |
+| Pruebas | Postman (250 peticiones), Jest + Supertest (428), Vitest (568) y Playwright + axe-core (396 del frontend original y 335 del de React) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -318,7 +318,7 @@ Esquema `qr_empresarial` con 11 tablas: `usuario`, `perfil_empresarial`, `codigo
 construido con React 19 y Vite 8 para las Guías Frontend N.º 1 y N.º 2 del
 programa. Cubre los ocho módulos en dieciséis pantallas y consume 39 de los 40
 endpoints, con pruebas propias en dos niveles: **568 en jsdom** (Vitest y
-Testing Library) y **256 en un navegador de verdad** (Playwright), estas
+Testing Library) y **335 en un navegador de verdad** (Playwright), estas
 ultimas solo para lo que jsdom no puede contestar.
 
 **Es el que publica el servidor desde `v3.3.0.`** Los dos siguen en el
@@ -483,7 +483,7 @@ npm run avisos:semanal    # sin SMTP en el .env el mensaje va a Ethereal, que
                           # no lo entrega e imprime una URL para verlo.
                           # Relanzarlo no manda nada dos veces.
 
-# 6. Pruebas automaticas del backend (415, Jest + Supertest)
+# 6. Pruebas automaticas del backend (428, Jest + Supertest)
 npm test                  # crea su propia base qr_empresarial_test; no toca la suya
 
 # 7. Pruebas del frontend original (396, Playwright)
@@ -492,7 +492,7 @@ npm install
 npx playwright install chromium
 npm test                  # no necesita el backend encendido: simula la API
 
-# 8. Pruebas del frontend en React (568 en jsdom + 256 en Chromium y WebKit)
+# 8. Pruebas del frontend en React (568 en jsdom + 335 en Chromium y WebKit)
 cd ../frontend-react
 npm install
 npx playwright install chromium webkit

@@ -1,6 +1,6 @@
 # Pruebas automáticas del backend
 
-415 pruebas de integración sobre la API, con **Jest** y **Supertest**.
+428 pruebas de integración sobre la API, con **Jest** y **Supertest**.
 
 ```bash
 npm test
@@ -53,10 +53,11 @@ quedaron es la forma más rápida de entender por qué.
 | `admin.test.js` | RF-13, RF-14, RF-15 | 24 |
 | `frontend-publicado.test.js` | lo que publica Express | 41 |
 | `avisos.test.js` | RF-12, el resumen semanal | 27 |
+| `dos-pestanas.test.js` | la misma cuenta actuando dos veces | 13 |
 | `correo.test.js` | RF-03, el envío | 14 |
 | `arranque.test.js` | CORS, errores, avisos de despliegue | 11 |
 
-Cobertura: **96,3 % de las sentencias**, 92,2 % de las ramas y 99,1 % de las funciones de `src/`.
+Cobertura: **96,4 % de las sentencias**, 92,4 % de las ramas y 99,1 % de las funciones de `src/`.
 
 Los dos puntos de entrada quedan fuera de la medición: `src/server.js` y
 `src/tareas/resumen-semanal.js`. No tienen lógica —leen el `.env`, arrancan lo suyo y
@@ -85,7 +86,7 @@ Dos detalles que condicionan cómo están escritas:
 
 **Una rama que ninguna prueba distingue, y se deja dicho.** La consulta de destinatarios
 filtra por `deleted_at IS NULL` **y** por `estado = 'activo'`. Quitar solo el primer filtro
-no hace fallar ninguna de las 415 pruebas, y no es un descuido: la baja pone las dos cosas a
+no hace fallar ninguna de las 428 pruebas, y no es un descuido: la baja pone las dos cosas a
 la vez —`deleted_at` y `estado = 'restringido'`—, de modo que no existe ningún estado
 alcanzable con `deleted_at` puesto y la cuenta activa. La condición es un cinturón de más y
 se conserva, pero no hay prueba que pueda demostrarla.
@@ -190,6 +191,6 @@ Las tres se complementan y ninguna sobra:
 
 - **Postman** (232 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
   para explorar la API.
-- **Jest + Supertest** (415) es la red de seguridad automática del backend: corre entera en
+- **Jest + Supertest** (428) es la red de seguridad automática del backend: corre entera en
   medio minuto y avisa si un módulo nuevo rompe uno viejo.
 - **Playwright** (396) prueba las pantallas, con la API simulada.

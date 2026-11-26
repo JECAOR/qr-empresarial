@@ -175,13 +175,23 @@ export async function simularApi(page, opciones = {}) {
     errorAlOrdenar = null,
     errorAlDescargar = null,
     tema = PERFIL.tema,
-    sinMenu = false
+    sinMenu = false,
+
+    // Para probar con datos que no son los de muestra: un nombre de negocio
+    // de 150 caracteres, una descripcion de 2000, cuarenta bloques. Los
+    // datos de muestra son mansos a proposito -se leen bien en los
+    // informes-, y con ellos una prueba de desbordamiento no comprueba lo
+    // que pasa de verdad con lo que una persona puede escribir.
+    perfil: perfilPropio = {},
+    contenido: contenidoPropio = null
   } = opciones;
 
   const cuenta = comoAdministrador ? ADMINISTRADOR : USUARIO;
 
-  let contenido = contenidoInicial().filter((b) => !sinMenu || b.seccion !== 'menu');
-  let perfil = { ...PERFIL, tema };
+  let contenido = contenidoPropio
+    ? contenidoPropio.map((b) => ({ ...b }))
+    : contenidoInicial().filter((b) => !sinMenu || b.seccion !== 'menu');
+  let perfil = { ...PERFIL, tema, ...perfilPropio };
   let qr = { idQr: 9, url: `/p/${PERFIL.slug}`, activo: true, fechaCreacion: '2026-09-18' };
 
   // Deja de faltar en cuanto se genera: la pantalla vuelve a pedirlo despues
@@ -355,10 +365,20 @@ export async function simularApi(page, opciones = {}) {
 
     if (camino === '/qr') {
       if (metodo === 'POST') {
+        // El servidor distingue los dos casos, asi que aqui tambien: 201 la
+        // primera vez y 200 cuando el codigo ya existia -lo que ocurre con
+        // dos pestañas, cuando la segunda pulsa «Generar» sin saber que la
+        // primera ya lo genero-. Los mensajes son los del servidor de
+        // verdad: un simulador que diga otra cosa hace que una prueba de
+        // navegador pase sin comprobar nada.
+        if (!faltaElQr) {
+          return json(200, { message: 'Este perfil ya tenía un código QR', data: qr });
+        }
+
         qr = { idQr: 9, url: `/p/${PERFIL.slug}`, activo: true, fechaCreacion: '2026-10-31' };
         faltaElQr = false;
 
-        return json(201, { message: 'Código generado', data: qr });
+        return json(201, { message: 'Código QR generado correctamente', data: qr });
       }
 
       if (faltaElQr) return json(404, { message: 'Esta cuenta todavía no tiene un código' });
