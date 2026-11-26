@@ -439,9 +439,64 @@ mismo bloque aunque se insista con la red lenta —el botón se apaga y dice
 parecer que no pasó nada, y lo escrito se conserva para reintentar sin volver
 a teclearlo.
 
+## La sesión que se termina sola
+
+El séptimo repaso, y el que encontró el defecto más grave de los veinte. Las
+seis revisiones anteriores comparten un punto ciego: **todas mantuvieron la
+sesión constante.** La de la red cortada hace fallar la *conexión* —un
+`TypeError`—, no la *sesión*. La de los textos y los estados de error miró los
+fallos de la aplicación y nunca mató el token.
+
+Y es trivial de alcanzar: `JWT_EXPIRES_IN` vale **2 h** por defecto, así que le
+pasa a cualquiera que deje una pestaña abierta. También al cambiar la
+contraseña desde el móvil, al cerrar sesión en otra pestaña, o si un
+administrador restringe la cuenta.
+
+`AuthContext` detectaba el token muerto **solo en su primer efecto**, es decir
+al cargar o recargar la página. Navegando por la barra —lo que hace quien está
+usando la aplicación— nadie se enteraba, y ninguna pantalla miraba el 401.
+
+**Lo grave no era el mensaje crudo, sino lo que decían las pantallas.** Con la
+sesión muerta, la respuesta vacía se interpretaba como que no había nada, y
+cada pantalla lo anunciaba con su texto de «todavía no tienes»:
+
+| Pantalla | Lo que afirmaba |
+|---|---|
+| Contenido | contadores en **0** y «esta sección todavía no tiene bloques» |
+| Código QR | «todavía no has generado tu código», con el botón de generarlo |
+| Actividad | «todavía no hay nada que contar» |
+| Mi negocio | el formulario vacío, «0 de 2000 caracteres» |
+
+Son buenos textos *en su contexto*. Ante un fallo de autenticación afirmaban
+algo falso y alarmante: al dueño de un negocio se le estaba diciendo que su
+contenido, su código y sus estadísticas habían desaparecido. Y nada le sugería
+lo único que arreglaba la situación, que era recargar.
+
+Ahora el 401 de sesión se trata en **un solo sitio**, el cliente de la API, que
+es la única puerta de salida: borra la sesión, avisa a `AuthContext` y la
+guardia lleva al login con una frase que dice qué pasó y, sobre todo, **que lo
+que se estuviera escribiendo no se guardó**. Se vuelve a donde se estaba
+después de entrar.
+
+**El arreglo obvio habría sido un defecto peor.** «Cualquier 401 cierra la
+sesión» echaría de la aplicación a quien se equivoque al teclear su contraseña:
+cambiar el correo, cambiarla y darse de baja piden confirmarla y responden 401
+cuando no es la que es. Se distinguen por un campo que **manda el servidor**
+—`codigo: "sesion"`, solo en los del middleware— y no comparando el texto del
+mensaje, que se rompería al reescribir una frase.
+
+Dos cosas que salieron al falsificar, y que valen más que el arreglo:
+
+- `page.goto()` **recarga la página**, y eso remonta `AuthContext`, que sí
+  detectaba el token muerto. La primera investigación usó `goto` y concluyó que
+  todo funcionaba. Era falso. Las pruebas navegan pulsando los enlaces.
+- Había **dos** limpiezas del motivo del cierre, en `entrar()` y en `salir()`,
+  y se tapaban la una a la otra: quitar cualquiera de las dos no hacía fallar
+  nada. Quedó una sola, y ahora quitarla rompe su prueba.
+
 ## Las pruebas
 
-**554 en jsdom y 241 en un navegador de verdad.** Las primeras, con
+**568 en jsdom y 256 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -520,7 +575,7 @@ dice que manda.
 
 ## Las pruebas de extremo a extremo
 
-**241 pruebas en 14 archivos**, con [Playwright](https://playwright.dev) sobre
+**256 pruebas en 15 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium y WebKit, contra el paquete compilado:
 
 ```bash

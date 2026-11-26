@@ -1,6 +1,6 @@
 # Pruebas automáticas del backend
 
-404 pruebas de integración sobre la API, con **Jest** y **Supertest**.
+415 pruebas de integración sobre la API, con **Jest** y **Supertest**.
 
 ```bash
 npm test
@@ -45,7 +45,7 @@ quedaron es la forma más rápida de entender por qué.
 
 | Archivo | Requisitos | Pruebas |
 |---|---|---|
-| `auth.test.js` | RF-01, RF-02, RF-03 | 53 |
+| `auth.test.js` | RF-01, RF-02, RF-03 | 64 |
 | `usuarios.test.js` | RF-01 (administración), RF-12 | 80 |
 | `perfiles.test.js` | RF-04, RF-10, tema | 42 |
 | `contenido.test.js` | RF-05, RF-06 | 52 |
@@ -85,10 +85,32 @@ Dos detalles que condicionan cómo están escritas:
 
 **Una rama que ninguna prueba distingue, y se deja dicho.** La consulta de destinatarios
 filtra por `deleted_at IS NULL` **y** por `estado = 'activo'`. Quitar solo el primer filtro
-no hace fallar ninguna de las 404 pruebas, y no es un descuido: la baja pone las dos cosas a
+no hace fallar ninguna de las 415 pruebas, y no es un descuido: la baja pone las dos cosas a
 la vez —`deleted_at` y `estado = 'restringido'`—, de modo que no existe ningún estado
 alcanzable con `deleted_at` puesto y la cuenta activa. La condición es un cinturón de más y
 se conserva, pero no hay prueba que pueda demostrarla.
+
+### El código que distingue los dos 401
+
+Once pruebas de `auth.test.js` cuidan un contrato con el frontend, y de los que si se rompen
+hacen daño en silencio. Hay **dos clases de 401** y el cliente las trata de forma opuesta:
+
+- **De sesión** —falta el token, venció, la sesión se cerró, la cuenta fue restringida, la
+  contraseña cambió en otro dispositivo—. Lo emite el middleware, y solo él, con
+  `codigo: 'sesion'`. El cliente cierra la sesión y lleva al login.
+- **De credencial confirmada** —la contraseña está mal al cambiar el correo, al cambiarla o
+  al darse de baja, y las credenciales al entrar—. NO llevan el código. El cliente se queda
+  en el formulario para poder reintentar.
+
+Si los primeros perdieran la marca, el frontend volvería a dejar a quien estaba trabajando
+dentro de una aplicación muerta, con cada pantalla diciéndole que su negocio se quedó sin
+contenido, sin código QR y sin estadísticas. Y si la marca se colara en los segundos,
+equivocarse al teclear la contraseña echaría a la persona de la aplicación. Las dos
+direcciones se comprobaron quitando y colando la marca: la primera rompe 7 pruebas y la
+segunda, 4.
+
+Se distingue por el campo y no por el texto del mensaje a propósito: comparar frases se
+rompería al reescribir una. Lo sabe el servidor, que es quien los emite.
 
 Las tres últimas subidas salieron de mirar **qué no se ejecutaba nunca**, no de añadir casos a lo que ya pasaba:
 
@@ -168,6 +190,6 @@ Las tres se complementan y ninguna sobra:
 
 - **Postman** (232 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
   para explorar la API.
-- **Jest + Supertest** (404) es la red de seguridad automática del backend: corre entera en
+- **Jest + Supertest** (415) es la red de seguridad automática del backend: corre entera en
   medio minuto y avisa si un módulo nuevo rompe uno viejo.
 - **Playwright** (396) prueba las pantallas, con la API simulada.
