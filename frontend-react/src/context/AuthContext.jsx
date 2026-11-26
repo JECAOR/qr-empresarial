@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 import { iniciarSesion, cerrarSesion, consultarMiPerfil } from "../services/authService";
-import { CLAVE_TOKEN } from "../services/apiClient";
+import { CLAVE_TOKEN, alTerminarLaSesion } from "../services/apiClient";
 import { olvidarTema } from "../styles/tema";
 
 const ContextoAuth = createContext(null);
@@ -33,6 +33,37 @@ export function ProveedorAuth({ children }) {
   // si echar a alguien al login. Sin esto, al recargar una pantalla privada
   // se ve un parpadeo hacia /login antes de volver.
   const [cargando, setCargando] = useState(true);
+
+  // Por que se cerro, si se cerro sola. Lo ensena la pantalla de inicio de
+  // sesion: sin esto, quien llevaba media hora escribiendo aparece en el
+  // login sin saber por que y creyendo que la aplicacion se estropeo.
+  const [motivoDelCierre, setMotivoDelCierre] = useState("");
+
+  /**
+   * Lo que pasa cuando el servidor contesta que la sesion ya no vale.
+   *
+   * Se registra una sola vez, al montar. apiClient ya borro el token: aqui
+   * solo queda tirar del estado de React, que es lo que hace que la guardia
+   * mande al login y que la barra deje de ensenar el nombre del negocio.
+   *
+   * Antes esto no existia, y AuthContext solo se enteraba de una sesion
+   * muerta en su primer efecto, es decir al cargar o recargar la pagina.
+   * Navegando por la barra -que es lo que hace quien esta usando la
+   * aplicacion- nadie se enteraba.
+   */
+  useEffect(() => {
+    alTerminarLaSesion((mensaje) => {
+      setMotivoDelCierre(mensaje);
+      setUsuario(null);
+
+      // El color de marca es del negocio: en el computador del mostrador,
+      // dejarlo puesto pintaria con los colores de uno la pantalla del
+      // siguiente. Lo mismo que hace salir().
+      olvidarTema();
+    });
+
+    return () => alTerminarLaSesion(null);
+  }, []);
 
   useEffect(() => {
     let vigente = true;
@@ -79,6 +110,17 @@ export function ProveedorAuth({ children }) {
 
   async function salir() {
     await cerrarSesion();
+
+    // Salir por voluntad propia no es que la sesion se muriera: no hay nada
+    // que explicarle a nadie en el login.
+    //
+    // Es el UNICO sitio donde se limpia, y basta. Habia otra limpieza en
+    // entrar(), y al falsificar se vio que ninguna prueba podia distinguir
+    // las dos: las unicas formas de llegar al login son una sesion muerta
+    // -que vuelve a poner el motivo- o este boton, asi que limpiar aqui
+    // cubre el caso entero. Dos limpiezas se tapaban la una a la otra y
+    // dejaban sin comprobar las dos.
+    setMotivoDelCierre("");
     setUsuario(null);
 
     // El color de marca es del negocio, no del navegador. En un equipo
@@ -102,7 +144,9 @@ export function ProveedorAuth({ children }) {
   }
 
   return (
-    <ContextoAuth.Provider value={{ usuario, cargando, entrar, salir, refrescar }}>
+    <ContextoAuth.Provider
+      value={{ usuario, cargando, motivoDelCierre, entrar, salir, refrescar }}
+    >
       {children}
     </ContextoAuth.Provider>
   );

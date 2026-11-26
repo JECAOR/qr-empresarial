@@ -92,11 +92,47 @@ teléfono de otro negocio.
 | 200 | OK | Consulta o modificación correcta |
 | 201 | Created | Usuario creado |
 | 400 | Bad Request | Datos mal formados o identificador inválido |
-| 401 | Unauthorized | Sin token, token inválido o vencido, credenciales incorrectas, cuenta restringida |
+| 401 | Unauthorized | Sin token, token inválido o vencido, credenciales incorrectas, cuenta restringida. **Dos clases:** ver abajo |
 | 403 | Forbidden | Autenticado, pero el rol no tiene permiso |
 | 404 | Not Found | El usuario no existe |
 | 409 | Conflict | El correo ya está registrado |
 | 500 | Internal Server Error | Error inesperado; el detalle queda en el log del servidor |
+
+### Los dos 401, y cómo distinguirlos
+
+Hay **dos clases de 401** y un cliente tiene que tratarlas de forma opuesta:
+
+- **El de sesión.** El token falta, venció, la sesión se cerró, la cuenta fue restringida o
+  la contraseña cambió desde otro dispositivo. No hay nada que reintentar: toca entrar de
+  nuevo. Lo emite el middleware de autenticación, antes de cualquier validador.
+- **El de credencial confirmada.** Cambiar el correo, cambiar la contraseña y darse de baja
+  piden confirmar la contraseña, y responden 401 cuando no es la que es. La sesión sigue
+  perfectamente viva: hay que quedarse en el formulario para poder reintentar.
+
+Los primeros, y solo ellos, traen un campo **`codigo: "sesion"`**:
+
+```json
+{ "message": "La sesión fue cerrada", "codigo": "sesion" }
+```
+
+```json
+{ "message": "La contraseña no es correcta" }
+```
+
+Distinguirlos por el texto del mensaje sería frágil: bastaría reescribir una frase para
+romperlo. Lo sabe el servidor, que es quien los emite, y por eso lo dice el servidor. El
+campo **se agrega y no reemplaza nada**: un cliente que lo ignore sigue recibiendo el mismo
+401 y el mismo `message` que antes.
+
+> **Por qué importa tanto.** El frontend de React trataba cualquier 401 como un error
+> cualquiera, y eso dejaba a quien estaba trabajando dentro de una aplicación muerta: el
+> token se quedaba guardado, la barra seguía con el nombre del negocio y cada pantalla
+> interpretaba la respuesta vacía como que no había nada. Contenido anunciaba que no había
+> bloques, Código QR ofrecía generar uno que ya existía y Actividad decía que no había nada
+> que contar. Al dueño del negocio se le estaba diciendo que sus datos habían desaparecido.
+>
+> Y el arreglo ingenuo —cerrar la sesión ante cualquier 401— habría sido peor: equivocarse
+> al teclear la contraseña habría echado a la persona de la aplicación.
 
 ---
 

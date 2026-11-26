@@ -14,13 +14,28 @@ const authRepository = require('../modules/auth/auth.repository');
  * Responde 401 si falta el token, es invalido, vencido, si la sesion fue
  * cerrada, si la contrasena cambio despues de emitirlo, o si el usuario ya no
  * existe o fue restringido.
+ *
+ * TODOS estos 401 llevan codigo: 'sesion', y esa marca es para el frontend.
+ *
+ * Hay otros 401 en la API que NO son de sesion: los que piden confirmar la
+ * contrasena -cambiar el correo, cambiarla, darse de baja- responden 401
+ * cuando la contrasena no es la que es. Los dos casos tienen que tratarse de
+ * forma opuesta: el de sesion lleva al login, y el de la contrasena
+ * equivocada se queda en el formulario para que se pueda reintentar. Un
+ * cliente que no los distinguiera echaria fuera a quien se equivoco al
+ * teclear.
+ *
+ * Distinguirlos por el texto del mensaje seria fragil: bastaria reescribir
+ * una frase para romperlo. Lo sabe el servidor, que es quien los emite, y
+ * por eso lo dice el servidor. El campo se agrega, no reemplaza nada: un
+ * cliente que lo ignore sigue viendo el mismo 401 y el mismo message.
  */
 async function autenticar(req, res, next) {
   try {
     const autorizacion = req.headers.authorization;
 
     if (!autorizacion?.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Autenticación requerida' });
+      return res.status(401).json({ message: 'Autenticación requerida', codigo: 'sesion' });
     }
 
     const token = autorizacion.split(' ')[1];
@@ -32,13 +47,13 @@ async function autenticar(req, res, next) {
     // Solo ocurre con tokens emitidos antes de incorporar el cierre de
     // sesion; basta volver a iniciar sesion para obtener uno nuevo.
     if (!datos.jti) {
-      return res.status(401).json({ message: 'Token inválido o vencido' });
+      return res.status(401).json({ message: 'Token inválido o vencido', codigo: 'sesion' });
     }
 
     // RF-02: si el usuario cerro sesion, el token queda inservible aunque
     // su firma y su fecha sigan siendo correctas
     if (await authRepository.sesionRevocada(datos.jti)) {
-      return res.status(401).json({ message: 'La sesión fue cerrada' });
+      return res.status(401).json({ message: 'La sesión fue cerrada', codigo: 'sesion' });
     }
 
     // Se consulta de nuevo porque el token no cambia hasta que vence:
@@ -46,7 +61,7 @@ async function autenticar(req, res, next) {
     const usuario = await authRepository.buscarPorId(datos.id);
 
     if (!usuario || usuario.estado !== 'activo') {
-      return res.status(401).json({ message: 'Usuario inválido o restringido' });
+      return res.status(401).json({ message: 'Usuario inválido o restringido', codigo: 'sesion' });
     }
 
     // Si la contrasena cambio despues de emitirse este token, no sirve.
@@ -61,7 +76,8 @@ async function autenticar(req, res, next) {
 
       if (firmadoEn < corte) {
         return res.status(401).json({
-          message: 'La contraseña cambió. Inicie sesión de nuevo'
+          message: 'La contraseña cambió. Inicie sesión de nuevo',
+          codigo: 'sesion'
         });
       }
     }
@@ -78,7 +94,7 @@ async function autenticar(req, res, next) {
 
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Token inválido o vencido' });
+    return res.status(401).json({ message: 'Token inválido o vencido', codigo: 'sesion' });
   }
 }
 

@@ -9,6 +9,7 @@
 const { app, request, CLAVE, correoNuevo, crearCuenta, entrar, como } = require('./ayudas');
 
 const pool = require('../src/config/database');
+const jwt = require('jsonwebtoken');
 
 describe('Registro publico (RF-01)', () => {
   test('crea la cuenta, devuelve token y crea el perfil del negocio', async () => {
@@ -509,5 +510,167 @@ describe('cambiar la contrasena propia', () => {
 
     expect(respuesta.status).toBe(400);
     expect(respuesta.body.message).toMatch(/distinta de la actual/);
+  });
+});
+
+// ============================================
+// El codigo que distingue un 401 de sesion
+//
+// Es un contrato con el frontend, y de los que si se rompen hacen dano en
+// silencio. El cliente trata los dos casos de forma OPUESTA: el de sesion
+// cierra la sesion y lleva al login; el de contrasena equivocada se queda en
+// el formulario para poder reintentar.
+//
+// Si los 401 del middleware perdieran el codigo, el frontend volveria al
+// defecto que esto arreglo: quedarse en una pantalla muerta ensenando
+// "Token invalido o vencido" y, peor, diciendo que el negocio no tiene
+// contenido ni codigo QR ni estadisticas.
+//
+// Si al contrario lo llevara un 401 de contrasena, equivocarse al teclear
+// echaria a la persona de la aplicacion.
+//
+// Por eso lo dice el servidor y no lo adivina el cliente comparando frases.
+// ============================================
+
+describe('los 401 de sesion llevan codigo', () => {
+  test('sin cabecera de autorizacion', async () => {
+    const respuesta = await request(app).get('/api/usuarios/me');
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBe('sesion');
+  });
+
+  test('con un token que no es un token', async () => {
+    const respuesta = await como('esto-no-es-un-jwt').get('/api/usuarios/me');
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBe('sesion');
+  });
+
+  test('con un token bien firmado pero sin jti', async () => {
+    const { id } = await crearCuenta();
+
+    const sinJti = jwt.sign(
+      { id, correo: 'da@igual.co', rol: 'empresa' },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    const respuesta = await como(sinJti).get('/api/usuarios/me');
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBe('sesion');
+  });
+
+  test('con la sesion ya cerrada', async () => {
+    const { token } = await crearCuenta();
+
+    await como(token).post('/api/auth/logout');
+
+    const respuesta = await como(token).get('/api/usuarios/me');
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBe('sesion');
+  });
+
+  test('con la cuenta restringida despues de entrar', async () => {
+    const cuenta = await crearCuenta();
+
+    await pool.execute(
+      "UPDATE usuario SET estado = 'restringido' WHERE id_usuario = ?",
+      [cuenta.id]
+    );
+
+    const respuesta = await como(cuenta.token).get('/api/usuarios/me');
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBe('sesion');
+  });
+
+  // El caso de las dos pestanas: se cambia la contrasena en una y la otra se
+  // queda con un token emitido antes del corte.
+  //
+  // El segundo de espera hace falta y no es un apano de la prueba: el
+  // middleware compara con `<` estricto a proposito, para que el token que
+  // recibe quien ACABA de cambiar su contrasena -emitido en el mismo segundo
+  // del corte- siga valiendo. Sin la espera, el token de la otra pestana
+  // cae en ese mismo segundo y sobrevive. Fuera de una prueba las dos cosas
+  // nunca pasan en el mismo segundo.
+  test('con un token de antes de cambiar la contrasena', async () => {
+    const cuenta = await crearCuenta();
+    const otraPestana = await entrar(cuenta.correo);
+
+    await new Promise((listo) => setTimeout(listo, 1100));
+
+    await como(cuenta.token).put('/api/usuarios/me/contrasena').send({
+      contrasenaActual: CLAVE,
+      contrasenaNueva: 'OtraClave1*'
+    });
+
+    const respuesta = await como(otraPestana).get('/api/usuarios/me');
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBe('sesion');
+  });
+
+  // La descarga del codigo QR tiene su propio camino en el frontend, asi que
+  // conviene dejar comprobado que el servidor la rechaza igual.
+  test('tambien al pedir la descarga del codigo', async () => {
+    const respuesta = await request(app).get('/api/qr/descargar/png');
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBe('sesion');
+  });
+});
+
+describe('los 401 que NO son de sesion no lo llevan', () => {
+  // Los tres que piden confirmar la contrasena. Si el frontend los tratara
+  // como una sesion muerta, quien se equivoque al teclear acabaria en el
+  // login habiendo perdido lo que estaba escribiendo.
+  test('la contrasena equivocada al cambiar el correo', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/usuarios/me').send({
+      nombre: 'Nombre Valido',
+      correo: correoNuevo(),
+      contrasena: 'EstaNoEsLaClave1*'
+    });
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBeUndefined();
+  });
+
+  test('la contrasena actual equivocada al cambiarla', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/usuarios/me/contrasena').send({
+      contrasenaActual: 'EstaNoEsLaClave1*',
+      contrasenaNueva: 'OtraClave1*'
+    });
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBeUndefined();
+  });
+
+  test('la contrasena equivocada al darse de baja', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).delete('/api/usuarios/me')
+      .send({ contrasena: 'EstaNoEsLaClave1*' });
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBeUndefined();
+  });
+
+  // Y entrar con credenciales que no son: tampoco es una sesion que se
+  // murio, es una que nunca empezo.
+  test('las credenciales equivocadas al entrar', async () => {
+    const { correo } = await crearCuenta();
+
+    const respuesta = await request(app).post('/api/auth/login')
+      .send({ correo, contrasena: 'EstaNoEsLaClave1*' });
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.codigo).toBeUndefined();
   });
 });

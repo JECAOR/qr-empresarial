@@ -1,6 +1,6 @@
 # Pruebas de extremo a extremo — frontend en React
 
-**241 pruebas en 14 archivos**, con [Playwright](https://playwright.dev) sobre
+**256 pruebas en 15 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium. Corren contra el **paquete compilado**, en un navegador de verdad.
 
 ```bash
@@ -21,7 +21,7 @@ Y en modo interactivo, útil mientras se programa:
 npm run test:e2e:ui
 ```
 
-## Por qué existen, si ya hay 554 pruebas
+## Por qué existen, si ya hay 568 pruebas
 
 Las de Vitest corren en **jsdom, que no es un navegador**. No aplica CSS, no
 tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene
@@ -82,6 +82,7 @@ redibujado, no porque haga falta.
 | `teclado.spec.js` (8) | Los flujos largos sin ratón: agregar, reordenar, apagar y borrar un bloque, y a dónde va el foco después de cada paso | el foco de jsdom es una simulación: no lo suelta al deshabilitar un botón, así que allí el defecto no existe |
 | `red.spec.js` (7) | La red lenta o caída a mitad: qué se dice, si se conserva lo escrito y si se puede mandar algo dos veces | el `fetch` de jsdom es un doble que responde al instante: no hay «lento» ni «a medias» |
 | `desarrollo.spec.js` (8) | El doble paso de `StrictMode`: que ocurra, y que aun así una visita se cuente una sola vez | React quita `StrictMode` al compilar, así que corre contra el servidor de desarrollo |
+| `sesion.spec.js` (15) | La sesion que se termina sola: que navegar por la barra lleve al login, que se explique, y que ninguna pantalla afirme que el negocio se quedo sin contenido, sin codigo ni sin estadisticas | `page.goto()` recarga y eso REMONTA `AuthContext`, que si detectaba el token muerto; el defecto solo aparece navegando con los enlaces, y en jsdom no hay navegacion de verdad |
 | `menu.spec.js` (20) | El recorrido del menú (RF-05): que el botón navegue sin recargar, que la pantalla aguante un enlace directo y una recarga, que Atrás vuelva al perfil, y que el clic en un enlace del menú salga contado | que el contenido quede AGRUPADO es estructura del DOM y se prueba en jsdom; el recorrido y `sendBeacon` no |
 | `ayudas.js` | No es una prueba: es la API simulada y la sesión sembrada | — |
 
@@ -122,7 +123,7 @@ Lo habitual es `prepararSesion(page)`, que hace las dos.
 reenvíe sus direcciones lo prueba
 [`backend/tests/frontend-publicado.test.js`](../../backend/tests/frontend-publicado.test.js),
 con Supertest. Que la API responda lo que debe, la colección de Postman en
-[`docs/postman/`](../../docs/postman) y las 404 pruebas del backend.
+[`docs/postman/`](../../docs/postman) y las 415 pruebas del backend.
 
 ### Que la simulación se parezca a la API no es un detalle
 

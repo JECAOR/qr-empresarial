@@ -13,13 +13,23 @@ import { useAuth } from "../../context/AuthContext";
  * @param {string[]} [rolesPermitidos]
  */
 export default function RutaProtegida({ rolesPermitidos }) {
-  const { usuario, cargando } = useAuth();
+  const { usuario, cargando, motivoDelCierre } = useAuth();
   const ubicacion = useLocation();
 
   if (cargando) return <p className="aviso">Verificando sesión…</p>;
 
-  // Se recuerda a donde iba, para devolverlo ahi despues de entrar
-  if (!usuario) return <Navigate to="/login" replace state={{ desde: ubicacion.pathname }} />;
+  // Se recuerda a donde iba, para devolverlo ahi despues de entrar. Y si la
+  // sesion se murio sola, el motivo viaja con el: aparecer en el login sin
+  // explicacion, despues de media hora escribiendo, parece una averia.
+  if (!usuario) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ desde: ubicacion.pathname, aviso: motivoDelCierre || undefined }}
+      />
+    );
+  }
 
   if (rolesPermitidos && !rolesPermitidos.includes(usuario.rol)) {
     return <Navigate to="/acceso-denegado" replace />;

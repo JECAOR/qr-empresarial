@@ -8,7 +8,9 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { peticion, descargar, origenDelBackend, CLAVE_TOKEN } from "./apiClient";
+import {
+  peticion, descargar, origenDelBackend, alTerminarLaSesion, CLAVE_TOKEN, CLAVE_USUARIO
+} from "./apiClient";
 import { respuesta, simularFetch } from "../pruebas/ayudas";
 
 const API = "http://api.de.pruebas.invalido/api";
@@ -242,5 +244,144 @@ describe("cuando la peticion no sale", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Algo muy raro")));
 
     await expect(peticion("/usuarios/me")).rejects.toThrow("Algo muy raro");
+  });
+});
+
+// ============================================
+// La sesion que se termina sola
+//
+// Esto no lo veia ninguna prueba. Las seis revisiones del frontend
+// mantuvieron la sesion constante: la de red cortada hace fallar la
+// CONEXION -un TypeError-, no la SESION. Y AuthContext solo se enteraba de
+// un token muerto en su primer efecto, o sea al cargar la pagina: navegando
+// por la barra, que es lo que hace quien esta usando la aplicacion, nadie se
+// enteraba.
+// ============================================
+
+describe("un 401 de sesion", () => {
+  /** Un 401 como el que manda el middleware del backend. */
+  const deSesion = (message = "Token inválido o vencido") =>
+    respuesta({ message, codigo: "sesion" }, { status: 401 });
+
+  it("borra el token y el usuario guardados", async () => {
+    sessionStorage.setItem(CLAVE_TOKEN, "jwt");
+    sessionStorage.setItem(CLAVE_USUARIO, JSON.stringify({ nombre: "Alguien" }));
+
+    simularFetch([deSesion()]);
+
+    await expect(peticion("/usuarios/me")).rejects.toThrow();
+
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull();
+    expect(sessionStorage.getItem(CLAVE_USUARIO)).toBeNull();
+  });
+
+  // El mensaje del servidor es correcto para un registro y no dice que hacer
+  // a quien esta delante. Y la segunda mitad es la que importa: quien
+  // llevaba media hora escribiendo tiene derecho a saber que no se guardo.
+  it("no reenvia el mensaje del servidor, dice uno que sirve", async () => {
+    simularFetch([deSesion()]);
+
+    await expect(peticion("/usuarios/me")).rejects.toThrow(/Tu sesión terminó/);
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull();
+  });
+
+  it("y dice que lo que se estaba escribiendo no se guardo", async () => {
+    simularFetch([deSesion()]);
+
+    await expect(peticion("/perfiles/me")).rejects.toThrow(/no se guardó/);
+  });
+
+  it("avisa a quien se haya registrado", async () => {
+    const avisado = vi.fn();
+
+    alTerminarLaSesion(avisado);
+    simularFetch([deSesion()]);
+
+    await expect(peticion("/contenido")).rejects.toThrow();
+
+    expect(avisado).toHaveBeenCalledTimes(1);
+    expect(avisado.mock.calls[0][0]).toMatch(/Tu sesión terminó/);
+
+    alTerminarLaSesion(null);
+  });
+
+  // Los cinco motivos del middleware llevan el mismo codigo y se tratan
+  // igual: la frase vale para todos.
+  it.each([
+    "Autenticación requerida",
+    "Token inválido o vencido",
+    "La sesión fue cerrada",
+    "Usuario inválido o restringido",
+    "La contraseña cambió. Inicie sesión de nuevo"
+  ])("pasa igual con «%s»", async (mensaje) => {
+    sessionStorage.setItem(CLAVE_TOKEN, "jwt");
+    simularFetch([deSesion(mensaje)]);
+
+    await expect(peticion("/usuarios/me")).rejects.toThrow(/Tu sesión terminó/);
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull();
+  });
+
+  // La descarga del codigo QR no pasa por peticion(): pide un blob y tiene
+  // su propio manejo de errores, asi que podria quedarse fuera del arreglo.
+  it("la descarga del codigo QR tambien", async () => {
+    sessionStorage.setItem(CLAVE_TOKEN, "jwt");
+    simularFetch([deSesion()]);
+
+    await expect(descargar("/qr/descargar/png")).rejects.toThrow(/Tu sesión terminó/);
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull();
+  });
+});
+
+describe("un 401 que NO es de sesion", () => {
+  // LA TRAMPA DEL ARREGLO, y la razon de que el backend mande un codigo.
+  //
+  // Cambiar el correo, cambiar la contrasena y darse de baja piden confirmar
+  // la contrasena, y responden 401 cuando no es la que es. Si cualquier 401
+  // cerrara la sesion, equivocarse al teclear la contrasena echaria a la
+  // persona fuera de la aplicacion y le haria perder lo que estuviera
+  // escribiendo: un defecto peor que el que esto arregla.
+  const deContrasena = respuesta(
+    { message: "La contraseña no es correcta" },
+    { status: 401 }
+  );
+
+  it("no cierra la sesion", async () => {
+    sessionStorage.setItem(CLAVE_TOKEN, "jwt");
+    simularFetch([deContrasena]);
+
+    await expect(peticion("/usuarios/me", { method: "PUT" })).rejects.toThrow();
+
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBe("jwt");
+  });
+
+  it("deja pasar el mensaje del servidor, que es el que hay que leer", async () => {
+    simularFetch([deContrasena]);
+
+    await expect(peticion("/usuarios/me", { method: "PUT" }))
+      .rejects.toThrow("La contraseña no es correcta");
+  });
+
+  it("ni avisa de que la sesion termino", async () => {
+    const avisado = vi.fn();
+
+    alTerminarLaSesion(avisado);
+    simularFetch([deContrasena]);
+
+    await expect(peticion("/usuarios/me", { method: "DELETE" })).rejects.toThrow();
+
+    expect(avisado).not.toHaveBeenCalled();
+
+    alTerminarLaSesion(null);
+  });
+
+  // Y un 401 sin cuerpo que se pueda leer tampoco: sin el codigo no se puede
+  // afirmar que sea de sesion, y cerrarla por si acaso seria adivinar.
+  it("un 401 sin cuerpo no cierra la sesion", async () => {
+    sessionStorage.setItem(CLAVE_TOKEN, "jwt");
+    simularFetch([respuesta(undefined, { status: 401 })]);
+
+    await expect(peticion("/usuarios/me")).rejects.toThrow();
+
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBe("jwt");
   });
 });
