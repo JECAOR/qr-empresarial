@@ -21,7 +21,7 @@ Y en modo interactivo, útil mientras se programa:
 npm run test:e2e:ui
 ```
 
-## Por qué existen, si ya hay 553 pruebas
+## Por qué existen, si ya hay 554 pruebas
 
 Las de Vitest corren en **jsdom, que no es un navegador**. No aplica CSS, no
 tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene
@@ -122,7 +122,7 @@ Lo habitual es `prepararSesion(page)`, que hace las dos.
 reenvíe sus direcciones lo prueba
 [`backend/tests/frontend-publicado.test.js`](../../backend/tests/frontend-publicado.test.js),
 con Supertest. Que la API responda lo que debe, la colección de Postman en
-[`docs/postman/`](../../docs/postman) y las 372 pruebas del backend.
+[`docs/postman/`](../../docs/postman) y las 404 pruebas del backend.
 
 ### Que la simulación se parezca a la API no es un detalle
 

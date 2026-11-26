@@ -249,7 +249,7 @@ export async function simularApi(page, opciones = {}) {
     if (camino === '/usuarios/me' && metodo === 'GET') return json(200, { data: cuenta });
 
     if (camino === '/usuarios/me/preferencias') {
-      return json(200, { data: { resumen: true, novedades: false } });
+      return json(200, { data: { resumen: true, guardadas: false } });
     }
 
     // --- Perfil empresarial ---

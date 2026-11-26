@@ -1,6 +1,6 @@
 # Pruebas automáticas del backend
 
-372 pruebas de integración sobre la API, con **Jest** y **Supertest**.
+404 pruebas de integración sobre la API, con **Jest** y **Supertest**.
 
 ```bash
 npm test
@@ -46,16 +46,49 @@ quedaron es la forma más rápida de entender por qué.
 | Archivo | Requisitos | Pruebas |
 |---|---|---|
 | `auth.test.js` | RF-01, RF-02, RF-03 | 53 |
-| `usuarios.test.js` | RF-01 (administración), RF-12 | 65 |
-| `perfiles.test.js` | RF-04, RF-10, tema | 22 |
-| `contenido.test.js` | RF-05, RF-06 | 30 |
-| `qr-y-publico.test.js` | RF-07, RF-08, RF-09, RF-11 | 35 |
+| `usuarios.test.js` | RF-01 (administración), RF-12 | 80 |
+| `perfiles.test.js` | RF-04, RF-10, tema | 42 |
+| `contenido.test.js` | RF-05, RF-06 | 52 |
+| `qr-y-publico.test.js` | RF-07, RF-08, RF-09, RF-11 | 60 |
 | `admin.test.js` | RF-13, RF-14, RF-15 | 24 |
 | `frontend-publicado.test.js` | lo que publica Express | 41 |
+| `avisos.test.js` | RF-12, el resumen semanal | 27 |
 | `correo.test.js` | RF-03, el envío | 14 |
 | `arranque.test.js` | CORS, errores, avisos de despliegue | 11 |
 
-Cobertura: **96,2 % de las sentencias**, 92,2 % de las ramas y 99,1 % de las funciones de `src/`.
+Cobertura: **96,3 % de las sentencias**, 92,2 % de las ramas y 99,1 % de las funciones de `src/`.
+
+Los dos puntos de entrada quedan fuera de la medición: `src/server.js` y
+`src/tareas/resumen-semanal.js`. No tienen lógica —leen el `.env`, arrancan lo suyo y
+cierran el pool— y lo que hacen de verdad vive en el Service correspondiente, que sí se
+prueba. Medirlos solo premiaría escribir una prueba que ejecuta un `process.exit`.
+
+### El resumen semanal, y por qué se prueba así
+
+`avisos.test.js` no prueba una ruta: prueba un proceso que **nadie mira cuando corre**. Un
+error en una petición web lo ve quien la hizo; un error aquí son correos repetidos a cien
+negocios, o ninguno, y no se sabría hasta que alguien se queje. De ahí que se centre en las
+dos cosas que pueden doler: a quién se le manda y cuántas veces.
+
+`nodemailer` está simulado en `setup/entorno.js` y cada mensaje queda en
+`global.__correosEnviados`, así que se comprueba el correo **de verdad** —asunto, texto y
+HTML, el escapado del nombre del negocio incluido— sin abrir una conexión.
+
+Dos detalles que condicionan cómo están escritas:
+
+- **La base de pruebas es una sola para toda la suite** y se llena de cuentas de los otros
+  archivos, así que ninguna prueba cuenta correos en total: todas filtran por la dirección
+  de la cuenta que acaban de crear.
+- **La baja reescribe el correo** a `eliminado_<id>_<correo>`. La prueba de la cuenta dada
+  de baja filtraba por la dirección de antes y pasaba aunque el mensaje se mandara: no
+  distinguía nada. Ahora comprueba las dos direcciones.
+
+**Una rama que ninguna prueba distingue, y se deja dicho.** La consulta de destinatarios
+filtra por `deleted_at IS NULL` **y** por `estado = 'activo'`. Quitar solo el primer filtro
+no hace fallar ninguna de las 404 pruebas, y no es un descuido: la baja pone las dos cosas a
+la vez —`deleted_at` y `estado = 'restringido'`—, de modo que no existe ningún estado
+alcanzable con `deleted_at` puesto y la cuenta activa. La condición es un cinturón de más y
+se conserva, pero no hay prueba que pueda demostrarla.
 
 Las tres últimas subidas salieron de mirar **qué no se ejecutaba nunca**, no de añadir casos a lo que ya pasaba:
 
@@ -68,6 +101,8 @@ Las tres últimas subidas salieron de mirar **qué no se ejecutaba nunca**, no d
 | Las de entrar y registrarse (`auth.validator.js`) | 77,8 % | 100 % |
 | El CORS de producción, que no se había ejecutado nunca | 70 % | 100 % |
 | El middleware de errores con un fallo inesperado | 50 % | 100 % |
+| Que un error de base que no sea un duplicado **no** se lea como «ya enviado» | — | cubierto |
+| La llamada sin argumentos, que es justo la que hace la tarea programada | — | cubierto |
 | Las escrituras del lado `elemento` del contenido | 63,6 % | 100 % |
 
 El acento está en lo que, si se rompe, **no da un error visible**. Un 401 que pasa a 200 no
@@ -133,6 +168,6 @@ Las tres se complementan y ninguna sobra:
 
 - **Postman** (232 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
   para explorar la API.
-- **Jest + Supertest** (372) es la red de seguridad automática del backend: corre entera en
+- **Jest + Supertest** (404) es la red de seguridad automática del backend: corre entera en
   medio minuto y avisa si un módulo nuevo rompe uno viejo.
 - **Playwright** (396) prueba las pantallas, con la API simulada.

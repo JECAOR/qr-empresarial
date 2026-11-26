@@ -263,9 +263,12 @@ function showSavedToast(id) {
 // ya existía en inglés y la API sigue el español del esquema. Esta es la
 // única traducción.
 const NOTIF_KEY = "qre-notifications";
-const NOTIF_DEFAULTS = { weekly: true, updates: false };
 
-const NOMBRE_EN_LA_API = { weekly: "resumen", updates: "novedades" };
+// Queda un aviso. El de novedades se quito con la migracion 015 y el de
+// resenas antes: los dos anunciaban algo que el sistema no tiene, asi que
+// el correo no habria salido nunca. Este si sale, lo manda la tarea
+// avisos:semanal del backend.
+const NOTIF_DEFAULTS = { weekly: true };
 
 function getNotifPrefs() {
   try {
@@ -287,8 +290,7 @@ function saveNotifPrefs(prefs) {
 /** Traduce las claves de la pantalla a las de la API. */
 function prefsParaLaApi(prefs) {
   return {
-    resumen: Boolean(prefs.weekly),
-    novedades: Boolean(prefs.updates)
+    resumen: Boolean(prefs.weekly)
   };
 }
 
@@ -303,8 +305,7 @@ async function sincronizarNotificaciones() {
     const { data } = await Api.misPreferencias();
 
     saveNotifPrefs({
-      weekly: data.resumen,
-      updates: data.novedades
+      weekly: data.resumen
     });
 
     loadNotifToggles();

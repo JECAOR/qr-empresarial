@@ -160,7 +160,7 @@ describe("cambiarMiContrasena()", () => {
 
 describe("preferencias de avisos", () => {
   it("las consulta en /usuarios/me/preferencias", async () => {
-    const espia = simularFetch([respuesta({ data: { resumen: true, novedades: false } })]);
+    const espia = simularFetch([respuesta({ data: { resumen: true, guardadas: true } })]);
 
     await consultarMisPreferencias();
 
@@ -170,10 +170,10 @@ describe("preferencias de avisos", () => {
   it("las guarda con PUT", async () => {
     const espia = simularFetch([respuesta({ data: {} })]);
 
-    await guardarMisPreferencias({ resumen: false, novedades: true });
+    await guardarMisPreferencias({ resumen: false });
 
     expect(espia.mock.calls[0][1].method).toBe("PUT");
-    expect(cuerpoDe(espia)).toEqual({ resumen: false, novedades: true });
+    expect(cuerpoDe(espia)).toEqual({ resumen: false });
   });
 });
 

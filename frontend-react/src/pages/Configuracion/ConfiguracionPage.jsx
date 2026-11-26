@@ -13,16 +13,14 @@ import CampoTexto from "../../components/Formulario/CampoTexto";
 import useTitulo from "../../hooks/useTitulo";
 import "./ConfiguracionPage.css";
 
+// Queda uno. Habia tres: el de resenas se quito porque el sistema no tiene
+// resenas, y el de novedades porque nada guarda ni redacta anuncios. Los dos
+// prometian un correo que no podia salir. Este si sale.
 const AVISOS = [
   {
     clave: "resumen",
     nombre: "Resumen de actividad",
     ayuda: "Cuántas veces se escaneó tu código y qué se pulsó."
-  },
-  {
-    clave: "novedades",
-    nombre: "Novedades del sistema",
-    ayuda: "Cuando se agregue algo nuevo a la aplicación."
   }
 ];
 
@@ -42,7 +40,7 @@ export default function ConfiguracionPage() {
     contrasena: ""
   }));
   const [claves, setClaves] = useState({ actual: "", nueva: "", repetida: "" });
-  const [avisos, setAvisos] = useState({ resumen: true, novedades: false, guardadas: false });
+  const [avisos, setAvisos] = useState({ resumen: true, guardadas: false });
   const [paraBorrar, setParaBorrar] = useState("");
 
   const [cargando, setCargando] = useState(true);
@@ -309,9 +307,9 @@ export default function ConfiguracionPage() {
         <h2 className="panel__titulo panel__titulo--chico">Avisos por correo</h2>
 
         <p className="panel__sub">
-          Se guarda tu preferencia, pero <strong>todavía no se envía ningún
-          correo</strong>: el sistema no tiene aún la tarea que los manda.
-          Preferimos decirlo a prometer avisos que no llegan.
+          El resumen se envía los lunes al correo de tu cuenta. Si durante la
+          semana no hubo ni un escaneo, no te escribimos: un correo que dice
+          «cero» no le sirve a nadie.
         </p>
 
         <ul className="avisos">
