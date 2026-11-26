@@ -206,7 +206,7 @@ módulo 8 (RF-13 a RF-15).
 | QR | `qrcode` (servidor, descargas) y `qrcode.min.js` (navegador, vista previa) | En uso |
 | PDF | `pdfkit`, para la descarga del código en PDF (RF-08) | En uso |
 | Gráficos | `chart.js` | En uso |
-| Pruebas | Postman (250 peticiones), Jest + Supertest (295), Vitest (553) y Playwright + axe-core (396 del frontend original y 241 del de React) | En uso |
+| Pruebas | Postman (250 peticiones), Jest + Supertest (372), Vitest (553) y Playwright + axe-core (396 del frontend original y 241 del de React) | En uso |
 | Calidad | ESLint, Prettier, EditorConfig, Lighthouse | Previsto |
 | Versionamiento | Git + GitHub | En uso |
 | Despliegue | Ubuntu Server 24.04, Nginx, PM2, Let's Encrypt (SSL) | Previsto |
@@ -458,7 +458,7 @@ npm run dev               # servidor con nodemon en http://localhost:3000
 # Si el paso 2 se salta, el servidor arranca igual y avisa de que falta
 # compilar. Para publicar el frontend original en su lugar: FRONTEND=clasico
 
-# 5. Pruebas automaticas del backend (295, Jest + Supertest)
+# 5. Pruebas automaticas del backend (372, Jest + Supertest)
 # (se sigue en backend/, desde el paso 3)
 npm test                  # crea su propia base qr_empresarial_test; no toca la suya
 

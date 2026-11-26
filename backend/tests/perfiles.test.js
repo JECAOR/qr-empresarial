@@ -2,7 +2,7 @@
 // TESTS/PERFILES.TEST.JS — RF-04, RF-10 y el tema (RF-12)
 // ============================================
 
-const { app, request, CLAVE, crearCuenta, entrar, como } = require('./ayudas');
+const { app, request, CLAVE, crearCuenta, entrar, agregarBloque, como } = require('./ayudas');
 
 const pool = require('../src/config/database');
 
@@ -355,5 +355,154 @@ describe('cuando el nombre ya lo usan doscientos negocios', () => {
 
     // La base, mas los sufijos del 2 al 200
     expect(espia).toHaveBeenCalledTimes(200);
+  });
+});
+
+// ============================================
+// Los limites del perfil, y las etiquetas de la vista previa
+// ============================================
+
+describe('los limites del perfil', () => {
+  // Son los de las columnas: pasarse sin validar da un error de MySQL, que
+  // llega al cliente como un 500 sin explicacion.
+  test.each([
+    ['nombreNegocio', 150],
+    ['categoria', 80],
+    ['descripcion', 2000],
+    ['direccion', 200],
+    ['telefono', 30],
+    ['correoContacto', 100],
+    ['instagram', 60],
+    ['horario', 120]
+  ])('%s no puede pasar de %i caracteres', async (campo, maximo) => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/perfiles/me').send({
+      nombreNegocio: 'Negocio Valido',
+      [campo]: 'x'.repeat(maximo + 1)
+    });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(new RegExp(`${campo} no puede superar los ${maximo}`));
+  });
+
+  // Los tres que existen en el CSS. Uno inventado dejaria la pagina publica
+  // sin colores, asi que se rechaza aunque la base tambien lo impida.
+  test.each(['azul', 'INDIGO', 'fucsia'])('el tema "%s" se rechaza', async (tema) => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).patch('/api/perfiles/me/tema').send({ tema });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/El tema debe ser uno de/);
+  });
+
+  test.each(['indigo', 'teal', 'terracota'])('y el tema "%s" se acepta', async (tema) => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).patch('/api/perfiles/me/tema').send({ tema });
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.data.tema).toBe(tema);
+  });
+
+  // Guardar el perfil entero tambien puede traer tema: la misma regla.
+  test('un tema invalido tampoco cuela al guardar el perfil', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/perfiles/me')
+      .send({ nombreNegocio: 'Negocio Valido', tema: 'dorado' });
+
+    expect(respuesta.status).toBe(400);
+  });
+});
+
+describe('las etiquetas que leen WhatsApp y Google', () => {
+  /** Un negocio publicado, con la pagina respondiendo. */
+  async function negocioPublicado(perfil = {}) {
+    const cuenta = await crearCuenta({ nombreNegocio: 'Negocio Con Etiquetas' });
+
+    await como(cuenta.token).put('/api/perfiles/me').send({
+      nombreNegocio: 'Negocio Con Etiquetas',
+      ...perfil
+    });
+
+    await agregarBloque(cuenta.token);
+    await como(cuenta.token).post('/api/qr');
+
+    return cuenta;
+  }
+
+  // Son datos estructurados: Google los lee para la ficha del negocio. Si no
+  // salen, el horario y la foto no aparecen en el resultado de busqueda.
+  test('el horario y la imagen salen en los datos estructurados', async () => {
+    const cuenta = await negocioPublicado({
+      horario: 'Lunes a sabado, 7:00 a.m. - 7:00 p.m.',
+      imagen: 'https://ejemplo.co/logo.png'
+    });
+
+    const html = (await request(app).get(`/p/${cuenta.slug}`)).text;
+
+    expect(html).toContain('"openingHours"');
+    expect(html).toContain('Lunes a sabado');
+    expect(html).toContain('"image"');
+    expect(html).toContain('https://ejemplo.co/logo.png');
+  });
+
+  // Y si el negocio no los lleno, no se escriben campos vacios: una ficha
+  // con "horario: " en blanco es peor que sin horario.
+  test('y si no los tiene, no se escriben vacios', async () => {
+    const cuenta = await negocioPublicado();
+
+    const html = (await request(app).get(`/p/${cuenta.slug}`)).text;
+
+    expect(html).not.toContain('"openingHours"');
+    expect(html).not.toContain('"image"');
+  });
+
+  // La descripcion de la vista previa se corta por la ultima palabra
+  // entera: un corte a mitad de palabra se ve mal en WhatsApp.
+  test('una descripcion larga se corta sin partir palabras', async () => {
+    const palabras = 'palabra '.repeat(60).trim();
+    const cuenta = await negocioPublicado({ descripcion: palabras });
+
+    const html = (await request(app).get(`/p/${cuenta.slug}`)).text;
+    const etiqueta = html.match(/<meta name="description" content="([^"]*)"/);
+
+    expect(etiqueta).not.toBeNull();
+    expect(etiqueta[1].length).toBeLessThanOrEqual(205);
+    expect(etiqueta[1]).toMatch(/…$/);
+    expect(etiqueta[1]).not.toMatch(/palab…$/);
+  });
+
+  // Las comillas de un nombre romperian el atributo del HTML y, con el,
+  // la etiqueta entera.
+  test('un nombre con comillas no rompe las etiquetas', async () => {
+    const cuenta = await crearCuenta({ nombreNegocio: 'El "Mejor" Pan' });
+
+    await agregarBloque(cuenta.token);
+    await como(cuenta.token).post('/api/qr');
+
+    const html = (await request(app).get(`/p/${cuenta.slug}`)).text;
+
+    expect(html).toContain('&quot;Mejor&quot;');
+    expect(html).not.toContain('content="El "Mejor" Pan"');
+  });
+});
+
+describe('un nombre del que no sale ninguna direccion', () => {
+  // El slug se arma quitando acentos y lo que no sea letra o numero. Un
+  // nombre de solo simbolos pasa el validador -tiene mas de dos caracteres-
+  // y deja la cadena vacia: sin un valor por defecto, el negocio quedaria
+  // con una direccion publica vacia y su codigo QR no llevaria a ninguna
+  // parte.
+  test('se le pone una por defecto en lugar de dejarla vacia', async () => {
+    const cuenta = await crearCuenta({ nombreNegocio: '!!! ???' });
+
+    expect(cuenta.slug).toMatch(/^negocio/);
+
+    const publico = await request(app).get(`/api/publico/${cuenta.slug}`);
+
+    expect(publico.status).not.toBe(500);
   });
 });

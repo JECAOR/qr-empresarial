@@ -6,7 +6,7 @@
 // veces y no se leeria como lo que es.
 // ============================================
 
-const { app, request, crearCuenta, agregarBloque, como } = require('./ayudas');
+const { app, request, CLAVE, crearCuenta, entrar, agregarBloque, como } = require('./ayudas');
 const pool = require('../src/config/database');
 
 /** Una cuenta con contenido y codigo QR ya generado. */
@@ -480,5 +480,246 @@ describe('Metadatos de la pagina publica (RF-09)', () => {
     // La pantalla muestra el aviso; la ruta no revela que slugs hay
     expect(respuesta.status).toBe(200);
     expect(respuesta.text).toContain('Perfil no disponible');
+  });
+});
+
+// ============================================
+// Los caminos que no se habian recorrido
+//
+// Tres grupos, elegidos porque son alcanzables desde fuera y porque lo que
+// hacen importa: el codigo QR de una cuenta a medio montar, los eventos que
+// cualquiera en internet puede mandar, y las etiquetas de vista previa.
+// ============================================
+
+/** Una cuenta de empresa sin perfil, de las que crea el administrador. */
+async function cuentaSinPerfil() {
+  const base = await crearCuenta();
+
+  await pool.execute("UPDATE usuario SET rol = 'administrador' WHERE correo = ?", [base.correo]);
+
+  const admin = await entrar(base.correo);
+  const correo = `sin.perfil.${Date.now()}.${Math.random().toString(36).slice(2, 8)}@ejemplo.co`;
+
+  await como(admin).post('/api/usuarios').send({
+    nombre: 'Cuenta Sin Perfil',
+    correo,
+    contrasena: CLAVE,
+    rol: 'empresa'
+  });
+
+  return entrar(correo);
+}
+
+describe('el codigo QR de una cuenta a medio montar', () => {
+  // El codigo apunta al perfil: sin perfil no hay a donde apuntar. Decirlo
+  // asi es lo que hace que se sepa que falta, en lugar de un 500.
+  test('sin perfil no se puede generar, y se explica que falta', async () => {
+    const token = await cuentaSinPerfil();
+
+    const respuesta = await como(token).post('/api/qr');
+
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body.message).toMatch(/complete el perfil empresarial/);
+  });
+
+  test('ni consultar', async () => {
+    const token = await cuentaSinPerfil();
+
+    const respuesta = await como(token).get('/api/qr');
+
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body.message).toMatch(/complete el perfil empresarial/);
+  });
+
+  // Con perfil pero sin haberlo generado todavia: es el estado normal de una
+  // cuenta recien registrada, y la pantalla lo usa para ofrecer "Generar".
+  test('con perfil pero sin generar, dice que no hay codigo', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).get('/api/qr');
+
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body.message).toMatch(/todavía no tiene un código QR/);
+  });
+
+  test('y tampoco se puede publicar ni retirar lo que no existe', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).patch('/api/qr/estado').send({ activo: false });
+
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body.message).toMatch(/todavía no tiene un código QR/);
+  });
+});
+
+describe('los eventos que llegan de fuera', () => {
+  // Este endpoint no pide sesion: lo llama la pagina publica desde el
+  // navegador de quien escanea, asi que cualquiera puede mandarle lo que
+  // quiera. Lo que no sea de los tres tipos se rechaza antes de tocar la
+  // base.
+  test.each([
+    ['inventado', 'curioseo'],
+    ['vacio', ''],
+    ['en mayusculas', 'VISITA'],
+    ['que no es texto', 7]
+  ])('un tipo %s se rechaza', async (_, tipo) => {
+    const cuenta = await crearCuenta();
+
+    const respuesta = await request(app)
+      .post(`/api/publico/${cuenta.slug}/eventos`)
+      .send({ tipo });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/tipo de evento debe ser uno de/);
+  });
+
+  // Un clic sin decir cual: sin esto se guardarian clics que no apuntan a
+  // nada y las estadisticas dirian mas de lo que saben.
+  test.each([
+    ['sin el enlace', {}],
+    ['con un enlace que no es numero', { idEnlace: 'abc' }],
+    ['con un enlace negativo', { idEnlace: -1 }],
+    ['con un enlace cero', { idEnlace: 0 }]
+  ])('un clic %s se rechaza', async (_, extra) => {
+    const cuenta = await crearCuenta();
+
+    const respuesta = await request(app)
+      .post(`/api/publico/${cuenta.slug}/eventos`)
+      .send({ tipo: 'clic', ...extra });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/clic debe indicar el enlace/);
+  });
+
+  // Un slug inventado no crea filas: si no, cualquiera podria llenar la
+  // tabla de eventos de negocios que no existen.
+  test('un negocio que no existe no recibe eventos', async () => {
+    const respuesta = await request(app)
+      .post('/api/publico/no-existe-este-negocio/eventos')
+      .send({ tipo: 'visita' });
+
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body.message).toMatch(/no está disponible/);
+  });
+
+  // Un perfil con el codigo retirado tampoco: no se puede mostrar, asi que
+  // no se le cuentan visitas.
+  test('un negocio con la pagina retirada tampoco', async () => {
+    const cuenta = await crearCuenta();
+
+    await agregarBloque(cuenta.token);
+    await como(cuenta.token).post('/api/qr');
+    await como(cuenta.token).patch('/api/qr/estado').send({ activo: false });
+
+    const respuesta = await request(app)
+      .post(`/api/publico/${cuenta.slug}/eventos`)
+      .send({ tipo: 'visita' });
+
+    expect(respuesta.status).toBe(404);
+  });
+});
+
+describe('los periodos de la actividad', () => {
+  // La pantalla ofrece 7, 30 y 90. Cualquier otra cosa cae en el de por
+  // defecto en lugar de montar una consulta con lo que llegue.
+  test.each([['1'], ['365'], ['abc'], ['']])('un periodo de %s dias cae en el de siempre', async (dias) => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).get(`/api/estadisticas?dias=${dias}`);
+
+    expect(respuesta.status).toBe(200);
+    expect([7, 30, 90]).toContain(respuesta.body.data.dias);
+  });
+
+  test('y los tres que si valen se respetan', async () => {
+    const { token } = await crearCuenta();
+
+    for (const dias of [7, 30, 90]) {
+      const respuesta = await como(token).get(`/api/estadisticas?dias=${dias}`);
+
+      expect(respuesta.body.data.dias).toBe(dias);
+    }
+  });
+
+  // Sin perfil no hay actividad que contar, y hay que decirlo: un 200 con
+  // ceros haria creer que el negocio no tiene visitas.
+  test('una cuenta sin perfil no recibe ceros, recibe un 404', async () => {
+    const token = await cuentaSinPerfil();
+
+    const respuesta = await como(token).get('/api/estadisticas');
+
+    expect(respuesta.status).toBe(404);
+  });
+});
+
+describe('un boton en la pagina publica', () => {
+  // REGRESION con historia. El tipo se decidia comparando el nombre de la
+  // categoria con el literal "Boton", y basto con que la base se cargara
+  // desde una consola de Windows para que los acentos dejaran de coincidir:
+  // la comparacion fallaba en silencio y un boton salia dibujado como
+  // texto. Se arreglo comparando por el icono, que es ASCII.
+  //
+  // El camino del boton en la vista publica no se habia vuelto a ejecutar.
+  test('sale como boton, no como texto', async () => {
+    const cuenta = await crearCuenta({ nombreNegocio: 'Negocio Con Boton' });
+
+    const categorias = (await como(cuenta.token).get('/api/contenido/categorias')).body.data;
+    const deBoton = categorias.elementos.find((c) => c.nombre === 'Botón');
+
+    expect(deBoton).toBeDefined();
+
+    await como(cuenta.token).post('/api/contenido').send({
+      tipo: 'boton',
+      titulo: 'Encargar una torta',
+      detalle: 'Escríbenos con tres días de antelación',
+      idCategoria: deBoton.id
+    });
+
+    await como(cuenta.token).post('/api/qr');
+
+    const publico = await request(app).get(`/api/publico/${cuenta.slug}`);
+    const bloque = publico.body.data.contenido.find((b) => b.titulo === 'Encargar una torta');
+
+    expect(bloque.tipo).toBe('boton');
+  });
+
+  test('y un texto normal sigue saliendo como texto', async () => {
+    const cuenta = await crearCuenta({ nombreNegocio: 'Negocio Con Texto' });
+
+    const categorias = (await como(cuenta.token).get('/api/contenido/categorias')).body.data;
+    const deTexto = categorias.elementos.find((c) => c.nombre !== 'Botón');
+
+    await como(cuenta.token).post('/api/contenido').send({
+      tipo: 'texto',
+      titulo: 'Horneamos cada mañana',
+      detalle: 'Masa madre de fermentación lenta',
+      idCategoria: deTexto.id
+    });
+
+    await como(cuenta.token).post('/api/qr');
+
+    const publico = await request(app).get(`/api/publico/${cuenta.slug}`);
+    const bloque = publico.body.data.contenido.find((b) => b.titulo === 'Horneamos cada mañana');
+
+    expect(bloque.tipo).toBe('texto');
+  });
+});
+
+describe('publicar o retirar la pagina', () => {
+  // Es un interruptor, igual que el de los bloques.
+  test.each([
+    ['sin el campo', {}],
+    ['con una cadena', { activo: 'true' }],
+    ['con un numero', { activo: 1 }]
+  ])('%s se rechaza', async (_, cuerpo) => {
+    const cuenta = await crearCuenta();
+
+    await agregarBloque(cuenta.token);
+    await como(cuenta.token).post('/api/qr');
+
+    const respuesta = await como(cuenta.token).patch('/api/qr/estado').send(cuerpo);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/activo debe ser true o false/);
   });
 });
