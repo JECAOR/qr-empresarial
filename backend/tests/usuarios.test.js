@@ -531,3 +531,165 @@ describe('los datos propios', () => {
     expect(respuesta.body.message).toMatch(mensaje);
   });
 });
+
+// ============================================
+// Lo ultimo que quedaba con riesgo de verdad
+// ============================================
+
+const jwt = require('jsonwebtoken');
+
+describe('un token sin identificador de sesion', () => {
+  // Cada token lleva un jti con el que se comprueba si la sesion fue
+  // cerrada. Uno sin jti no se puede consultar contra esa lista: aunque
+  // estuviera bien firmado, aceptarlo significaria que cerrar sesion no
+  // sirve de nada para el. Se rechaza.
+  test('se rechaza aunque la firma sea buena', async () => {
+    const { id } = await crearCuenta();
+
+    const sinJti = jwt.sign(
+      { id, correo: 'da@igual.co', rol: 'empresa' },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    const respuesta = await como(sinJti).get('/api/usuarios/me');
+
+    expect(respuesta.status).toBe(401);
+  });
+});
+
+describe('el enlace de recuperacion, al abrirlo', () => {
+  // La pantalla consulta el enlace antes de ensenar el formulario: si no
+  // sirve, se dice ahi y no despues de escribir la contrasena nueva.
+  test('uno desconocido se rechaza al comprobarlo', async () => {
+    const respuesta = await request(app).get(`/api/auth/restablecer/${'c'.repeat(64)}`);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/no es válido o ya expiró/);
+  });
+});
+
+describe('cambiar el correo con la contrasena equivocada', () => {
+  // El correo es con el que se entra y al que llega el enlace de
+  // recuperacion: quien se hiciera con una sesion abierta podria cambiarlo
+  // y apropiarse de la cuenta. Por eso se pide la contrasena, y por eso
+  // tiene que comprobarse de verdad.
+  test('no se cambia, y se dice que la contrasena no es', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/usuarios/me').send({
+      nombre: 'Nombre Valido',
+      correo: correoNuevo(),
+      contrasena: 'EstaNoEsLaClave1*'
+    });
+
+    expect(respuesta.status).toBe(401);
+    expect(respuesta.body.message).toMatch(/contraseña no es correcta/);
+  });
+
+  test('y el correo sigue siendo el de antes', async () => {
+    const { token, correo } = await crearCuenta();
+
+    await como(token).put('/api/usuarios/me').send({
+      nombre: 'Nombre Valido',
+      correo: correoNuevo(),
+      contrasena: 'EstaNoEsLaClave1*'
+    });
+
+    const yo = await como(token).get('/api/usuarios/me');
+
+    expect(yo.body.data.correo).toBe(correo);
+  });
+});
+
+describe('consultar una cuenta que no existe', () => {
+  test('da 404 y no un cuerpo vacio', async () => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    const respuesta = await como(token).get('/api/usuarios/999999');
+
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body.message).toMatch(/Usuario no encontrado/);
+  });
+});
+
+describe('los filtros de la administracion', () => {
+  // Filtrar por rol es lo que usa el administrador para ver solo empresas.
+  test('por rol devuelve solo los de ese rol', async () => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    await crearCuenta();
+
+    const empresas = await como(token).get('/api/admin/usuarios?rol=empresa');
+
+    expect(empresas.status).toBe(200);
+    expect(empresas.body.data.length).toBeGreaterThan(0);
+    expect(empresas.body.data.every((u) => u.rol === 'empresa')).toBe(true);
+
+    const admins = await como(token).get('/api/admin/usuarios?rol=administrador');
+
+    expect(admins.body.data.every((u) => u.rol === 'administrador')).toBe(true);
+  });
+
+  // Un filtro inventado no revienta ni cuela en la consulta: se ignora y se
+  // devuelve la lista entera.
+  test('un rol inventado se ignora en lugar de fallar', async () => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    const respuesta = await como(token).get('/api/admin/usuarios?rol=jefazo');
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.data.length).toBeGreaterThan(0);
+  });
+
+  test('y un orden inventado cae en el de siempre', async () => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    const respuesta = await como(token).get('/api/admin/usuarios?orden=porLoQueSea');
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.data.length).toBeGreaterThan(0);
+  });
+});
+
+describe('la regla del correo unico al actualizar (RN-01)', () => {
+  // Cambiar una cuenta al correo de otra la dejaria sin forma de entrar, y
+  // a la otra con un duplicado que la base rechaza con un error crudo.
+  test('no se puede poner el correo de otra cuenta', async () => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    const una = await crearCuenta();
+    const otra = await crearCuenta();
+
+    const respuesta = await como(token).put(`/api/usuarios/${una.id}`).send({
+      nombre: 'Nombre Valido',
+      correo: otra.correo,
+      rol: 'empresa'
+    });
+
+    expect(respuesta.status).toBe(409);
+    expect(respuesta.body.message).toMatch(/correo ya está registrado/);
+  });
+
+  // Pero el suyo propio si: guardar sin tocar el correo es lo normal.
+  test('pero si el suyo propio, que es lo normal al guardar', async () => {
+    const jefe = await crearCuenta();
+    const token = await hacerAdministrador(jefe.correo);
+
+    const una = await crearCuenta();
+
+    const respuesta = await como(token).put(`/api/usuarios/${una.id}`).send({
+      nombre: 'Nombre Cambiado',
+      correo: una.correo,
+      rol: 'empresa'
+    });
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.data.nombre).toBe('Nombre Cambiado');
+  });
+});

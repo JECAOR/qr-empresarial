@@ -1,6 +1,6 @@
 # Pruebas automáticas del backend
 
-295 pruebas de integración sobre la API, con **Jest** y **Supertest**.
+372 pruebas de integración sobre la API, con **Jest** y **Supertest**.
 
 ```bash
 npm test
@@ -55,7 +55,7 @@ quedaron es la forma más rápida de entender por qué.
 | `correo.test.js` | RF-03, el envío | 14 |
 | `arranque.test.js` | CORS, errores, avisos de despliegue | 11 |
 
-Cobertura: **92,4 % de las sentencias**, 88,0 % de las ramas y 98,2 % de las funciones de `src/`.
+Cobertura: **96,2 % de las sentencias**, 92,2 % de las ramas y 99,1 % de las funciones de `src/`.
 
 Las tres últimas subidas salieron de mirar **qué no se ejecutaba nunca**, no de añadir casos a lo que ya pasaba:
 
@@ -133,6 +133,6 @@ Las tres se complementan y ninguna sobra:
 
 - **Postman** (232 peticiones) es la evidencia para el instructor, se ejecuta a mano y sirve
   para explorar la API.
-- **Jest + Supertest** (295) es la red de seguridad automática del backend: corre entera en
+- **Jest + Supertest** (372) es la red de seguridad automática del backend: corre entera en
   medio minuto y avisa si un módulo nuevo rompe uno viejo.
 - **Playwright** (396) prueba las pantallas, con la API simulada.

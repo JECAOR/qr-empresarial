@@ -31,7 +31,24 @@ function correoNuevo(prefijo = 'cuenta') {
  *
  * @returns {Promise<{token: string, correo: string, contrasena: string, id: number, slug: string}>}
  */
-async function crearCuenta({ nombreNegocio = 'Negocio de Prueba' } = {}) {
+/**
+ * Un nombre de negocio distinto en cada llamada.
+ *
+ * Antes era 'Negocio de Prueba' para todas, y el slug se resolvia con el
+ * sufijo -2, -3... hasta el 200, que es el limite del generador. Al crecer
+ * la suite se paso de ahi y las ultimas cuentas no se podian registrar: la
+ * suite fallaba por su propio volumen, no por el codigo. Las pruebas que
+ * comprueban un slug concreto pasan el nombre a mano y no dependen de esto.
+ */
+let cuantas = 0;
+
+const negocioNuevo = () => {
+  cuantas += 1;
+
+  return `Negocio de Prueba ${process.pid} ${cuantas}`;
+};
+
+async function crearCuenta({ nombreNegocio = negocioNuevo() } = {}) {
   const correo = correoNuevo();
 
   const registro = await request(app)

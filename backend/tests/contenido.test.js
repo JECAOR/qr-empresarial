@@ -2,7 +2,9 @@
 // TESTS/CONTENIDO.TEST.JS — RF-05 y RF-06
 // ============================================
 
-const { app, request, crearCuenta, agregarBloque, como } = require('./ayudas');
+const { app, request, CLAVE, crearCuenta, entrar, agregarBloque, como } = require('./ayudas');
+
+const pool = require('../src/config/database');
 
 describe('Agregar contenido (RF-05)', () => {
   test('un enlace se guarda con su categoria y su seccion', async () => {
@@ -441,5 +443,173 @@ describe('los textos y botones se manejan igual que los enlaces', () => {
     const estado = await como(mia.token).patch(`/api/contenido/${id}/estado`).send({ activo: false });
 
     expect(estado.status).toBe(404);
+  });
+});
+
+// ============================================
+// Los limites del contenido
+//
+// Son las reglas que impiden guardar basura en las dos tablas del
+// contenido. Casi ninguna se habia ejecutado: las pruebas entraban con
+// datos buenos y con uno o dos malos.
+// ============================================
+
+describe('lo que no se acepta al crear un bloque', () => {
+  const base = () => ({
+    tipo: 'enlace',
+    titulo: 'Un titulo cualquiera',
+    detalle: 'https://ejemplo.co',
+    idCategoria: 1
+  });
+
+  test.each([
+    ['sin categoria', { idCategoria: undefined }, /indicar la categoría/],
+    ['con una categoria que no es numero', { idCategoria: 'whatsapp' }, /indicar la categoría/],
+    ['con una categoria cero', { idCategoria: 0 }, /indicar la categoría/],
+    ['con una categoria negativa', { idCategoria: -3 }, /indicar la categoría/],
+    ['con una categoria decimal', { idCategoria: 1.5 }, /indicar la categoría/]
+  ])('%s', async (_, cambio, mensaje) => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).post('/api/contenido').send({ ...base(), ...cambio });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(mensaje);
+  });
+
+  // Los largos son los de las columnas: pasarse no da un error de validacion
+  // sino uno de MySQL, que llegaria como 500.
+  test.each([
+    ['el titulo', { titulo: 'T'.repeat(101) }, /titulo no puede superar los 100/],
+    ['la seccion', { seccion: 'S'.repeat(61) }, /seccion no puede superar los 60/],
+    ['el detalle', { detalle: `https://ejemplo.co/${'d'.repeat(2000)}` }, /detalle no puede superar los 2000/]
+  ])('%s no puede pasarse de largo', async (_, cambio, mensaje) => {
+    const { token } = await crearCuenta();
+
+    const categorias = (await como(token).get('/api/contenido/categorias')).body.data;
+
+    const respuesta = await como(token).post('/api/contenido')
+      .send({ ...base(), idCategoria: categorias.enlaces[0].id, ...cambio });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(mensaje);
+  });
+});
+
+describe('activar o desactivar', () => {
+  // Es un interruptor: "si", 1 o nada no son estados.
+  test.each([
+    ['sin el campo', {}],
+    ['con una cadena', { activo: 'true' }],
+    ['con un numero', { activo: 1 }],
+    ['con nulo', { activo: null }]
+  ])('%s se rechaza', async (_, cuerpo) => {
+    const cuenta = await crearCuenta();
+    const id = await agregarBloque(cuenta.token);
+
+    const respuesta = await como(cuenta.token).patch(`/api/contenido/${id}/estado`).send(cuerpo);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(/activo debe ser true o false/);
+  });
+});
+
+describe('reordenar', () => {
+  test.each([
+    ['sin la lista', {}, /lista de identificadores/],
+    ['con una lista vacia', { ids: [] }, /lista de identificadores/],
+    ['con algo que no es lista', { ids: 'enlace-1' }, /lista de identificadores/],
+    ['con numeros en lugar de identificadores', { ids: [1, 2] }, /deben ser cadenas/],
+    ['con una cadena vacia dentro', { ids: ['enlace-1', ''] }, /deben ser cadenas/]
+  ])('%s se rechaza', async (_, cuerpo, mensaje) => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).put('/api/contenido/orden').send(cuerpo);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.message).toMatch(mensaje);
+  });
+});
+
+describe('el telefono de un enlace de WhatsApp', () => {
+  // El servidor arma el enlace a partir del numero: con menos de siete
+  // digitos no hay numero que valga, y dejarlo pasar daria un wa.me roto
+  // impreso en un codigo QR.
+  test('un numero demasiado corto se rechaza', async () => {
+    const { token } = await crearCuenta();
+
+    const categorias = (await como(token).get('/api/contenido/categorias')).body.data;
+    const whatsapp = categorias.enlaces.find((c) => c.nombre === 'WhatsApp');
+
+    const respuesta = await como(token).post('/api/contenido').send({
+      tipo: 'enlace',
+      titulo: 'Escríbenos',
+      detalle: '12345',
+      idCategoria: whatsapp.id
+    });
+
+    expect(respuesta.status).toBe(400);
+  });
+});
+
+describe('las operaciones sobre lo que no esta', () => {
+  test('editar un bloque que no existe da 404', async () => {
+    const { token } = await crearCuenta();
+
+    const categorias = (await como(token).get('/api/contenido/categorias')).body.data;
+
+    const respuesta = await como(token).put('/api/contenido/enlace-999999').send({
+      tipo: 'enlace',
+      titulo: 'No existe',
+      detalle: 'https://ejemplo.co',
+      idCategoria: categorias.enlaces[0].id
+    });
+
+    expect(respuesta.status).toBe(404);
+  });
+
+  // Sin perfil no hay donde colgar un bloque. Es la cuenta que crea el
+  // administrador desde POST /api/usuarios.
+  test('una cuenta sin perfil no puede agregar contenido', async () => {
+    const base = await crearCuenta();
+
+    await pool.execute("UPDATE usuario SET rol = 'administrador' WHERE correo = ?", [base.correo]);
+
+    const admin = await entrar(base.correo);
+    const correo = `sin.perfil.${Date.now()}.${Math.random().toString(36).slice(2, 8)}@ejemplo.co`;
+
+    await como(admin).post('/api/usuarios')
+      .send({ nombre: 'Sin Perfil', correo, contrasena: CLAVE, rol: 'empresa' });
+
+    const token = await entrar(correo);
+    const categorias = (await como(token).get('/api/contenido/categorias')).body.data;
+
+    const respuesta = await como(token).post('/api/contenido').send({
+      tipo: 'enlace',
+      titulo: 'Sin perfil',
+      detalle: 'https://ejemplo.co',
+      idCategoria: categorias.enlaces[0].id
+    });
+
+    expect(respuesta.status).toBe(404);
+  });
+});
+
+describe('borrar o apagar lo que ya no esta', () => {
+  test('borrar un bloque inexistente da 404', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).delete('/api/contenido/enlace-999999');
+
+    expect(respuesta.status).toBe(404);
+  });
+
+  test('y apagarlo tambien', async () => {
+    const { token } = await crearCuenta();
+
+    const respuesta = await como(token).patch('/api/contenido/elemento-999999/estado')
+      .send({ activo: false });
+
+    expect(respuesta.status).toBe(404);
   });
 });
