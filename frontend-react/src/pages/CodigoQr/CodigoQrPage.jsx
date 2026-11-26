@@ -123,9 +123,12 @@ export default function CodigoQrPage() {
     setAviso("");
 
     try {
-      await accion();
+      // Si la accion devuelve un texto, ese gana: hay casos en los que solo
+      // el servidor sabe que paso de verdad. Ver generar().
+      const suyo = await accion();
+
       await cargar();
-      setAviso(mensajeExito);
+      setAviso(typeof suyo === "string" && suyo ? suyo : mensajeExito);
     } catch (fallo) {
       setError(fallo.message);
     } finally {
@@ -133,8 +136,18 @@ export default function CodigoQrPage() {
     }
   }
 
+  /**
+   * Genera el codigo, o informa de que ya existia.
+   *
+   * El servidor distingue los dos casos: 201 cuando lo crea y 200 con «Este
+   * perfil ya tenía un código QR» cuando no hacia falta. Se llega al segundo
+   * con dos pestañas abiertas: en una se genera el codigo y la otra, que
+   * sigue ensenando «Generar mi codigo» porque cargo antes, lo pulsa. Decir
+   * «Código generado» ahi seria falso, y ademas haria creer que el codigo es
+   * nuevo y que lo repartido antes ya no sirve.
+   */
   async function generar() {
-    await ejecutar(generarMiQr, "Código generado");
+    return ejecutar(async () => (await generarMiQr())?.message, "Código generado");
   }
 
   async function cambiarVisibilidad() {

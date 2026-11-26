@@ -213,3 +213,170 @@ for (const tema of ['teal', 'terracota']) {
     expect(await auditar(page)).toEqual([]);
   });
 }
+
+// ============================================
+// El zoom y el texto grande
+//
+// La decima vara de medir, y la que axe NO puede aplicar: ninguna de sus
+// reglas mide reflujo ni escalado de texto. Son tres criterios de la WCAG
+// que hasta ahora nadie habia comprobado, y se comprueban igual: forzando la
+// condicion y mirando si la pagina se puede arrastrar de lado.
+//
+//   - 1.4.10 Reflujo. A 320 px de ancho no debe haber desplazamiento
+//     horizontal. 320 px NO es un telefono pequeño: es el ancho equivalente
+//     a un zoom del 400 % en una pantalla de 1280, que es como navega quien
+//     necesita el texto grande. movil.spec.js prueba 375, que es mas ancho.
+//   - 1.4.4 Redimensionar texto. El texto tiene que poder llegar al 200 %
+//     sin perder contenido. Se sube la raiz de 16 a 32 px, que es lo que
+//     hace el ajuste de «tamaño de letra» del navegador.
+//   - 1.4.12 Espaciado del texto. Con interlineado 1,5, separacion entre
+//     letras 0,12em y entre palabras 0,16em no se puede perder nada.
+//
+// Volvio casi limpia: lo unico que encontro fueron 3 px en la pantalla del
+// codigo, y aun asi valio la pena, porque eran 3 px que nadie habria visto
+// nunca y que incumplian el criterio.
+// ============================================
+
+const TODAS = [
+  '/', '/perfil', '/contenido', '/codigo-qr', '/actividad', '/configuracion',
+  '/p/panaderia-la-espiga', '/p/panaderia-la-espiga/menu', '/login', '/registro'
+];
+
+/** Una direccion pegada, lo unico que de verdad no se puede partir. */
+const URL_PEGADA = 'https://www.google.com/maps/place/Panader%C3%ADa+La+Espiga/@4.6486259,'
+  + '-74.0629936,17z/data=!3m1!4b1!4m6!3m5!1s0x8e3f9a5e5f5e5f5e:0x1234567890abcdef'
+  + '!8m2!3d4.6486259!4d-74.0604187';
+
+const CON_DATOS_LARGOS = {
+  perfil: {
+    nombreNegocio: 'Panadería y Repostería Artesanal La Espiga de Oro de Chapinero Alto S.A.S.',
+    descripcion: 'Pan de masa madre horneado cada mañana en Chapinero. '.repeat(30),
+    direccion: 'Carrera 7 # 53 - 22, Local 3, Edificio Torres del Parque, Chapinero Alto, Bogotá',
+    correoContacto: 'contacto.panaderia.la.espiga.de.oro.chapinero@miempresa.com.co',
+    instagram: '@panaderialaespigadeorochapinero'
+  },
+  contenido: [{
+    id: 'elemento-1',
+    tipo: 'texto',
+    titulo: 'Cómo llegar',
+    detalle: 'Estamos a media cuadra del parque. ' + URL_PEGADA,
+    seccion: 'menu',
+    categoria: 'Texto',
+    icono: 'texto',
+    activo: true,
+    orden: 1,
+    clics: 0
+  }]
+};
+
+/** Si la pagina se puede arrastrar de lado. Es el sintoma de los tres. */
+async function seArrastraDeLado(page) {
+  return page.evaluate(() => ({
+    documento: document.documentElement.scrollWidth,
+    ventana: document.documentElement.clientWidth
+  }));
+}
+
+test.describe('1.4.10 reflujo: a 320 px no se arrastra de lado', () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  for (const ruta of TODAS) {
+    test(ruta, async ({ page }) => {
+      await prepararSesion(page);
+      await page.goto(ruta);
+      await expect(page.locator('main')).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      const d = await seArrastraDeLado(page);
+
+      expect(d.documento).toBeLessThanOrEqual(d.ventana);
+    });
+  }
+
+  // Y con lo que escribe un negocio, no con los datos de muestra
+  test('ni con una direccion pegada y un nombre largo', async ({ page }) => {
+    await prepararSesion(page, CON_DATOS_LARGOS);
+
+    for (const ruta of ['/', '/p/panaderia-la-espiga', '/p/panaderia-la-espiga/menu']) {
+      await page.goto(ruta);
+      await page.waitForLoadState('networkidle');
+
+      const d = await seArrastraDeLado(page);
+
+      expect(d.documento, `se arrastra en ${ruta}`).toBeLessThanOrEqual(d.ventana);
+    }
+  });
+
+  // REGRESION. La vista previa medía 240 px fijos y, con los 18 px de
+  // relleno del marco a cada lado, pedia 278 donde la rejilla le daba 238:
+  // tres pixeles de desplazamiento horizontal, invisibles y suficientes para
+  // incumplir el criterio. El arreglo fue dejarla encogerse.
+  //
+  // El desbordamiento en si lo comprueba la prueba de /codigo-qr de arriba.
+  // Aqui se cuida lo OTRO, que es lo que el arreglo puede estropear: un
+  // max-width sin height: auto encoge el ancho y deja la altura quieta, y
+  // entonces el codigo sale rectangular. Un codigo QR deformado no lo lee
+  // ningun telefono.
+  test('la vista previa se encoge sin deformar el codigo', async ({ page }) => {
+    await prepararSesion(page);
+    await page.goto('/codigo-qr');
+    await page.waitForLoadState('networkidle');
+
+    const imagen = page.getByAltText('Vista previa del código QR');
+
+    await expect(imagen).toBeVisible();
+
+    const forma = await imagen.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+
+      return { ancho: Math.round(r.width), alto: Math.round(r.height) };
+    });
+
+    expect(forma.ancho).toBe(forma.alto);
+  });
+});
+
+test.describe('1.4.4 el texto al 200 %', () => {
+  test.use({ viewport: { width: 1280, height: 720 } });
+
+  for (const ruta of TODAS) {
+    test(ruta, async ({ page }) => {
+      await prepararSesion(page);
+      await page.goto(ruta);
+      await expect(page.locator('main')).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      await page.addStyleTag({ content: 'html { font-size: 32px !important; }' });
+
+      const d = await seArrastraDeLado(page);
+
+      expect(d.documento).toBeLessThanOrEqual(d.ventana);
+    });
+  }
+});
+
+test.describe('1.4.12 el espaciado del texto', () => {
+  test.use({ viewport: { width: 1280, height: 720 } });
+
+  for (const ruta of TODAS) {
+    test(ruta, async ({ page }) => {
+      await prepararSesion(page);
+      await page.goto(ruta);
+      await expect(page.locator('main')).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      await page.addStyleTag({
+        content: `* {
+          line-height: 1.5 !important;
+          letter-spacing: 0.12em !important;
+          word-spacing: 0.16em !important;
+        }
+        p { margin-bottom: 2em !important; }`
+      });
+
+      const d = await seArrastraDeLado(page);
+
+      expect(d.documento).toBeLessThanOrEqual(d.ventana);
+    });
+  }
+});

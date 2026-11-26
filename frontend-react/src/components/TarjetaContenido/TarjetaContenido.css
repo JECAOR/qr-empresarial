@@ -17,6 +17,12 @@
   margin: 0;
   font-size: 15px;
   color: var(--slate-900);
+
+  /* Lo escribe el negocio y puede no tener un solo espacio donde partir.
+     `anywhere` y no `break-all`: break-all parte TODAS las palabras, incluso
+     las normales, y deja el castellano cortado por la mitad sin motivo.
+     Esta solo parte lo que no cabe de ninguna otra forma. */
+  overflow-wrap: anywhere;
 }
 
 .tarjeta__categoria {
@@ -35,6 +41,14 @@
   margin: 8px 0 0;
   color: var(--slate-600);
   line-height: 1.5;
+
+  /* Aqui estaba el defecto. El enlace de abajo si se partia
+     -.tarjeta__enlace lleva break-all-, pero el texto libre de un bloque no,
+     y lo normal es pegar ahi una direccion: la de un mapa pasa de 170
+     caracteres sin un solo espacio. La pagina publica -la que ve quien
+     escanea el codigo- se iba a 1305 px de ancho en un telefono de 375, dos
+     veces y media la pantalla. */
+  overflow-wrap: anywhere;
 }
 
 .tarjeta__enlace {

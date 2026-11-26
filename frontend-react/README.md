@@ -494,9 +494,100 @@ Dos cosas que salieron al falsificar, y que valen más que el arreglo:
   y se tapaban la una a la otra: quitar cualquiera de las dos no hacía fallar
   nada. Quedó una sola, y ahora quitarla rompe su prueba.
 
+## Tres varas más: dos pestañas, datos largos y zoom
+
+El séptimo repaso dejó un método: preguntar qué mantuvieron **constante** todos los
+anteriores. De ahi salieron estas tres, y vale la pena decir primero lo que
+encontraron, porque no fue lo mismo en las tres.
+
+### Dos pestañas (la octava)
+
+Las siete anteriores usaron **un solo cliente**. Aquí hay dos, con la misma
+cuenta y datos cargados en momentos distintos. Lo que podía doler no era la
+sesión —eso lo cierra el 401 con código— sino el **estado viejo**.
+
+Volvió casi limpia, y el motivo es interesante: lo que la protege estaba ya
+escrito. Reordenar comprueba **todos** los identificadores antes de tocar el
+primero, así que una lista con un bloque que la otra pestaña borró no deja la
+sección a medio reordenar. Y un bloque nuevo nace con `MAX(orden) + 1`, así que
+una lista vieja nunca choca con él. Son 13 pruebas que sujetan propiedades que
+hoy se cumplen y que un cambio pequeño rompería en silencio.
+
+Lo único que encontró: la pantalla del código decía **«Código generado»** aunque
+el servidor contestara «este perfil ya tenía un código QR». Pasa con dos
+pestañas: en una se genera y la otra, que cargó antes, sigue ofreciendo
+«Generar». El texto era falso y de los que importan, porque hace creer que el
+código es **nuevo** y que lo repartido antes ya no sirve. Ahora el texto lo pone
+el servidor, que es el único que sabe cuál de las dos cosas pasó.
+
+Y queda una cosa escrita como lo que es, **una decisión y no un descuido**:
+guardar el perfil desde dos pestañas deja la última escritura y pierde la
+anterior sin avisar. Evitarlo pide bloqueo optimista —una versión en el perfil,
+un 409, una pantalla que sepa explicarlo— y para un negocio con un solo dueño
+el caso es raro y el daño es perder un cambio propio que se puede volver a
+escribir. Hay una prueba que lo afirma, para que el día que alguien implemente
+el bloqueo falle y le recuerde que esto era deliberado.
+
+### Datos largos (la novena), y aquí sí había un defecto
+
+La prueba de desbordamiento existía desde el principio, y pasaba. Corría con
+los datos de muestra, que son mansos a propósito: nombres cortos, una
+descripción de una línea. Variar los datos en lugar de la pantalla es lo que
+encontró esto:
+
+**Una dirección pegada en un bloque de texto rompía la página pública.** La de
+un mapa pasa de 170 caracteres sin un solo espacio, y pegarla es de las cosas
+más normales que puede hacer alguien. El enlace sí se partía —`.tarjeta__enlace`
+ya llevaba `break-all`— pero el texto libre no, ni el título. La página que ve
+quien escanea el código medía **1305 px de ancho en una pantalla de 375**: dos
+veces y media, con el texto saliendo por el lado derecho. Con un título largo,
+1432.
+
+Dos propiedades de CSS. `overflow-wrap: anywhere` y no `break-all`, que partiría
+todas las palabras y dejaría el castellano cortado por la mitad sin motivo.
+
+### Zoom y texto grande (la décima)
+
+Tres criterios de la WCAG que **axe no puede medir**: ninguna de sus reglas mira
+reflujo ni escalado de texto.
+
+| Criterio | Qué se fuerza | Resultado |
+|---|---|---|
+| 1.4.10 Reflujo | 320 px de ancho, que equivale al 400 % de zoom | 3 px en la pantalla del código |
+| 1.4.4 Texto al 200 % | la raíz de 16 a 32 px | limpio |
+| 1.4.12 Espaciado | interlineado 1,5, letras 0,12em, palabras 0,16em | limpio |
+
+Los 3 px eran la vista previa del código: 240 px fijos más 18 de relleno a cada
+lado, 278 donde la rejilla daba 238. Invisibles, y aun así la página se podía
+arrastrar de lado, que es justo lo que el criterio prohíbe. Y 320 px no es un
+teléfono pequeño: es cómo navega quien necesita el texto grande.
+
+**Tres cosas que salieron de falsificar, y que valen más que los arreglos:**
+
+- Intenté arreglar los 3 px con `flex-wrap` en la fila de botones. No cambiaba
+  nada: la causa era la imagen. Lo quité en lugar de dejar CSS que no demuestra
+  nada.
+- La prueba del título largo **no distinguía**. El título vive en una fila
+  flexible, así que sin poder partirse su caja *crece* y la medida interna cuadra
+  igual. Pasaba en verde mientras el documento se iba a 1432 px.
+- Mi medida «quien tiene contenido más ancho que su caja» acusaba a los siete
+  campos del formulario del perfil, porque un `<input>` con un correo largo
+  desplaza el texto por dentro, y eso es correcto. Sirve para **diagnosticar**
+  —con ella se localizó el culpable— y no para decidir si una pantalla está
+  bien. La afirmación es el síntoma: que la página se pueda arrastrar de lado.
+
+### Lo que no se arregló
+
+El contador de caracteres cuenta en unidades de UTF-16 y el límite de la base
+es de caracteres: con diez emoji dice **20 de 2000**. La dirección es segura —la
+pantalla es más estricta que la base, nunca al contrario— y solo se nota a mil
+emoji de distancia. Se deja dicho en lugar de medio arreglarlo: corregir el
+contador sin corregir el `maxLength` del campo daría un número que no coincide
+con lo que el campo acepta.
+
 ## Las pruebas
 
-**568 en jsdom y 256 en un navegador de verdad.** Las primeras, con
+**568 en jsdom y 335 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
@@ -575,7 +666,7 @@ dice que manda.
 
 ## Las pruebas de extremo a extremo
 
-**256 pruebas en 15 archivos**, con [Playwright](https://playwright.dev) sobre
+**335 pruebas en 15 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium y WebKit, contra el paquete compilado:
 
 ```bash

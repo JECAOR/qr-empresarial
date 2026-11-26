@@ -232,8 +232,42 @@ test.describe('cuando todavia no hay codigo', () => {
 
     await page.getByRole('button', { name: 'Generar mi código' }).click();
 
-    await expect(page.getByRole('status')).toHaveText('Código generado');
+    // El texto lo pone el servidor y no la pantalla: es el unico que sabe si
+    // lo acaba de crear o si ya existia. Ver el bloque de dos pestañas.
+    await expect(page.getByRole('status')).toHaveText('Código QR generado correctamente');
     await expect(page.getByRole('button', { name: 'PNG' })).toBeVisible();
     await expect(page.getByAltText('Vista previa del código QR')).toBeVisible();
+  });
+
+  // Dos pestañas abiertas: en una se genera el codigo y la otra sigue
+  // ensenando «Generar mi codigo», porque cargo antes. Al pulsarlo, el
+  // servidor contesta 200 «ya tenía un código» en lugar de crear otro.
+  //
+  // La pantalla decia «Código generado» igualmente, con un texto fijo suyo.
+  // Era falso, y de los falsos que importan: haria creer que el codigo es
+  // NUEVO y que lo repartido o impreso antes ya no sirve. Ahora el texto lo
+  // pone el servidor, que es el unico que sabe cual de las dos cosas paso.
+  test('si la otra pestaña ya lo genero, se dice que ya existia', async ({ page }) => {
+    await abrirQr(page, { sinQr: true });
+
+    await page.route('**/api/qr', (ruta) => {
+      if (ruta.request().method() !== 'POST') return ruta.fallback();
+
+      return ruta.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'Este perfil ya tenía un código QR',
+          data: { idQr: 9, url: '/p/panaderia-la-espiga', activo: true, fechaCreacion: '2026-10-31' }
+        })
+      });
+    });
+
+    await page.getByRole('button', { name: 'Generar mi código' }).click();
+
+    const aviso = page.getByRole('status');
+
+    await expect(aviso).toHaveText('Este perfil ya tenía un código QR');
+    await expect(aviso).not.toHaveText(/generado/);
   });
 });

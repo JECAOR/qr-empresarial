@@ -1,6 +1,6 @@
 # Pruebas de extremo a extremo — frontend en React
 
-**256 pruebas en 15 archivos**, con [Playwright](https://playwright.dev) sobre
+**335 pruebas en 15 archivos**, con [Playwright](https://playwright.dev) sobre
 Chromium. Corren contra el **paquete compilado**, en un navegador de verdad.
 
 ```bash
@@ -71,11 +71,11 @@ redibujado, no porque haga falta.
 |---|---|---|
 | `entrar.spec.js` (15) | A dónde se llega al entrar, el historial, Atrás después de salir, la guardia de rol | `act()` decide quién gana entre dos salidas; no hay historial de navegador |
 | `arrastrar.spec.js` (12) | Reordenar arrastrando, despacio y con los tres eventos seguidos; las flechas con ratón y teclado | jsdom no tiene arrastre nativo ni `dataTransfer` |
-| `descargar.spec.js` (14) | PNG, SVG, PDF y el CSV de la administración: nombre y primeros bytes del archivo; la vista previa en `blob:`; el portapapeles | jsdom no descarga nada; `createObjectURL` es de pega |
+| `descargar.spec.js` (15) | PNG, SVG, PDF y el CSV de la administración: nombre y primeros bytes del archivo; la vista previa en `blob:`; el portapapeles | jsdom no descarga nada; `createObjectURL` es de pega |
 | `recargar.spec.js` (17) | Recargar cada pantalla, enlaces directos, direcciones que no existen, la sesión al arrancar en frío | no hay recarga, ni pestañas, ni `sessionStorage` entre pruebas |
 | `escaneada.spec.js` (19) | Escaneos, visitas y clics del RF-11, que el panel del dueño no cuente nada, y que el logo del negocio se descargue y sus datos de contacto se puedan pulsar | `sendBeacon` no existe en jsdom; que un `<img>` CARGUE y que algo mida 24 px tampoco se ven allí |
-| `movil.spec.js` (21) | Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa | Vitest corre con `css: false` y jsdom no maqueta |
-| `accesibilidad.spec.js` (24 × 2) | Auditoría de axe-core en 14 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible | la mitad de las reglas de axe miden contraste y tamaños |
+| `movil.spec.js` (35) | Lo que decide el CSS a 375 px: la tabla en tarjetas, la barra que baja, el desbordamiento, el tamaño de lo que se pulsa | Vitest corre con `css: false` y jsdom no maqueta |
+| `accesibilidad.spec.js` (56 × 2) | Auditoría de axe-core en 14 pantallas, 4 estados y los tres colores de marca, el tabulador y el foco visible | la mitad de las reglas de axe miden contraste y tamaños |
 | `tema.spec.js` (19) | El color de marca (RF-12): que la barra se pinte con él, que cambie sin recargar, que no haya parpadeo al recargar, y que quien escanea vea los colores del negocio | jsdom puede ver el atributo, pero no que PINTE: Vitest corre con `css: false` |
 | `titulos.spec.js` (18) | El título de la pestaña en cada pantalla, al navegar y al volver atrás | lo que falla aquí es el cambio al NAVEGAR, y en jsdom cada pantalla se monta sola |
 | `pwa.spec.js` (15) | Que el icono, el manifiesto, `robots.txt` y el sitemap se sirvan de verdad, y que el service worker se registre y abra la aplicación sin conexión | jsdom no pide archivos ni registra service workers |
@@ -123,7 +123,7 @@ Lo habitual es `prepararSesion(page)`, que hace las dos.
 reenvíe sus direcciones lo prueba
 [`backend/tests/frontend-publicado.test.js`](../../backend/tests/frontend-publicado.test.js),
 con Supertest. Que la API responda lo que debe, la colección de Postman en
-[`docs/postman/`](../../docs/postman) y las 415 pruebas del backend.
+[`docs/postman/`](../../docs/postman) y las 428 pruebas del backend.
 
 ### Que la simulación se parezca a la API no es un detalle
 
