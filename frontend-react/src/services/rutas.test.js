@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vitest";
 
 import * as usuarios from "./usuarioService";
+import { direccionPublica } from "./qrService";
 import * as contenido from "./contenidoService";
 import * as perfil from "./perfilService";
 import * as estadisticas from "./estadisticaService";
@@ -234,5 +235,46 @@ describe("adminService", () => {
     expect(admin.ROLES).toEqual(["empresa", "administrador"]);
     expect(admin.ORDENES.map((o) => o.valor))
       .toEqual(["registro", "nombre", "acceso", "actividad"]);
+  });
+});
+
+// ============================================
+// direccionPublica() — los dos formatos que hay en la base
+//
+// Lo encontro el recorrido integrado de la evidencia GA8, corriendo contra
+// el servidor de verdad: la pantalla del codigo ensenaba
+// «http://localhost:3000http://localhost:3000/p/...». El simulador de las
+// pruebas de navegador devolvia la ruta relativa -el contrato de los
+// primeros codigos- asi que todo pasaba en verde mientras el sistema real
+// estaba roto.
+// ============================================
+
+describe("direccionPublica()", () => {
+  it("deja la direccion como esta si ya viene entera", () => {
+    expect(direccionPublica("http://localhost:3000/p/mi-negocio"))
+      .toBe("http://localhost:3000/p/mi-negocio");
+  });
+
+  it("y no repite el dominio [regresión]", () => {
+    const salida = direccionPublica("http://localhost:3000/p/mi-negocio");
+
+    expect(salida.match(/http/g)).toHaveLength(1);
+  });
+
+  // Los primeros codigos guardaron solo la ruta, y esas filas siguen en la
+  // base: el perfil de demostracion es una de ellas.
+  it("antepone el origen si viene solo la ruta", () => {
+    expect(direccionPublica("/p/panaderia-la-espiga"))
+      .toBe("http://api.de.pruebas.invalido/p/panaderia-la-espiga");
+  });
+
+  it("acepta https igual que http", () => {
+    expect(direccionPublica("https://qrempresarial.co/p/mi-negocio"))
+      .toBe("https://qrempresarial.co/p/mi-negocio");
+  });
+
+  it("sin codigo todavia, no inventa una direccion", () => {
+    expect(direccionPublica("")).toBe("");
+    expect(direccionPublica(undefined)).toBe("");
   });
 });

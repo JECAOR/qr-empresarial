@@ -5,9 +5,10 @@ import {
   consultarMiQr,
   generarMiQr,
   cambiarEstadoQr,
-  descargarImagen
+  descargarImagen,
+  direccionPublica
 } from "../../services/qrService";
-import { origenDelBackend } from "../../services/apiClient";
+
 import useTitulo from "../../hooks/useTitulo";
 import "./CodigoQrPage.css";
 
@@ -227,8 +228,10 @@ export default function CodigoQrPage() {
     );
   }
 
-  // La API devuelve la ruta relativa; quien escanea necesita el enlace entero
-  const direccion = qr ? `${origenDelBackend()}${qr.url}` : "";
+  // La arma el servicio: en la base conviven la ruta relativa de los primeros
+  // codigos y la direccion absoluta de los de ahora, y anteponer el origen
+  // sin mirar repetia el dominio en los nuevos.
+  const direccion = qr ? direccionPublica(qr.url) : "";
 
   // Lo que se manda al compartir. Con una linea de texto delante y no el
   // enlace a secas: un mensaje que solo trae una direccion parece de los que

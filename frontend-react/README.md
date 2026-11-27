@@ -587,7 +587,7 @@ con lo que el campo acepta.
 
 ## Las pruebas
 
-**568 en jsdom y 335 en un navegador de verdad.** Las primeras, con
+**573 en jsdom y 335 en un navegador de verdad.** Las primeras, con
 [Vitest](https://vitest.dev) y
 [Testing Library](https://testing-library.com), miran lo que dibuja React y
 cómo reacciona; las segundas, con Playwright, lo que solo contesta un navegador
