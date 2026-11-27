@@ -21,7 +21,7 @@ Y en modo interactivo, útil mientras se programa:
 npm run test:e2e:ui
 ```
 
-## Por qué existen, si ya hay 568 pruebas
+## Por qué existen, si ya hay 573 pruebas
 
 Las de Vitest corren en **jsdom, que no es un navegador**. No aplica CSS, no
 tiene arrastre nativo, no descarga archivos, no tiene `sendBeacon`, no tiene

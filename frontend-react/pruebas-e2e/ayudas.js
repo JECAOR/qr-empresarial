@@ -192,7 +192,9 @@ export async function simularApi(page, opciones = {}) {
     ? contenidoPropio.map((b) => ({ ...b }))
     : contenidoInicial().filter((b) => !sinMenu || b.seccion !== 'menu');
   let perfil = { ...PERFIL, tema, ...perfilPropio };
-  let qr = { idQr: 9, url: `/p/${PERFIL.slug}`, activo: true, fechaCreacion: '2026-09-18' };
+  // La direccion la rellena el manejador en cada peticion, con el origen de
+  // la que acaba de interceptar: ver mas abajo.
+  let qr = { idQr: 9, url: '', activo: true, fechaCreacion: '2026-09-18' };
 
   // Deja de faltar en cuanto se genera: la pantalla vuelve a pedirlo despues
   // del POST, y si el simulador siguiera contestando 404 se quedaria
@@ -223,6 +225,17 @@ export async function simularApi(page, opciones = {}) {
     const url = new URL(peticion.url());
     const camino = url.pathname.replace(/^\/api/, '');
     const metodo = peticion.method();
+
+    // La direccion publica va ENTERA, como la guarda el servidor desde
+    // APP_URL. Este simulador devolvia la ruta relativa -el contrato de los
+    // primeros codigos-, y con eso las pruebas pasaban en verde mientras la
+    // pantalla repetia el dominio contra el servidor de verdad: lo encontro
+    // el recorrido integrado de la evidencia GA8.
+    //
+    // Se arma con el origen de la peticion interceptada y no con uno fijo,
+    // porque los proyectos de Playwright corren en puertos distintos: 4174
+    // el compilado y 5174 el de desarrollo.
+    qr.url = `${url.origin}/p/${PERFIL.slug}`;
 
     const json = (status, cuerpo) => ruta.fulfill({
       status,
@@ -375,7 +388,7 @@ export async function simularApi(page, opciones = {}) {
           return json(200, { message: 'Este perfil ya tenía un código QR', data: qr });
         }
 
-        qr = { idQr: 9, url: `/p/${PERFIL.slug}`, activo: true, fechaCreacion: '2026-10-31' };
+        qr = { ...qr, idQr: 9, activo: true, fechaCreacion: '2026-10-31' };
         faltaElQr = false;
 
         return json(201, { message: 'Código QR generado correctamente', data: qr });
